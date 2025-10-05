@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .field {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            display: none;
+        }
+        #error {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            display: none;
+            color: #721c24;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <form id="form">
+            {% for field in fields %}
+                {% if field.type == 'checkbox' %}
+                    <div class="field checkbox-field">
+                        <input type="checkbox" 
+                               name="{{ field.name }}" 
+                               id="{{ field.name }}"
+                               {% if field.default %}checked{% endif %}>
+                        <label for="{{ field.name }}">{{ field.name }}</label>
+                    </div>
+                {% elif field.type == 'select' %}
+                    <div class="field">
+                        <label for="{{ field.name }}">{{ field.name }}</label>
+                        <select name="{{ field.name }}" id="{{ field.name }}">
+                            {% for option in field.options %}
+                                <option value="{{ option }}" 
+                                        {% if field.default == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% else %}
+                    <div class="field">
+                        <label for="{{ field.name }}">{{ field.name }}</label>
+                        <input type="{{ field.type }}" 
+                               name="{{ field.name }}" 
+                               id="{{ field.name }}"
+                               {% if field.get('min') is not none %}min="{{ field.min }}"{% endif %}
+                               {% if field.get('max') is not none %}max="{{ field.max }}"{% endif %}
+                               {% if field.get('step') %}step="{{ field.step }}"{% endif %}
+                               {% if field.get('minlength') %}minlength="{{ field.minlength }}"{% endif %}
+                               {% if field.get('maxlength') %}maxlength="{{ field.maxlength }}"{% endif %}
+                               {% if field.default is not none %}value="{{ field.default }}"{% endif %}>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <button type="submit">Submit</button>
+        </form>
+        
+        <div id="result"></div>
+        <div id="error"></div>
+    </div>
+    
+    <script>
+        document.getElementById('form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    body: new FormData(e.target)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
+                    resultDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'Error: ' + data.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Error: ' + err.message;
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

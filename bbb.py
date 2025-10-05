@@ -132,10 +132,12 @@ def validate_params(form_data, params_info):
     return validated
 
 
-# ========== RUN (FASTAPI) ==========
-def run(func, host="0.0.0.0", port=8000, reload=False):
+# ========== RUN (FASTAPI + JINJA2) ==========
+def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
     from fastapi import FastAPI, Request
-    from fastapi.responses import JSONResponse, HTMLResponse
+    from fastapi.responses import JSONResponse
+    from fastapi.templating import Jinja2Templates
+    from pathlib import Path
     import uvicorn
     
     app = FastAPI()
@@ -143,35 +145,23 @@ def run(func, host="0.0.0.0", port=8000, reload=False):
     fields = build_form_fields(params)
     func_name = func.__name__.replace('_', ' ').title()
     
-    # HTML inline (minimalista)
-    html_template = """<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>{title}</title>
-<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:sans-serif;padding:2rem;max-width:500px;margin:0 auto}}.field{{margin-bottom:1rem}}label{{display:block;margin-bottom:0.5rem}}input,select{{width:100%;padding:0.5rem;border:1px solid #ccc;border-radius:4px}}button{{padding:0.75rem 1.5rem;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer}}button:hover{{background:#0056b3}}</style>
-</head><body><h1>{title}</h1><form id="form">{fields}<button type="submit">Submit</button></form>
-<div id="result" style="margin-top:1rem;padding:1rem;background:#d4edda;border-radius:4px;display:none"></div>
-<script>
-document.getElementById('form').addEventListener('submit',async(e)=>{{e.preventDefault();const d=await fetch('/submit',{{method:'POST',body:new FormData(e.target)}});const r=await d.json();document.getElementById('result').textContent=JSON.stringify(r.result,null,2);document.getElementById('result').style.display='block'}});
-</script></body></html>"""
+    # Verificar que exista el directorio de templates
+    template_path = Path(template_dir)
+    if not template_path.exists():
+        raise FileNotFoundError(
+            f"Template directory '{template_dir}' not found. "
+            f"Create it and add 'form.html' template."
+        )
     
-    def render_field(f):
-        if f['type'] == 'checkbox':
-            return f'<div class="field"><label><input type="checkbox" name="{f["name"]}" {"checked" if f.get("default") else ""}> {f["name"]}</label></div>'
-        elif f['type'] == 'select':
-            opts = ''.join(f'<option value="{o}">{o}</option>' for o in f['options'])
-            return f'<div class="field"><label>{f["name"]}</label><select name="{f["name"]}">{opts}</select></div>'
-        else:
-            attrs = f'type="{f["type"]}" name="{f["name"]}"'
-            if f.get('min') is not None: attrs += f' min="{f["min"]}"'
-            if f.get('max') is not None: attrs += f' max="{f["max"]}"'
-            if f.get('step'): attrs += f' step="{f["step"]}"'
-            if f.get('default') is not None: attrs += f' value="{f["default"]}"'
-            return f'<div class="field"><label>{f["name"]}</label><input {attrs}></div>'
-    
-    html = html_template.format(title=func_name, fields=''.join(render_field(f) for f in fields))
+    # Configurar Jinja2
+    templates = Jinja2Templates(directory=str(template_path))
     
     @app.get("/")
-    async def form():
-        return HTMLResponse(html)
+    async def form(request: Request):
+        return templates.TemplateResponse(
+            "form.html",
+            {"request": request, "title": func_name, "fields": fields}
+        )
     
     @app.post("/submit")
     async def submit(request: Request):
@@ -183,10 +173,18 @@ document.getElementById('form').addEventListener('submit',async(e)=>{{e.preventD
         except Exception as e:
             return JSONResponse({"success": False, "error": str(e)}, status_code=400)
     
+    print(f"🚀 Server starting at http://{host}:{port}")
     uvicorn.run(app, host=host, port=port, reload=False)
 
+
+# ========== EJEMPLO ==========
 if __name__ == "__main__":
-    def test_func(name: str = "World", times: int = Limits(1, ge=1, le=5), excited: bool = False, mood: Selected['happy', 'sad', 'neutral'] = 'neutral'):
+    def test_func(
+        name: str = "World",
+        times: int = Limits(1, ge=1, le=5),
+        excited: bool = False,
+        mood: Selected['happy', 'sad', 'neutral'] = 'neutral'
+    ):
         greeting = f"Hello, {name}" + ("!" * times if excited else ".")
         return {"greeting": greeting, "mood": mood}
     
