@@ -2,7 +2,15 @@
 from FuncToWeb import run
 from FuncToWeb.ui_types import IntUi, StrUi, FloatUi, BoolUi
 
+
+from typing import Annotated
+from pydantic import Field
+
+def BoolUiTest():
+    return Annotated[bool, Field()]
+
 def FuncToWeb(
+    test: BoolUiTest(),
     int_param: IntUi(min=1, max=10),
     list_str_param: list[str] = ["Option 1", "Option 2", "Option 3"],
     str_param: StrUi(min_length=3, max_length=20) = "Hello",

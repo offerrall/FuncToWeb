@@ -41,6 +41,7 @@ def _process_annotated_type(annotation, types_map):
             raise TypeError(f"Unsupported type: {annotation}")
     
     base_type = args_type[0]
+    print(f"Base type: {base_type}")
     constraints = {}
     
     # Extraer constraints del Field
@@ -50,12 +51,14 @@ def _process_annotated_type(annotation, types_map):
         if hasattr(c, 'min_length'): constraints['min_length'] = c.min_length
         if hasattr(c, 'max_length'): constraints['max_length'] = c.max_length
     
+    print(f"Constraints: {constraints}")
     return types_map[base_type](**constraints)
 
 
 def analyze(func):
     """Analiza una función y extrae información de sus parámetros para generar UI"""
     types_map = {int: IntUi, float: FloatUi, str: StrUi, bool: BoolUi}
+
     sig = inspect.signature(func)
     params = {}
 
@@ -76,7 +79,7 @@ def analyze(func):
         
         # Procesar Annotated[T, ...] o tipos simples
         ui_type = _process_annotated_type(annotation, types_map)
-        
+
         # Validar default si existe
         if default is not None:
             TypeAdapter(ui_type).validate_python(default)
