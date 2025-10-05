@@ -61,7 +61,11 @@ def build_form_fields(params_info):
     fields = []
     
     for name, info in params_info.items():
-        field = {'name': name, 'default': info.default}
+        field = {
+            'name': name, 
+            'default': info.default,
+            'required': True  # Todos los campos son obligatorios
+        }
         
         # Determinar tipo de input
         if get_origin(info.field_info) is Literal:
@@ -70,6 +74,7 @@ def build_form_fields(params_info):
             field['options'] = get_args(info.field_info)
         elif info.type is bool:
             field['type'] = 'checkbox'
+            field['required'] = False  # Checkboxes no usan required (son true/false)
         elif info.type in (int, float):
             field['type'] = 'number'
             field['step'] = '1' if info.type is int else 'any'
@@ -80,6 +85,8 @@ def build_form_fields(params_info):
                     cn = type(c).__name__
                     if cn == 'Ge': field['min'] = c.ge
                     elif cn == 'Le': field['max'] = c.le
+                    elif cn == 'Gt': field['min'] = c.gt + (1 if info.type is int else 0.01)
+                    elif cn == 'Lt': field['max'] = c.lt - (1 if info.type is int else 0.01)
         else:  # str
             field['type'] = 'text'
             
@@ -181,11 +188,12 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
 if __name__ == "__main__":
     def test_func(
         name: str = "World",
+        name_limit: Annotated[str, Limits(min_length=3, max_length=20)] = "User",
         times: int = Limits(1, ge=1, le=5),
         excited: bool = False,
         mood: Selected['happy', 'sad', 'neutral'] = 'neutral'
     ):
         greeting = f"Hello, {name}" + ("!" * times if excited else ".")
-        return {"greeting": greeting, "mood": mood}
+        return {"greeting": greeting, "mood": mood, "name_limit": name_limit}
     
     run(test_func)

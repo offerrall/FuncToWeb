@@ -43,6 +43,26 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input:invalid,
+        select:invalid {
+            border-color: #dc3545;
+        }
+        input:valid,
+        select:valid {
+            border-color: #28a745;
+        }
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .field-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
         }
         input[type="checkbox"] {
             width: 20px;
@@ -108,8 +128,11 @@
                     </div>
                 {% elif field.type == 'select' %}
                     <div class="field">
-                        <label for="{{ field.name }}">{{ field.name }}</label>
-                        <select name="{{ field.name }}" id="{{ field.name }}">
+                        <label for="{{ field.name }}">
+                            {{ field.name }}
+                            {% if field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                        </label>
+                        <select name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
                             {% for option in field.options %}
                                 <option value="{{ option }}" 
                                         {% if field.default == option %}selected{% endif %}>
@@ -117,19 +140,25 @@
                                 </option>
                             {% endfor %}
                         </select>
+                        <div class="field-error" id="error-{{ field.name }}"></div>
                     </div>
                 {% else %}
                     <div class="field">
-                        <label for="{{ field.name }}">{{ field.name }}</label>
+                        <label for="{{ field.name }}">
+                            {{ field.name }}
+                            {% if field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                        </label>
                         <input type="{{ field.type }}" 
                                name="{{ field.name }}" 
                                id="{{ field.name }}"
+                               {% if field.required %}required{% endif %}
                                {% if field.get('min') is not none %}min="{{ field.min }}"{% endif %}
                                {% if field.get('max') is not none %}max="{{ field.max }}"{% endif %}
                                {% if field.get('step') %}step="{{ field.step }}"{% endif %}
                                {% if field.get('minlength') %}minlength="{{ field.minlength }}"{% endif %}
                                {% if field.get('maxlength') %}maxlength="{{ field.maxlength }}"{% endif %}
                                {% if field.default is not none %}value="{{ field.default }}"{% endif %}>
+                        <div class="field-error" id="error-{{ field.name }}"></div>
                     </div>
                 {% endif %}
             {% endfor %}
@@ -141,18 +170,74 @@
     </div>
     
     <script>
-        document.getElementById('form').addEventListener('submit', async (e) => {
+        const form = document.getElementById('form');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        
+        // Validación en tiempo real
+        form.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('blur', () => validateField(input));
+            input.addEventListener('input', () => {
+                if (input.classList.contains('was-validated')) {
+                    validateField(input);
+                }
+            });
+        });
+        
+        function validateField(input) {
+            const errorEl = document.getElementById(`error-${input.name}`);
+            if (!errorEl) return;
+            
+            input.classList.add('was-validated');
+            
+            if (!input.validity.valid) {
+                if (input.validity.valueMissing) {
+                    errorEl.textContent = 'This field is required';
+                } else if (input.validity.rangeUnderflow) {
+                    errorEl.textContent = `Minimum value is ${input.min}`;
+                } else if (input.validity.rangeOverflow) {
+                    errorEl.textContent = `Maximum value is ${input.max}`;
+                } else if (input.validity.tooShort) {
+                    errorEl.textContent = `Minimum length is ${input.minLength} characters`;
+                } else if (input.validity.tooLong) {
+                    errorEl.textContent = `Maximum length is ${input.maxLength} characters`;
+                } else if (input.validity.stepMismatch) {
+                    errorEl.textContent = `Value must be a valid number`;
+                } else {
+                    errorEl.textContent = 'Invalid value';
+                }
+                errorEl.style.display = 'block';
+                return false;
+            } else {
+                errorEl.style.display = 'none';
+                return true;
+            }
+        }
+        
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const resultDiv = document.getElementById('result');
-            const errorDiv = document.getElementById('error');
+            // Validar todos los campos
+            let isValid = true;
+            form.querySelectorAll('input:not([type="checkbox"]), select').forEach(input => {
+                if (!validateField(input)) {
+                    isValid = false;
+                }
+            });
+            
+            if (!isValid) {
+                errorDiv.textContent = 'Please fix the errors above';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
             resultDiv.style.display = 'none';
             errorDiv.style.display = 'none';
             
             try {
                 const response = await fetch('/submit', {
                     method: 'POST',
-                    body: new FormData(e.target)
+                    body: new FormData(form)
                 });
                 
                 const data = await response.json();
