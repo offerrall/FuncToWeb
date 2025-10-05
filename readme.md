@@ -6,6 +6,8 @@ FuncToWeb is a minimalist library that generates web UIs from your Python functi
 
 **The entire library is just 300 lines of Python and 600 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
 
+![FuncToWeb Demo](images/functoweb.jpg)
+
 ## Quick Start (Minimal Example)
 
 ```python
