@@ -2,13 +2,14 @@ from typing import Annotated, Literal, get_args, get_origin
 from pydantic import Field, TypeAdapter
 from dataclasses import dataclass
 import inspect
+from datetime import date
 
 # ========== EXPORTS PÚBLICOS ==========
 UI = Annotated
 Limits = Field
 Selected = Literal
 
-VALID = {int, float, str, bool}
+VALID = {int, float, str, bool, date}
 
 # Definir patterns como constantes
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
@@ -96,6 +97,12 @@ def build_form_fields(params_info):
             field['type'] = 'checkbox'
             field['required'] = False
             
+        elif info.type is date:
+            field['type'] = 'date'
+            # Convertir date a string ISO para HTML
+            if isinstance(info.default, date):
+                field['default'] = info.default.isoformat()
+            
         elif info.type in (int, float):
             field['type'] = 'number'
             field['step'] = '1' if info.type is int else 'any'
@@ -144,6 +151,14 @@ def validate_params(form_data, params_info):
         # Checkbox
         if info.type is bool:
             validated[name] = value is not None
+            continue
+        
+        # Date
+        if info.type is date:
+            if value:
+                validated[name] = date.fromisoformat(value)
+            else:
+                validated[name] = None
             continue
         
         # Literal/Selected
@@ -208,7 +223,7 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
             data = dict(await request.form())
             validated = validate_params(data, params)
             result = func(**validated)
-            return JSONResponse({"success": True, "result": result})
+            return JSONResponse({"success": True, "result": str(result)})
         except Exception as e:
             return JSONResponse({"success": False, "error": str(e)}, status_code=400)
     
