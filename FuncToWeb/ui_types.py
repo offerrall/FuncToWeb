@@ -12,6 +12,3 @@ def StrUi(min_length: int = 0, max_length: int = 100):
 
 def BoolUi():
     return Annotated[bool, Field()]
-
-def ColorUi():
-    return Annotated[str, Field(pattern=r'^#[0-9A-Fa-f]{6}$', json_schema_extra={'ui_type': 'color'})]
