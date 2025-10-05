@@ -5,7 +5,6 @@ import inspect
 from datetime import date, time
 
 # ========== EXPORTS PÚBLICOS ==========
-Limits = Field
 
 VALID = {int, float, str, bool, date, time}
 
