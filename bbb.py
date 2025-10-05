@@ -14,21 +14,15 @@ VALID = {int, float, str, bool, date}
 # Definir patterns como constantes
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
-URL_PATTERN = r'^https?://'
-PHONE_PATTERN = r'^\+?[0-9\s()-]{10,}$'
 
 # Tipos custom usando las constantes
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
-URL = Annotated[str, Field(pattern=URL_PATTERN)]
-Phone = Annotated[str, Field(pattern=PHONE_PATTERN)]
 
 # Mapeo usando las MISMAS constantes
 PATTERN_TO_HTML_TYPE = {
     COLOR_PATTERN: 'color',
     EMAIL_PATTERN: 'email',
-    URL_PATTERN: 'url',
-    PHONE_PATTERN: 'tel',
 }
 
 
