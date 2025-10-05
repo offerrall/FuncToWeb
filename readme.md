@@ -83,7 +83,7 @@ def special_inputs(
 run(special_inputs)
 ```
 
-![Color Picker](images/color_picker.png)
+![Color Picker](images/color.jpg)
 
 ### File Uploads
 
@@ -118,6 +118,8 @@ def preferences(
 run(preferences)
 ```
 
+![Dropdowns](images/drop.jpg)
+
 ### Constraints & Validation
 
 ```python
@@ -135,7 +137,7 @@ def register(
 run(register)
 ```
 
-![Validation](images/validation.png)
+![Validation](images/limits.jpg)
 
 ### Return Images & Plots
 
@@ -152,7 +154,7 @@ def blur_image(image: ImageFile, radius: int = 5):
 run(blur_image)
 ```
 
-![Image Processing](images/image_result.png)
+![Image Processing](images/image.jpg)
 
 ```python
 from FuncToWeb import run
@@ -171,7 +173,7 @@ def plot_sine(frequency: float = 1.0, amplitude: float = 1.0):
 run(plot_sine)
 ```
 
-![Plot Result](images/plot_result.png)
+![Plot Result](images/plot.jpg)
 
 ## Features
 
