@@ -187,9 +187,9 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
 # ========== EJEMPLO ==========
 if __name__ == "__main__":
     def test_func(
+        times: UI[int, Limits(ge=1, le=5)],
         name: str = "World",
-        name_limit: Annotated[str, Limits(min_length=3, max_length=20)] = "User",
-        times: int = Limits(1, ge=1, le=5),
+        name_limit: UI[str, Limits(min_length=3, max_length=20)] = "User",
         excited: bool = False,
         mood: Selected['happy', 'sad', 'neutral'] = 'neutral'
     ):

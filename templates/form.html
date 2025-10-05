@@ -128,10 +128,7 @@
                     </div>
                 {% elif field.type == 'select' %}
                     <div class="field">
-                        <label for="{{ field.name }}">
-                            {{ field.name }}
-                            {% if field.required %}<span style="color: #dc3545;">*</span>{% endif %}
-                        </label>
+                        <label for="{{ field.name }}">{{ field.name }}</label>
                         <select name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
                             {% for option in field.options %}
                                 <option value="{{ option }}" 
@@ -144,10 +141,7 @@
                     </div>
                 {% else %}
                     <div class="field">
-                        <label for="{{ field.name }}">
-                            {{ field.name }}
-                            {% if field.required %}<span style="color: #dc3545;">*</span>{% endif %}
-                        </label>
+                        <label for="{{ field.name }}">{{ field.name }}</label>
                         <input type="{{ field.type }}" 
                                name="{{ field.name }}" 
                                id="{{ field.name }}"
