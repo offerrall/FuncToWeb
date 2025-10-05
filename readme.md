@@ -23,7 +23,7 @@ def dividir(a: int, b: int):
 run(dividir)
 ```
 
-That's it! Open `http://localhost:8000` and you'll see a form with two integer inputs.
+That's it! Open `http://127.0.0.1:8000` in your browser to see the generated form.
 
 ## Adding Constraints
 
