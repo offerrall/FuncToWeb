@@ -4,6 +4,8 @@
 
 FuncToWeb is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
 
+**The entire library is just 250 lines of Python and 600 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
+
 ## Installation
 
 ```bash
@@ -76,6 +78,32 @@ def subscribe(email: Email):
 
 run(subscribe)
 ```
+
+### File Upload Types
+
+FuncToWeb supports file uploads with automatic validation:
+
+```python
+from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile, AnyFile
+
+def process_data(
+    csv_file: DataFile,  # Accepts .csv, .xlsx, .xls, .json
+    image: ImageFile,    # Accepts .png, .jpg, .jpeg, .gif, .webp
+    document: DocumentFile  # Accepts .pdf, .doc, .docx
+):
+    return f"Processing {csv_file}, {image}, {document}"
+
+run(process_data)
+```
+
+**Available file types:**
+- `ImageFile` - Image files (.png, .jpg, .jpeg, .gif, .webp)
+- `DataFile` - Data files (.csv, .xlsx, .xls, .json)
+- `TextFile` - Text files (.txt, .md, .log)
+- `DocumentFile` - Document files (.pdf, .doc, .docx)
+- `AnyFile` - Any file with an extension
+
+Files are automatically saved to temporary locations and their paths are passed to your function.
 
 ## Field Constraints
 
@@ -158,11 +186,13 @@ run(greet)
 from typing import Annotated, Literal
 from pydantic import Field
 from datetime import date, time
-from FuncToWeb import run, Color, Email
+from FuncToWeb import run, Color, Email, ImageFile, DataFile
 
 def create_profile(
     name: Annotated[str, Field(min_length=3, max_length=50)] = "John Doe",
     email: Email = "user@example.com",
+    avatar: ImageFile = None,
+    data_import: DataFile = None,
     event_hour: time = time(14, 30),
     birth_date: date = date(1990, 1, 1),
     color: Color = "#10b981",
@@ -173,6 +203,8 @@ def create_profile(
     return {
         "name": name,
         "email": email,
+        "avatar": avatar,
+        "data_import": data_import,
         "birth_date": birth_date.isoformat(),
         "event_hour": event_hour.isoformat(),
         "color": color,
@@ -182,6 +214,26 @@ def create_profile(
     }
 
 run(create_profile)
+```
+
+## File Processing Example
+
+```python
+from FuncToWeb import run, ImageFile
+from PIL import Image
+
+def resize_image(
+    image: ImageFile,
+    width: Annotated[int, Field(ge=1, le=4000)] = 800,
+    height: Annotated[int, Field(ge=1, le=4000)] = 600
+):
+    img = Image.open(image)
+    img_resized = img.resize((width, height))
+    output_path = image.replace('.', '_resized.')
+    img_resized.save(output_path)
+    return f"Image resized and saved to {output_path}"
+
+run(resize_image)
 ```
 
 ## Configuration
@@ -213,7 +265,7 @@ Each field contains:
 ```python
 {
     'name': str,
-    'type': str,  # 'text', 'number', 'email', 'color', 'date', 'time', 'checkbox', 'select'
+    'type': str,  # 'text', 'number', 'email', 'color', 'date', 'time', 'checkbox', 'select', 'file'
     'default': any,
     'required': bool,
     'options': list,  # For select fields
@@ -222,7 +274,8 @@ Each field contains:
     'step': str,  # For number fields
     'pattern': str,  # For text fields
     'minlength': int,  # For text fields
-    'maxlength': int   # For text fields
+    'maxlength': int,  # For text fields
+    'accept': str  # For file fields
 }
 ```
 
@@ -231,8 +284,9 @@ Each field contains:
 1. **Analysis**: Inspects function signature using `inspect` module
 2. **Validation**: Validates type hints and constraints using `pydantic`
 3. **Form Generation**: Builds HTML form fields from parameter metadata
-4. **Server**: Runs FastAPI server with auto-generated routes
-5. **Validation**: Validates submitted data before calling your function
+4. **File Handling**: Automatically saves uploaded files to temporary locations
+5. **Server**: Runs FastAPI server with auto-generated routes
+6. **Validation**: Validates submitted data before calling your function
 
 ## Error Handling
 
@@ -253,6 +307,14 @@ run(divide)
 ```
 
 If validation fails, the user sees a clear error message.
+
+## Why FuncToWeb?
+
+- **Minimalist**: Only 250 lines of Python + 600 lines of HTML/CSS/JS
+- **Zero boilerplate**: Just type hints and you're done
+- **Powerful**: Supports all common input types including file uploads
+- **Beautiful UI**: Modern, responsive interface out of the box
+- **Type-safe**: Full Pydantic validation
 
 ## License
 
