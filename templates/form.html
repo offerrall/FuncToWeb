@@ -169,6 +169,47 @@
             pointer-events: none;
         }
         
+        /* File input styling */
+        input[type="file"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+        
+        input[type="file"]:hover {
+            border-color: var(--primary);
+            background: var(--white);
+        }
+        
+        input[type="file"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            border-style: solid;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        input[type="file"]::file-selector-button {
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-dark);
+        }
+        
         .field-error {
             color: var(--error);
             font-size: 0.75rem;
@@ -290,6 +331,7 @@
             input[type="tel"],
             input[type="date"],
             input[type="time"],
+            input[type="file"],
             select {
                 font-size: 16px;
             }
@@ -380,6 +422,17 @@
                                  style="background-color: {{ field.default or '#000000' }}"
                                  title="Click to pick color"></div>
                         </div>
+                        <div class="field-error" id="error-{{ field.name }}"></div>
+                    </div>
+                {% elif field.type == 'file' %}
+                    <div class="field">
+                        <label for="{{ field.name }}">{{ field.name }}</label>
+                        <input type="file" 
+                               name="{{ field.name }}" 
+                               id="{{ field.name }}"
+                               {% if field.required %}required{% endif %}
+                               {% if field.get('accept') %}accept="{{ field.accept }}"{% endif %}
+                               class="file-input">
                         <div class="field-error" id="error-{{ field.name }}"></div>
                     </div>
                 {% else %}
@@ -481,6 +534,8 @@
                 } else if (input.validity.patternMismatch) {
                     if (input.dataset.colorInput !== undefined) {
                         errorEl.textContent = 'Please enter a valid color (#RGB or #RRGGBB)';
+                    } else if (input.type === 'file') {
+                        errorEl.textContent = 'Please select a valid file type';
                     } else {
                         errorEl.textContent = 'Invalid format';
                     }

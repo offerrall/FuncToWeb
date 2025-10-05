@@ -12,9 +12,21 @@ VALID = {int, float, str, bool, date, time}
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
 
+def _file_pattern(*extensions):
+    """Crea un pattern regex para extensiones de archivo"""
+    exts = [e.lstrip('.').lower() for e in extensions]
+    return r'^.+\.(' + '|'.join(exts) + r')$'
+
 # Tipos custom usando las constantes
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
+
+# Tipos de archivo predefinidos
+ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp'))]
+DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
+TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
+DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
+AnyFile = Annotated[str, Field(pattern=r'^.+\..+$')]
 
 # Mapeo usando las MISMAS constantes
 PATTERN_TO_HTML_TYPE = {
@@ -120,8 +132,16 @@ def build_form_fields(params_info):
                     # Pattern - verificar atributo directamente
                     if hasattr(c, 'pattern') and c.pattern:
                         pattern = c.pattern
-                        if pattern in PATTERN_TO_HTML_TYPE:
+                        
+                        # Detectar patterns de archivo: ^.+\.(ext1|ext2|...)$
+                        if pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
+                            field['type'] = 'file'
+                            # Extraer extensiones del pattern
+                            exts = pattern[6:-2].split('|')  # Quitar ^.+\.( y )$
+                            field['accept'] = '.' + ',.'.join(exts)
+                        elif pattern in PATTERN_TO_HTML_TYPE:
                             field['type'] = PATTERN_TO_HTML_TYPE[pattern]
+                        
                         field['pattern'] = pattern
                     
                     # Constraints de string
@@ -219,11 +239,31 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
             "form.html",
             {"request": request, "title": func_name, "fields": fields}
         )
-    
+
     @app.post("/submit")
     async def submit(request: Request):
         try:
-            data = dict(await request.form())
+            form_data = await request.form()
+            data = {}
+            
+            # Procesar cada campo
+            for name, value in form_data.items():
+                # Si es un archivo subido
+                if hasattr(value, 'filename'):
+                    import tempfile
+                    import os
+                    
+                    # Obtener extensión del archivo
+                    suffix = os.path.splitext(value.filename)[1]
+                    
+                    # Crear archivo temporal (multiplataforma)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                        content = await value.read()
+                        tmp.write(content)
+                        data[name] = tmp.name  # tmp.name funciona en Windows, Linux y Mac
+                else:
+                    data[name] = value
+            
             validated = validate_params(data, params)
             result = func(**validated)
             return JSONResponse({"success": True, "result": str(result)})
