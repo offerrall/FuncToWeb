@@ -23,7 +23,6 @@ ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gi
 DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
 TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
 DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
-AnyFile = Annotated[str, Field(pattern=r'^.+\..+$')]
 
 PATTERN_TO_HTML_TYPE = {
     COLOR_PATTERN: 'color',

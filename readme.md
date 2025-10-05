@@ -21,7 +21,7 @@ run(divide)
 
 Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated form.
 
-![FuncToWeb Demo](images/demo.png)
+![FuncToWeb Demo](images/demo.jpg)
 
 
 ## Installation
@@ -42,7 +42,7 @@ python examples/08_image_blur.py
 python examples/11_plot_sine.py
 ```
 
-![Examples Preview](images/examples_preview.png)
+![Examples Preview](images/full_example.jpeg)
 
 ## What Can You Do?
 
@@ -67,7 +67,7 @@ def example(
 run(example)
 ```
 
-![Basic Types](images/basic_types.png)
+![Basic Types](images/basic.jpg)
 
 ### Special Input Types
 
@@ -88,21 +88,20 @@ run(special_inputs)
 ### File Uploads
 
 ```python
-from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile, AnyFile
+from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile
 
 def process_files(
     photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
     data: DataFile,         # .csv, .xlsx, .xls, .json
     notes: TextFile,        # .txt, .md, .log
     report: DocumentFile,   # .pdf, .doc, .docx
-    anything: AnyFile       # Any file type
 ):
     return "Files uploaded!"
 
 run(process_files)
 ```
 
-![File Upload](images/file_upload.png)
+![File Upload](images/files.jpg)
 
 ### Dropdowns
 
@@ -259,11 +258,3 @@ MIT
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Author
-
-Created with love for developers who want instant UIs for their Python functions.
-
----
-
-**Start building web UIs in seconds. No HTML, no CSS, no JavaScript. Just Python.**
