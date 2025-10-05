@@ -2,121 +2,274 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --error: #ef4444;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --bg: #f9fafb;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            padding: 2rem;
-            max-width: 600px;
-            margin: 0 auto;
-            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        
         .container {
-            background: white;
+            background: var(--white);
             padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 500px;
+            animation: fadeIn 0.3s ease-out;
         }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         h1 {
-            margin-bottom: 1.5rem;
-            color: #333;
+            margin-bottom: 2rem;
+            color: var(--text);
+            font-size: 1.875rem;
+            font-weight: 700;
+            text-align: center;
         }
+        
         .field {
             margin-bottom: 1.5rem;
         }
+        
         label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #555;
+            color: var(--text);
+            font-size: 0.875rem;
+            text-transform: capitalize;
         }
+        
         input[type="text"],
         input[type="number"],
         select {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
+            background: var(--white);
+            color: var(--text);
         }
-        input:invalid,
-        select:invalid {
-            border-color: #dc3545;
-        }
-        input:valid,
-        select:valid {
-            border-color: #28a745;
-        }
-        input:focus,
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #007bff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
+        
+        input.was-validated:invalid,
+        select.was-validated:invalid {
+            border-color: var(--error);
+        }
+        
         .field-error {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
+            color: var(--error);
+            font-size: 0.75rem;
+            margin-top: 0.375rem;
             display: none;
+            font-weight: 500;
         }
+        
         input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 0.5rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
             cursor: pointer;
+            accent-color: var(--primary);
         }
+        
         .checkbox-field {
             display: flex;
             align-items: center;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.2s;
         }
+        
+        .checkbox-field:hover {
+            background: var(--bg);
+        }
+        
+        .checkbox-field label {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
         button {
             width: 100%;
             padding: 1rem;
-            background: #007bff;
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
+        
         button:hover {
-            background: #0056b3;
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
         }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
         #result {
             margin-top: 1.5rem;
             padding: 1rem;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 8px;
             display: none;
+            animation: slideIn 0.3s ease-out;
         }
+        
         #error {
             margin-top: 1.5rem;
             padding: 1rem;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
+            background: #fef2f2;
+            border: 2px solid var(--error);
+            border-radius: 8px;
             display: none;
-            color: #721c24;
+            color: #991b1b;
+            animation: slideIn 0.3s ease-out;
         }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         pre {
             margin: 0;
             white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            color: #065f46;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            input[type="text"],
+            input[type="number"],
+            select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            button {
+                padding: 0.875rem;
+            }
+        }
+        
+        /* Landscape mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 0.5rem 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            
+            .field {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Tablet */
+        @media (min-width: 640px) and (max-width: 1024px) {
+            .container {
+                max-width: 600px;
+            }
+        }
+        
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>{{ title }}</h1>
-        <form id="form">
+        <form id="form" novalidate>
             {% for field in fields %}
                 {% if field.type == 'checkbox' %}
                     <div class="field checkbox-field">
@@ -180,7 +333,7 @@
         
         function validateField(input) {
             const errorEl = document.getElementById(`error-${input.name}`);
-            if (!errorEl) return;
+            if (!errorEl) return true;
             
             input.classList.add('was-validated');
             
@@ -222,6 +375,7 @@
             if (!isValid) {
                 errorDiv.textContent = 'Please fix the errors above';
                 errorDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
                 return;
             }
             
