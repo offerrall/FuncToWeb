@@ -14,8 +14,6 @@ pip install functoweb
 
 ## Quick Start
 
-The simplest example possible:
-
 ```python
 from FuncToWeb import run
 
@@ -25,152 +23,90 @@ def dividir(a: int, b: int):
 run(dividir)
 ```
 
-That's it! Open `http://127.0.0.1:8000` in your browser to see the generated form.
+Open `http://127.0.0.1:8000` in your browser to see the generated form.
 
-## Adding Constraints
+## What Can You Do?
 
-You can add constraints to your inputs using `Annotated` and `Field` from `typing` and `pydantic` respectively:
+FuncToWeb automatically generates beautiful web forms for any Python function. Here's everything it supports:
 
+### Basic Types
 ```python
 from FuncToWeb import run
-from typing import Annotated
-from pydantic import Field
+from datetime import date, time
 
-def dividir(a: int, b: Annotated[int, Field(ge=1)]):
-    return a / b
+def example(
+    text: str,              # Text input
+    number: int,            # Integer input
+    decimal: float,         # Decimal input
+    checkbox: bool,         # Checkbox
+    birthday: date,         # Date picker
+    meeting: time           # Time picker
+):
+    return "All basic types supported!"
 
-run(dividir)
+run(example)
 ```
 
-Now `b` must be at least 1. The UI automatically enforces this with HTML5 validation.
-
-## Supported Types
-
-FuncToWeb supports the following Python types out of the box:
-
-- `int` - Integer numbers
-- `float` - Decimal numbers
-- `str` - Text strings
-- `bool` - Checkboxes
-- `date` - Date picker (from `datetime`)
-- `time` - Time picker (from `datetime`)
-
-## Special Types
-
-FuncToWeb includes pre-configured special types:
-
-### Color
+### Special Input Types
 ```python
-from FuncToWeb import run, Color
+from FuncToWeb import run, Color, Email
 
-def set_theme(primary: Color = "#3b82f6"):
-    return f"Theme color: {primary}"
+def special_inputs(
+    favorite_color: Color,  # Color picker
+    contact: Email          # Email validation
+):
+    return f"Color: {favorite_color}, Email: {contact}"
 
-run(set_theme)
+run(special_inputs)
 ```
 
-### Email
-```python
-from FuncToWeb import run, Email
-
-def subscribe(email: Email):
-    return f"Subscribed: {email}"
-
-run(subscribe)
-```
-
-### File Upload Types
-
-FuncToWeb supports file uploads with automatic validation:
-
+### File Uploads
 ```python
 from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile, AnyFile
 
-def process_data(
-    csv_file: DataFile,  # Accepts .csv, .xlsx, .xls, .json
-    image: ImageFile,    # Accepts .png, .jpg, .jpeg, .gif, .webp
-    document: DocumentFile  # Accepts .pdf, .doc, .docx
+def process_files(
+    photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
+    data: DataFile,         # .csv, .xlsx, .xls, .json
+    notes: TextFile,        # .txt, .md, .log
+    report: DocumentFile,   # .pdf, .doc, .docx
+    anything: AnyFile       # Any file type
 ):
-    return f"Processing {csv_file}, {image}, {document}"
+    return "Files uploaded!"
 
-run(process_data)
+run(process_files)
 ```
 
-**Available file types:**
-- `ImageFile` - Image files (.png, .jpg, .jpeg, .gif, .webp)
-- `DataFile` - Data files (.csv, .xlsx, .xls, .json)
-- `TextFile` - Text files (.txt, .md, .log)
-- `DocumentFile` - Document files (.pdf, .doc, .docx)
-- `AnyFile` - Any file with an extension
-
-Files are automatically saved to temporary locations and their paths are passed to your function.
-
-## Field Constraints
-
-### Numeric Constraints
-
+### Dropdowns
 ```python
-from typing import Annotated
-from pydantic import Field
+from typing import Literal
 from FuncToWeb import run
 
-def create_user(
-    age: Annotated[int, Field(ge=18, le=120)],
-    height: Annotated[float, Field(gt=0, lt=3.0)]
+def preferences(
+    theme: Literal['light', 'dark', 'auto'],
+    language: Literal['en', 'es', 'fr']
 ):
-    return f"User: {age} years, {height}m tall"
+    return f"Theme: {theme}, Language: {language}"
 
-run(create_user)
+run(preferences)
 ```
 
-**Available constraints:**
-- `ge` - Greater than or equal to (≥)
-- `le` - Less than or equal to (≤)
-- `gt` - Greater than (>)
-- `lt` - Less than (<)
-
-### String Constraints
-
+### Constraints & Validation
 ```python
 from typing import Annotated
 from pydantic import Field
 from FuncToWeb import run
 
 def register(
-    username: Annotated[str, Field(min_length=3, max_length=20)],
-    password: Annotated[str, Field(min_length=8)]
+    age: Annotated[int, Field(ge=18, le=120)],              # Min/max values
+    username: Annotated[str, Field(min_length=3, max_length=20)],  # Length limits
+    rating: Annotated[float, Field(gt=0, lt=5)]             # Exclusive bounds
 ):
-    return f"User '{username}' registered"
+    return f"User {username}, age {age}, rating {rating}"
 
 run(register)
 ```
 
-**Available constraints:**
-- `min_length` - Minimum string length
-- `max_length` - Maximum string length
-- `pattern` - Regex pattern validation
-
-## Literal Types (Dropdowns)
-
-Use `Literal` to create dropdown selects:
-
-```python
-from typing import Literal
-from FuncToWeb import run
-
-def set_preferences(
-    theme: Literal['light', 'dark', 'auto'] = 'auto',
-    language: Literal['en', 'es', 'fr'] = 'en'
-):
-    return f"Theme: {theme}, Language: {language}"
-
-run(set_preferences)
-```
-
-## Default Values
-
-Simply set default values in your function signature:
-
+### Default Values
 ```python
 from FuncToWeb import run
 
@@ -186,28 +122,39 @@ run(greet)
 from typing import Annotated, Literal
 from pydantic import Field
 from datetime import date, time
-from FuncToWeb import run, Color, Email, ImageFile, DataFile
+from FuncToWeb import run, Color, Email, ImageFile
 
 def create_profile(
+    # Text with constraints
     name: Annotated[str, Field(min_length=3, max_length=50)] = "John Doe",
+    
+    # Special types
     email: Email = "user@example.com",
+    favorite_color: Color = "#10b981",
+    
+    # File upload
     avatar: ImageFile = None,
-    data_import: DataFile = None,
-    event_hour: time = time(14, 30),
+    
+    # Date and time
     birth_date: date = date(1990, 1, 1),
-    color: Color = "#10b981",
+    alarm: time = time(7, 30),
+    
+    # Numeric with constraints
     age: Annotated[int, Field(ge=18, le=120)] = 25,
+    
+    # Dropdown
     theme: Literal['light', 'dark', 'auto'] = 'auto',
+    
+    # Checkbox
     newsletter: bool = True
 ):
     return {
         "name": name,
         "email": email,
+        "color": favorite_color,
         "avatar": avatar,
-        "data_import": data_import,
         "birth_date": birth_date.isoformat(),
-        "event_hour": event_hour.isoformat(),
-        "color": color,
+        "alarm": alarm.isoformat(),
         "age": age,
         "theme": theme,
         "newsletter": newsletter
@@ -216,10 +163,12 @@ def create_profile(
 run(create_profile)
 ```
 
-## File Processing Example
+## Real-World Example: Image Resizer
 
 ```python
 from FuncToWeb import run, ImageFile
+from typing import Annotated
+from pydantic import Field
 from PIL import Image
 
 def resize_image(
@@ -236,9 +185,27 @@ def resize_image(
 run(resize_image)
 ```
 
-## Configuration
+## Available Constraints
 
-Customize the server settings:
+### Numbers (`int`, `float`)
+- `ge` - Greater than or equal (≥)
+- `le` - Less than or equal (≤)
+- `gt` - Greater than (>)
+- `lt` - Less than (<)
+
+### Strings (`str`)
+- `min_length` - Minimum length
+- `max_length` - Maximum length
+- `pattern` - Regex pattern
+
+### File Types
+- `ImageFile` - Images (.png, .jpg, .jpeg, .gif, .webp)
+- `DataFile` - Data files (.csv, .xlsx, .xls, .json)
+- `TextFile` - Text files (.txt, .md, .log)
+- `DocumentFile` - Documents (.pdf, .doc, .docx)
+- `AnyFile` - Any file with extension
+
+## Configuration
 
 ```python
 from FuncToWeb import run
@@ -254,75 +221,26 @@ run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (default: `"templates"`)
 
-## Template Requirements
-
-FuncToWeb requires a `templates/form.html` file. The template receives:
-
-- `title` - Function name (formatted)
-- `fields` - List of field configurations
-
-Each field contains:
-```python
-{
-    'name': str,
-    'type': str,  # 'text', 'number', 'email', 'color', 'date', 'time', 'checkbox', 'select', 'file'
-    'default': any,
-    'required': bool,
-    'options': list,  # For select fields
-    'min': int/float,  # For number fields
-    'max': int/float,  # For number fields
-    'step': str,  # For number fields
-    'pattern': str,  # For text fields
-    'minlength': int,  # For text fields
-    'maxlength': int,  # For text fields
-    'accept': str  # For file fields
-}
-```
-
 ## How It Works
 
-1. **Analysis**: Inspects function signature using `inspect` module
-2. **Validation**: Validates type hints and constraints using `pydantic`
-3. **Form Generation**: Builds HTML form fields from parameter metadata
-4. **File Handling**: Automatically saves uploaded files to temporary locations
-5. **Server**: Runs FastAPI server with auto-generated routes
-6. **Validation**: Validates submitted data before calling your function
-
-## Error Handling
-
-FuncToWeb validates inputs both client-side (HTML5) and server-side (Pydantic):
-
-```python
-from typing import Annotated
-from pydantic import Field
-from FuncToWeb import run
-
-def divide(
-    a: int,
-    b: Annotated[int, Field(ge=1)]  # Must be >= 1
-):
-    return a / b
-
-run(divide)
-```
-
-If validation fails, the user sees a clear error message.
+1. **Analysis** - Inspects function signature using `inspect`
+2. **Validation** - Validates type hints and constraints using `pydantic`
+3. **Form Generation** - Builds HTML form fields from metadata
+4. **File Handling** - Saves uploaded files to temp locations
+5. **Server** - Runs FastAPI server with auto-generated routes
+6. **Validation** - Validates data client-side (HTML5) and server-side (Pydantic)
 
 ## Why FuncToWeb?
 
-- **Minimalist**: Only 250 lines of Python + 600 lines of HTML/CSS/JS
-- **Zero boilerplate**: Just type hints and you're done
-- **Powerful**: Supports all common input types including file uploads
-- **Beautiful UI**: Modern, responsive interface out of the box
-- **Type-safe**: Full Pydantic validation
+- **Minimalist** - Only 250 lines of Python + 600 lines of HTML/CSS/JS
+- **Zero boilerplate** - Just type hints and you're done
+- **Powerful** - Supports all common input types including files
+- **Beautiful UI** - Modern, responsive interface out of the box
+- **Type-safe** - Full Pydantic validation
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Author
 
