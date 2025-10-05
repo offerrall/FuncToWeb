@@ -2,14 +2,14 @@ from typing import Annotated, Literal, get_args, get_origin
 from pydantic import Field, TypeAdapter
 from dataclasses import dataclass
 import inspect
-from datetime import date
+from datetime import date, time
 
 # ========== EXPORTS PÚBLICOS ==========
 UI = Annotated
 Limits = Field
 Selected = Literal
 
-VALID = {int, float, str, bool, date}
+VALID = {int, float, str, bool, date, time}
 
 # Definir patterns como constantes
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
@@ -93,9 +93,13 @@ def build_form_fields(params_info):
             
         elif info.type is date:
             field['type'] = 'date'
-            # Convertir date a string ISO para HTML
             if isinstance(info.default, date):
                 field['default'] = info.default.isoformat()
+        
+        elif info.type is time:
+            field['type'] = 'time'
+            if isinstance(info.default, time):
+                field['default'] = info.default.strftime('%H:%M')
             
         elif info.type in (int, float):
             field['type'] = 'number'
@@ -151,6 +155,14 @@ def validate_params(form_data, params_info):
         if info.type is date:
             if value:
                 validated[name] = date.fromisoformat(value)
+            else:
+                validated[name] = None
+            continue
+        
+        # Time
+        if info.type is time:
+            if value:
+                validated[name] = time.fromisoformat(value)
             else:
                 validated[name] = None
             continue
