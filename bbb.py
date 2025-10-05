@@ -8,7 +8,21 @@ UI = Annotated
 Limits = Field
 Selected = Literal
 
+# Tipos custom usando Annotated + Field con pattern (Pydantic 2.x)
+Color = Annotated[str, Field(pattern=r'^#(?:[0-9a-fA-F]{3}){1,2}$')]
+Email = Annotated[str, Field(pattern=r'^[^@]+@[^@]+\.[^@]+$')]
+URL = Annotated[str, Field(pattern=r'^https?://')]
+Phone = Annotated[str, Field(pattern=r'^\+?[0-9\s()-]{10,}$')]
+
 VALID = {int, float, str, bool}
+
+# Mapeo de patterns a tipos HTML5
+PATTERN_TO_HTML_TYPE = {
+    r'^#(?:[0-9a-fA-F]{3}){1,2}$': 'color',
+    r'^[^@]+@[^@]+\.[^@]+$': 'email',
+    r'^https?://': 'url',
+    r'^\+?[0-9\s()-]{10,}$': 'tel',
+}
 
 
 # ========== DATACLASS ==========
@@ -64,22 +78,22 @@ def build_form_fields(params_info):
         field = {
             'name': name, 
             'default': info.default,
-            'required': True  # Todos los campos son obligatorios
+            'required': True
         }
         
         # Determinar tipo de input
         if get_origin(info.field_info) is Literal:
-            # Select dropdown
             field['type'] = 'select'
             field['options'] = get_args(info.field_info)
+            
         elif info.type is bool:
             field['type'] = 'checkbox'
-            field['required'] = False  # Checkboxes no usan required (son true/false)
+            field['required'] = False
+            
         elif info.type in (int, float):
             field['type'] = 'number'
             field['step'] = '1' if info.type is int else 'any'
             
-            # Extraer constraints
             if info.field_info and hasattr(info.field_info, 'metadata'):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
@@ -87,15 +101,28 @@ def build_form_fields(params_info):
                     elif cn == 'Le': field['max'] = c.le
                     elif cn == 'Gt': field['min'] = c.gt + (1 if info.type is int else 0.01)
                     elif cn == 'Lt': field['max'] = c.lt - (1 if info.type is int else 0.01)
+                    
         else:  # str
             field['type'] = 'text'
             
-            # Extraer constraints
             if info.field_info and hasattr(info.field_info, 'metadata'):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
-                    if cn == 'MinLen': field['minlength'] = c.min_length
-                    elif cn == 'MaxLen': field['maxlength'] = c.max_length
+                    
+                    # Pattern -> HTML5 input type o atributo pattern
+                    if cn == 'Str' and hasattr(c, 'pattern') and c.pattern:
+                        pattern = c.pattern
+                        if pattern in PATTERN_TO_HTML_TYPE:
+                            field['type'] = PATTERN_TO_HTML_TYPE[pattern]
+                        else:
+                            # Pattern genérico como atributo HTML
+                            field['pattern'] = pattern
+                    
+                    # Constraints de string
+                    elif cn == 'MinLen': 
+                        field['minlength'] = c.min_length
+                    elif cn == 'MaxLen': 
+                        field['maxlength'] = c.max_length
         
         fields.append(field)
     
@@ -128,7 +155,7 @@ def validate_params(form_data, params_info):
             validated[name] = value
             continue
         
-        # Con Limits (usar TypeAdapter)
+        # Con Field (incluye patterns, limits, etc.)
         if info.field_info and hasattr(info.field_info, 'metadata'):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
             validated[name] = adapter.validate_python(value)
@@ -139,7 +166,7 @@ def validate_params(form_data, params_info):
     return validated
 
 
-# ========== RUN (FASTAPI + JINJA2) ==========
+# ========== RUN (sin cambios) ==========
 def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
     from fastapi import FastAPI, Request
     from fastapi.responses import JSONResponse
@@ -152,7 +179,6 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
     fields = build_form_fields(params)
     func_name = func.__name__.replace('_', ' ').title()
     
-    # Verificar que exista el directorio de templates
     template_path = Path(template_dir)
     if not template_path.exists():
         raise FileNotFoundError(
@@ -160,7 +186,6 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
             f"Create it and add 'form.html' template."
         )
     
-    # Configurar Jinja2
     templates = Jinja2Templates(directory=str(template_path))
     
     @app.get("/")
@@ -182,20 +207,3 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
     
     print(f"🚀 Server starting at http://{host}:{port}")
     uvicorn.run(app, host=host, port=port, reload=False)
-
-
-# ========== EJEMPLO ==========
-if __name__ == "__main__":
-    def test_func(
-        times: UI[int, Limits(ge=1, le=5)],
-        name: str = "World",
-        name_limit: UI[str, Limits(min_length=3, max_length=20)] = "User",
-        excited: bool = False,
-        mood: Selected['happy', 'sad', 'neutral'] = 'neutral',
-        mood2: Selected[2, 3, 5] = 3
-    ):
-        types_info = ", ".join(f"{k}={type(v).__name__}" for k, v in locals().items())
-        excitement = "!" * (3 if excited else 1)
-        return f"Hello, {name_limit} the {mood} ({mood2})! " + (f"{'Yay' + excitement} " * times) + f"[{types_info}]"
-    
-    run(test_func)
