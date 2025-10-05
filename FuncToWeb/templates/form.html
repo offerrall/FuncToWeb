@@ -95,7 +95,6 @@
             color: var(--text);
         }
         
-        /* Mejorar inputs de fecha y hora */
         input[type="date"],
         input[type="time"] {
             appearance: none;
@@ -135,7 +134,6 @@
             border-color: var(--error);
         }
         
-        /* Color input container */
         .color-input-wrapper {
             display: flex;
             gap: 0.75rem;
@@ -162,14 +160,12 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
         
-        /* Ocultar el color picker nativo */
         .color-picker-hidden {
             position: absolute;
             opacity: 0;
             pointer-events: none;
         }
         
-        /* File input styling */
         input[type="file"] {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -278,6 +274,13 @@
             border-radius: 8px;
             display: none;
             animation: slideIn 0.3s ease-out;
+        }
+        
+        #result img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 0.5rem;
         }
         
         #error {
@@ -465,12 +468,10 @@
         const resultDiv = document.getElementById('result');
         const errorDiv = document.getElementById('error');
         
-        // Color picker functionality mejorado
         document.querySelectorAll('[data-color-input]').forEach(input => {
             const preview = document.querySelector(`[data-color-preview="${input.name}"]`);
             const picker = document.querySelector(`[data-color-picker="${input.name}"]`);
             
-            // Sync text input -> preview
             input.addEventListener('input', (e) => {
                 const value = e.target.value;
                 if (/^#[0-9a-fA-F]{6}$/.test(value) || /^#[0-9a-fA-F]{3}$/.test(value)) {
@@ -479,12 +480,10 @@
                 }
             });
             
-            // Click preview -> open picker
             preview.addEventListener('click', () => {
                 picker.click();
             });
             
-            // Picker change -> sync to text input
             picker.addEventListener('input', (e) => {
                 input.value = e.target.value;
                 preview.style.backgroundColor = e.target.value;
@@ -494,7 +493,6 @@
             });
         });
         
-        // Validación en tiempo real
         form.querySelectorAll('input, select').forEach(input => {
             input.addEventListener('blur', () => validateField(input));
             input.addEventListener('input', () => {
@@ -579,7 +577,11 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
+                    if (data.result_type === 'image') {
+                        resultDiv.innerHTML = '<img src="' + data.result + '" alt="Result">';
+                    } else {
+                        resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
+                    }
                     resultDiv.style.display = 'block';
                 } else {
                     errorDiv.textContent = 'Error: ' + data.error;

@@ -1,15 +1,12 @@
-from FuncToWeb import run, ImageFile, Field, Annotated
-from PIL import Image
+from FuncToWeb import run, ImageFile
+from PIL import Image, ImageFilter
 
-def resize_image(
+def blur_image(
     image: ImageFile,
-    width: Annotated[int, Field(ge=1, le=4000)] = 800,
-    height: Annotated[int, Field(ge=1, le=4000)] = 600
+    radius: int = 5
 ):
     img = Image.open(image)
-    img_resized = img.resize((width, height))
-    output_path = image.replace('.', '_resized.')
-    img_resized.save(output_path)
-    return f"Image resized and saved to {output_path}"
+    blurred = img.filter(ImageFilter.GaussianBlur(radius))
+    return blurred
 
-run(resize_image)
+run(blur_image)

@@ -5,6 +5,8 @@ import inspect
 from datetime import date, time
 from pathlib import Path
 import os
+import base64
+import io
 
 VALID = {int, float, str, bool, date, time}
 
@@ -188,6 +190,47 @@ def validate_params(form_data, params_info):
     return validated
 
 
+def process_result(result):
+    """Convert result to appropriate format for display"""
+    # Check if it's a PIL Image
+    try:
+        from PIL import Image
+        if isinstance(result, Image.Image):
+            buffer = io.BytesIO()
+            result.save(buffer, format='PNG')
+            buffer.seek(0)
+            img_base64 = base64.b64encode(buffer.read()).decode()
+            return {
+                'type': 'image',
+                'data': f'data:image/png;base64,{img_base64}'
+            }
+    except ImportError:
+        pass
+    
+    # Check if it's a matplotlib figure
+    try:
+        import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure
+        if isinstance(result, Figure):
+            buffer = io.BytesIO()
+            result.savefig(buffer, format='png', bbox_inches='tight')
+            buffer.seek(0)
+            img_base64 = base64.b64encode(buffer.read()).decode()
+            plt.close(result)
+            return {
+                'type': 'image',
+                'data': f'data:image/png;base64,{img_base64}'
+            }
+    except ImportError:
+        pass
+    
+    # Default to text
+    return {
+        'type': 'text',
+        'data': str(result)
+    }
+
+
 def run(func, host="0.0.0.0", port=8000, template_dir=None):
     from fastapi import FastAPI, Request
     from fastapi.responses import JSONResponse
@@ -239,7 +282,13 @@ def run(func, host="0.0.0.0", port=8000, template_dir=None):
             
             validated = validate_params(data, params)
             result = func(**validated)
-            return JSONResponse({"success": True, "result": str(result)})
+            processed = process_result(result)
+            
+            return JSONResponse({
+                "success": True,
+                "result_type": processed['type'],
+                "result": processed['data']
+            })
         except Exception as e:
             return JSONResponse({"success": False, "error": str(e)}, status_code=400)
     

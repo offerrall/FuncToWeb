@@ -116,6 +116,38 @@ def greet(name: str = "World", count: int = 1):
 run(greet)
 ```
 
+### Return Images & Plots
+
+FuncToWeb automatically detects and displays images from PIL/Pillow and matplotlib:
+
+```python
+from FuncToWeb import run, ImageFile
+from PIL import Image, ImageFilter
+
+def blur_image(image: ImageFile, radius: int = 5):
+    img = Image.open(image)
+    return img.filter(ImageFilter.GaussianBlur(radius))
+
+run(blur_image)
+```
+
+```python
+from FuncToWeb import run
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_sine(frequency: float = 1.0, amplitude: float = 1.0):
+    x = np.linspace(0, 10, 1000)
+    y = amplitude * np.sin(frequency * x)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(x, y)
+    ax.grid(True)
+    return fig
+
+run(plot_sine)
+```
+
 ## Complete Example
 
 ```python
@@ -163,27 +195,18 @@ def create_profile(
 run(create_profile)
 ```
 
-## Real-World Example: Image Resizer
+## More Examples
 
-```python
-from FuncToWeb import run, ImageFile
-from typing import Annotated
-from pydantic import Field
-from PIL import Image
+Check the `examples/` folder for complete working examples:
 
-def resize_image(
-    image: ImageFile,
-    width: Annotated[int, Field(ge=1, le=4000)] = 800,
-    height: Annotated[int, Field(ge=1, le=4000)] = 600
-):
-    img = Image.open(image)
-    img_resized = img.resize((width, height))
-    output_path = image.replace('.', '_resized.')
-    img_resized.save(output_path)
-    return f"Image resized and saved to {output_path}"
+- **Basic types** - All supported input types
+- **File uploads** - Image processing, CSV analysis
+- **Data visualization** - Matplotlib plots and charts
+- **Image manipulation** - Filters, transformations with PIL
+- **Validation** - Field constraints and custom validation
+- **Real-world apps** - Complete mini-applications
 
-run(resize_image)
-```
+Each example is a standalone Python file you can run directly.
 
 ## Available Constraints
 
@@ -204,6 +227,15 @@ run(resize_image)
 - `TextFile` - Text files (.txt, .md, .log)
 - `DocumentFile` - Documents (.pdf, .doc, .docx)
 - `AnyFile` - Any file with extension
+
+## Return Types
+
+FuncToWeb automatically handles different return types:
+
+- **Text/Numbers/Dicts** - Displayed as formatted JSON
+- **PIL Images** - Rendered as images in the browser
+- **Matplotlib Figures** - Converted to PNG and displayed
+- **Any other object** - Converted to string with `str()`
 
 ## Configuration
 
@@ -228,13 +260,15 @@ run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 3. **Form Generation** - Builds HTML form fields from metadata
 4. **File Handling** - Saves uploaded files to temp locations
 5. **Server** - Runs FastAPI server with auto-generated routes
-6. **Validation** - Validates data client-side (HTML5) and server-side (Pydantic)
+6. **Result Processing** - Detects return type and formats accordingly
+7. **Validation** - Validates data client-side (HTML5) and server-side (Pydantic)
 
 ## Why FuncToWeb?
 
 - **Minimalist** - Only 250 lines of Python + 600 lines of HTML/CSS/JS
 - **Zero boilerplate** - Just type hints and you're done
 - **Powerful** - Supports all common input types including files
+- **Smart output** - Automatically displays images, plots, and data
 - **Beautiful UI** - Modern, responsive interface out of the box
 - **Type-safe** - Full Pydantic validation
 
