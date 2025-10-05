@@ -1,26 +1,38 @@
-from typing import Annotated, get_args, get_origin
+from typing import Annotated, get_args, get_origin, Any
 from pydantic import Field
+from dataclasses import dataclass
 import inspect
 
 UI = Annotated
 Limits = Field
 
 
+@dataclass
+class ParamInfo:
+    type: type
+    default: Any = None
+    field_info: Any = None
+
+
 def analyze(func):
     result = {}
     
     for name, p in inspect.signature(func).parameters.items():
-        info = {}
-        info['default'] = None if p.default == inspect.Parameter.empty else p.default
-        info['type'] = p.annotation
-
+        default = None if p.default == inspect.Parameter.empty else p.default
+        param_type = p.annotation
+        field_info = None
+        
         if get_origin(p.annotation) is Annotated:
             args = get_args(p.annotation)
-            info['type'] = args[0]
+            param_type = args[0]
             if len(args) > 1:
-                info['field_info'] = args[1]
-
-        result[name] = info
+                field_info = args[1]
+        
+        result[name] = ParamInfo(
+            type=param_type,
+            default=default,
+            field_info=field_info
+        )
     
     return result
 
@@ -34,4 +46,4 @@ def calc(
     pass
 
 for name, info in analyze(calc).items():
-    print(f"{name}: type={info['type'].__name__}, default={info['default']}, field_info={info['field_info']}")
+    print(f"{name}: {info}")
