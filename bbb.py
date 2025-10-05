@@ -155,6 +155,10 @@ def validate_params(form_data, params_info):
             validated[name] = value
             continue
         
+        # Normalizar colores: #RGB -> #RRGGBB
+        if value and isinstance(value, str) and value.startswith('#') and len(value) == 4:
+            value = '#' + ''.join(c*2 for c in value[1:])
+        
         # Con Field (incluye patterns, limits, etc.)
         if info.field_info and hasattr(info.field_info, 'metadata'):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
