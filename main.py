@@ -1,15 +1,17 @@
-from bbb import run, UI, Limits, Selected, Color, Email
+from typing import Annotated, Literal
+from pydantic import Field
 from datetime import date, time
+from bbb import run, Color, Email
 
 def create_profile(
     primary_color: Color,
-    name: UI[str, Limits(min_length=3, max_length=50)] = "John Doe",
+    name: Annotated[str, Field(min_length=3, max_length=50)] = "John Doe",
     email: Email = "user@example.com",
     event_hour: time = time(14, 30),
     birth_date: date = date(1990, 1, 1),
     secondary_color: Color = "#10b981",
-    age: UI[int, Limits(ge=18, le=120)] = 25,
-    theme: Selected['light', 'dark', 'auto'] = 'auto',
+    age: Annotated[int, Field(ge=18, le=120)] = 25,
+    theme: Literal['light', 'dark', 'auto'] = 'auto',
     newsletter: bool = True
 ):
     return {

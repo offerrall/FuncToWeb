@@ -5,9 +5,7 @@ import inspect
 from datetime import date, time
 
 # ========== EXPORTS PÚBLICOS ==========
-UI = Annotated
 Limits = Field
-Selected = Literal
 
 VALID = {int, float, str, bool, date, time}
 
