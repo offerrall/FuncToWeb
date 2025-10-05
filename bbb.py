@@ -191,9 +191,11 @@ if __name__ == "__main__":
         name: str = "World",
         name_limit: UI[str, Limits(min_length=3, max_length=20)] = "User",
         excited: bool = False,
-        mood: Selected['happy', 'sad', 'neutral'] = 'neutral'
+        mood: Selected['happy', 'sad', 'neutral'] = 'neutral',
+        mood2: Selected[2, 3, 5] = 3
     ):
-        greeting = f"Hello, {name}" + ("!" * times if excited else ".")
-        return {"greeting": greeting, "mood": mood, "name_limit": name_limit}
+        types_info = ", ".join(f"{k}={type(v).__name__}" for k, v in locals().items())
+        excitement = "!" * (3 if excited else 1)
+        return f"Hello, {name_limit} the {mood} ({mood2})! " + (f"{'Yay' + excitement} " * times) + f"[{types_info}]"
     
     run(test_func)
