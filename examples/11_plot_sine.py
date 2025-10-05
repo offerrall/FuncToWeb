@@ -1,8 +1,6 @@
-from FuncToWeb import run
+from FuncToWeb import run, Field, Annotated
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Annotated
-from pydantic import Field
 
 def plot_sine(
     frequency: Annotated[float, Field(ge=0.1, le=10)] = 1.0,

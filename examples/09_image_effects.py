@@ -1,6 +1,5 @@
-from FuncToWeb import run, ImageFile
+from FuncToWeb import run, ImageFile, Literal
 from PIL import Image, ImageFilter, ImageEnhance
-from typing import Literal
 
 def apply_effect(
     image: ImageFile,

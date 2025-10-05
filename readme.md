@@ -4,7 +4,23 @@
 
 FuncToWeb is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
 
-**The entire library is just 250 lines of Python and 600 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
+**The entire library is just 300 lines of Python and 600 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
+
+## Quick Start (Minimal Example)
+
+```python
+from FuncToWeb import run
+
+def divide(a: int, b: int):
+    return a / b
+
+run(divide)
+```
+
+Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated form.
+
+![FuncToWeb Demo](images/demo.png)
+
 
 ## Installation
 
@@ -12,24 +28,24 @@ FuncToWeb is a minimalist library that generates web UIs from your Python functi
 pip install functoweb
 ```
 
-## Quick Start
+## Examples
 
-```python
-from FuncToWeb import run
+**Check the `examples/` folder** for 13+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
-def dividir(a: int, b: int):
-    return a / b
-
-run(dividir)
+```bash
+python examples/01_basic_division.py
+python examples/08_image_blur.py
+python examples/11_plot_sine.py
 ```
 
-Open `http://127.0.0.1:8000` in your browser to see the generated form.
+![Examples Preview](images/examples_preview.png)
 
 ## What Can You Do?
 
-FuncToWeb automatically generates beautiful web forms for any Python function. Here's everything it supports:
-
 ### Basic Types
+
+All Python built-in types work out of the box:
+
 ```python
 from FuncToWeb import run
 from datetime import date, time
@@ -47,7 +63,10 @@ def example(
 run(example)
 ```
 
+![Basic Types](images/basic_types.png)
+
 ### Special Input Types
+
 ```python
 from FuncToWeb import run, Color, Email
 
@@ -60,7 +79,10 @@ def special_inputs(
 run(special_inputs)
 ```
 
+![Color Picker](images/color_picker.png)
+
 ### File Uploads
+
 ```python
 from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile, AnyFile
 
@@ -76,7 +98,10 @@ def process_files(
 run(process_files)
 ```
 
+![File Upload](images/file_upload.png)
+
 ### Dropdowns
+
 ```python
 from typing import Literal
 from FuncToWeb import run
@@ -91,6 +116,7 @@ run(preferences)
 ```
 
 ### Constraints & Validation
+
 ```python
 from typing import Annotated
 from pydantic import Field
@@ -106,15 +132,7 @@ def register(
 run(register)
 ```
 
-### Default Values
-```python
-from FuncToWeb import run
-
-def greet(name: str = "World", count: int = 1):
-    return f"Hello {name}! " * count
-
-run(greet)
-```
+![Validation](images/validation.png)
 
 ### Return Images & Plots
 
@@ -130,6 +148,8 @@ def blur_image(image: ImageFile, radius: int = 5):
 
 run(blur_image)
 ```
+
+![Image Processing](images/image_result.png)
 
 ```python
 from FuncToWeb import run
@@ -148,94 +168,37 @@ def plot_sine(frequency: float = 1.0, amplitude: float = 1.0):
 run(plot_sine)
 ```
 
-## Complete Example
+![Plot Result](images/plot_result.png)
 
-```python
-from typing import Annotated, Literal
-from pydantic import Field
-from datetime import date, time
-from FuncToWeb import run, Color, Email, ImageFile
+## Features
 
-def create_profile(
-    # Text with constraints
-    name: Annotated[str, Field(min_length=3, max_length=50)] = "John Doe",
-    
-    # Special types
-    email: Email = "user@example.com",
-    favorite_color: Color = "#10b981",
-    
-    # File upload
-    avatar: ImageFile = None,
-    
-    # Date and time
-    birth_date: date = date(1990, 1, 1),
-    alarm: time = time(7, 30),
-    
-    # Numeric with constraints
-    age: Annotated[int, Field(ge=18, le=120)] = 25,
-    
-    # Dropdown
-    theme: Literal['light', 'dark', 'auto'] = 'auto',
-    
-    # Checkbox
-    newsletter: bool = True
-):
-    return {
-        "name": name,
-        "email": email,
-        "color": favorite_color,
-        "avatar": avatar,
-        "birth_date": birth_date.isoformat(),
-        "alarm": alarm.isoformat(),
-        "age": age,
-        "theme": theme,
-        "newsletter": newsletter
-    }
+### Input Types
+- `int`, `float`, `str`, `bool` - Basic types
+- `date`, `time` - Date and time pickers
+- `Color` - Color picker with preview
+- `Email` - Email validation
+- `Literal[...]` - Dropdown selections
+- `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`, `AnyFile` - File uploads
 
-run(create_profile)
-```
+### Validation
+- **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)
+- **String**: `min_length`, `max_length`, `pattern` (regex)
+- **Required/Optional**: Automatic detection from type hints
+- **Default values**: Set in function signature
 
-## More Examples
+### Output Types
+- **Text/Numbers/Dicts** - Formatted as JSON
+- **PIL Images** - Displayed as images
+- **Matplotlib Figures** - Rendered as PNG
+- **Any object** - Converted with `str()`
 
-Check the `examples/` folder for complete working examples:
-
-- **Basic types** - All supported input types
-- **File uploads** - Image processing, CSV analysis
-- **Data visualization** - Matplotlib plots and charts
-- **Image manipulation** - Filters, transformations with PIL
-- **Validation** - Field constraints and custom validation
-- **Real-world apps** - Complete mini-applications
-
-Each example is a standalone Python file you can run directly.
-
-## Available Constraints
-
-### Numbers (`int`, `float`)
-- `ge` - Greater than or equal (≥)
-- `le` - Less than or equal (≤)
-- `gt` - Greater than (>)
-- `lt` - Less than (<)
-
-### Strings (`str`)
-- `min_length` - Minimum length
-- `max_length` - Maximum length
-- `pattern` - Regex pattern
-
-### File Types
-- `ImageFile` - Images (.png, .jpg, .jpeg, .gif, .webp)
-- `DataFile` - Data files (.csv, .xlsx, .xls, .json)
-- `TextFile` - Text files (.txt, .md, .log)
-- `DocumentFile` - Documents (.pdf, .doc, .docx)
-- `AnyFile` - Any file with extension
-
-## Return Types
-
-FuncToWeb automatically handles different return types:
-
-- **Text/Numbers/Dicts** - Displayed as formatted JSON
-- **PIL Images** - Rendered as images in the browser
-- **Matplotlib Figures** - Converted to PNG and displayed
-- **Any other object** - Converted to string with `str()`
+### UI Features
+- Modern, responsive design
+- Real-time validation
+- Client-side and server-side checks
+- Error messages
+- Mobile-friendly
+- Accessible
 
 ## Configuration
 
@@ -251,7 +214,7 @@ run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 **Parameters:**
 - `host` - Server host (default: `"0.0.0.0"`)
 - `port` - Server port (default: `8000`)
-- `template_dir` - Custom template directory (default: `"templates"`)
+- `template_dir` - Custom template directory (optional)
 
 ## How It Works
 
@@ -261,21 +224,42 @@ run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 4. **File Handling** - Saves uploaded files to temp locations
 5. **Server** - Runs FastAPI server with auto-generated routes
 6. **Result Processing** - Detects return type and formats accordingly
-7. **Validation** - Validates data client-side (HTML5) and server-side (Pydantic)
+7. **Display** - Shows results as text, JSON, images, or plots
 
 ## Why FuncToWeb?
 
-- **Minimalist** - Only 250 lines of Python + 600 lines of HTML/CSS/JS
+- **Minimalist** - Only 300 lines of Python + 600 lines of HTML/CSS/JS
 - **Zero boilerplate** - Just type hints and you're done
 - **Powerful** - Supports all common input types including files
 - **Smart output** - Automatically displays images, plots, and data
 - **Beautiful UI** - Modern, responsive interface out of the box
 - **Type-safe** - Full Pydantic validation
+- **Batteries included** - 15+ examples in the `examples/` folder
+
+## Requirements
+
+- Python 3.8+
+- FastAPI
+- Uvicorn
+- Pydantic
+- Jinja2
+
+Optional for examples:
+- Pillow (for image processing)
+- Matplotlib (for plots)
 
 ## License
 
 MIT
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 ## Author
 
-Created with ❤️ for developers who want instant UIs for their Python functions.
+Created with love for developers who want instant UIs for their Python functions.
+
+---
+
+**Start building web UIs in seconds. No HTML, no CSS, no JavaScript. Just Python.**

@@ -1,7 +1,5 @@
-from FuncToWeb import run, ImageFile
+from FuncToWeb import run, ImageFile, Annotated, Field
 from PIL import Image, ImageFilter
-from typing import Annotated
-from pydantic import Field
 
 def blur_image(
     image: ImageFile,

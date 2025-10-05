@@ -1,6 +1,4 @@
-from FuncToWeb import run
-from typing import Annotated
-from pydantic import Field
+from FuncToWeb import run, Field, Annotated
 
 def calculate_bmi(
     weight_kg: Annotated[float, Field(ge=20, le=300)],

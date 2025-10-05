@@ -1,6 +1,4 @@
-from FuncToWeb import run, Color, Email, ImageFile
-from typing import Annotated, Literal
-from pydantic import Field
+from FuncToWeb import run, Color, Email, ImageFile, Annotated, Literal, Field
 from datetime import date, time
 
 def complete_profile(
