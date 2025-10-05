@@ -8,20 +8,26 @@ UI = Annotated
 Limits = Field
 Selected = Literal
 
-# Tipos custom usando Annotated + Field con pattern (Pydantic 2.x)
-Color = Annotated[str, Field(pattern=r'^#(?:[0-9a-fA-F]{3}){1,2}$')]
-Email = Annotated[str, Field(pattern=r'^[^@]+@[^@]+\.[^@]+$')]
-URL = Annotated[str, Field(pattern=r'^https?://')]
-Phone = Annotated[str, Field(pattern=r'^\+?[0-9\s()-]{10,}$')]
-
 VALID = {int, float, str, bool}
 
-# Mapeo de patterns a tipos HTML5
+# Definir patterns como constantes
+COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
+EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
+URL_PATTERN = r'^https?://'
+PHONE_PATTERN = r'^\+?[0-9\s()-]{10,}$'
+
+# Tipos custom usando las constantes
+Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
+Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
+URL = Annotated[str, Field(pattern=URL_PATTERN)]
+Phone = Annotated[str, Field(pattern=PHONE_PATTERN)]
+
+# Mapeo usando las MISMAS constantes
 PATTERN_TO_HTML_TYPE = {
-    r'^#(?:[0-9a-fA-F]{3}){1,2}$': 'color',
-    r'^[^@]+@[^@]+\.[^@]+$': 'email',
-    r'^https?://': 'url',
-    r'^\+?[0-9\s()-]{10,}$': 'tel',
+    COLOR_PATTERN: 'color',
+    EMAIL_PATTERN: 'email',
+    URL_PATTERN: 'url',
+    PHONE_PATTERN: 'tel',
 }
 
 
@@ -109,19 +115,17 @@ def build_form_fields(params_info):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
                     
-                    # Pattern -> HTML5 input type o atributo pattern
-                    if cn == 'Str' and hasattr(c, 'pattern') and c.pattern:
+                    # Pattern - verificar atributo directamente
+                    if hasattr(c, 'pattern') and c.pattern:
                         pattern = c.pattern
                         if pattern in PATTERN_TO_HTML_TYPE:
                             field['type'] = PATTERN_TO_HTML_TYPE[pattern]
-                        else:
-                            # Pattern genérico como atributo HTML
-                            field['pattern'] = pattern
+                        field['pattern'] = pattern
                     
                     # Constraints de string
-                    elif cn == 'MinLen': 
+                    if cn == 'MinLen': 
                         field['minlength'] = c.min_length
-                    elif cn == 'MaxLen': 
+                    if cn == 'MaxLen':
                         field['maxlength'] = c.max_length
         
         fields.append(field)
@@ -164,13 +168,12 @@ def validate_params(form_data, params_info):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
             validated[name] = adapter.validate_python(value)
         else:
-            # Tipo simple sin constraints
             validated[name] = info.type(value)
     
     return validated
 
 
-# ========== RUN (sin cambios) ==========
+# ========== RUN ==========
 def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
     from fastapi import FastAPI, Request
     from fastapi.responses import JSONResponse
