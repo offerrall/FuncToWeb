@@ -82,6 +82,7 @@
         input[type="email"],
         input[type="url"],
         input[type="tel"],
+        input[type="date"],
         select {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -93,11 +94,31 @@
             color: var(--text);
         }
         
+        /* Mejorar el input de fecha */
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            position: relative;
+            font-family: inherit;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        
         input[type="text"]:focus,
         input[type="number"]:focus,
         input[type="email"]:focus,
         input[type="url"]:focus,
         input[type="tel"]:focus,
+        input[type="date"]:focus,
         select:focus {
             outline: none;
             border-color: var(--primary);
@@ -114,6 +135,7 @@
             display: flex;
             gap: 0.75rem;
             align-items: center;
+            position: relative;
         }
         
         .color-input-wrapper input[type="text"] {
@@ -127,11 +149,19 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
         
         .color-preview:hover {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Ocultar el color picker nativo */
+        .color-picker-hidden {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
         }
         
         .field-error {
@@ -253,6 +283,7 @@
             input[type="email"],
             input[type="url"],
             input[type="tel"],
+            input[type="date"],
             select {
                 font-size: 16px;
             }
@@ -334,6 +365,10 @@
                                    {% if field.default is not none %}value="{{ field.default }}"{% endif %}
                                    placeholder="#000000"
                                    data-color-input>
+                            <input type="color" 
+                                   class="color-picker-hidden"
+                                   data-color-picker="{{ field.name }}"
+                                   {% if field.default is not none %}value="{{ field.default }}"{% endif %}>
                             <div class="color-preview" 
                                  data-color-preview="{{ field.name }}"
                                  style="background-color: {{ field.default or '#000000' }}"
@@ -371,31 +406,32 @@
         const resultDiv = document.getElementById('result');
         const errorDiv = document.getElementById('error');
         
-        // Color picker functionality
+        // Color picker functionality mejorado
         document.querySelectorAll('[data-color-input]').forEach(input => {
             const preview = document.querySelector(`[data-color-preview="${input.name}"]`);
+            const picker = document.querySelector(`[data-color-picker="${input.name}"]`);
             
+            // Sync text input -> preview
             input.addEventListener('input', (e) => {
                 const value = e.target.value;
                 if (/^#[0-9a-fA-F]{6}$/.test(value) || /^#[0-9a-fA-F]{3}$/.test(value)) {
                     preview.style.backgroundColor = value;
+                    picker.value = value.length === 4 ? '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3] : value;
                 }
             });
             
+            // Click preview -> open picker
             preview.addEventListener('click', () => {
-                const tempPicker = document.createElement('input');
-                tempPicker.type = 'color';
-                tempPicker.value = input.value || '#000000';
-                
-                tempPicker.addEventListener('input', (e) => {
-                    input.value = e.target.value;
-                    preview.style.backgroundColor = e.target.value;
-                    if (input.classList.contains('was-validated')) {
-                        validateField(input);
-                    }
-                });
-                
-                tempPicker.click();
+                picker.click();
+            });
+            
+            // Picker change -> sync to text input
+            picker.addEventListener('input', (e) => {
+                input.value = e.target.value;
+                preview.style.backgroundColor = e.target.value;
+                if (input.classList.contains('was-validated')) {
+                    validateField(input);
+                }
             });
         });
         
@@ -457,7 +493,7 @@
             e.preventDefault();
             
             let isValid = true;
-            form.querySelectorAll('input:not([type="checkbox"]), select').forEach(input => {
+            form.querySelectorAll('input:not([type="checkbox"]):not(.color-picker-hidden), select').forEach(input => {
                 if (!validateField(input)) {
                     isValid = false;
                 }
