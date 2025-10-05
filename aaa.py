@@ -6,6 +6,7 @@ import inspect
 UI = Annotated
 Limits = Field
 
+VALID_TYPES = {int, float, str, bool}
 
 @dataclass
 class ParamInfo:
@@ -27,6 +28,9 @@ def analyze(func):
             param_type = args[0]
             if len(args) > 1:
                 field_info = args[1]
+
+        if param_type not in VALID_TYPES:
+            raise ValueError(f"Unsupported type for parameter '{name}': {param_type}")
         
         result[name] = ParamInfo(
             type=param_type,
