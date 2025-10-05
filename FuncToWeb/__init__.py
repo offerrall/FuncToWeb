@@ -3,39 +3,32 @@ from pydantic import Field, TypeAdapter
 from dataclasses import dataclass
 import inspect
 from datetime import date, time
-
-# ========== EXPORTS PÚBLICOS ==========
+from pathlib import Path
+import os
 
 VALID = {int, float, str, bool, date, time}
 
-# Definir patterns como constantes
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
 
 def _file_pattern(*extensions):
-    """Crea un pattern regex para extensiones de archivo"""
     exts = [e.lstrip('.').lower() for e in extensions]
     return r'^.+\.(' + '|'.join(exts) + r')$'
 
-# Tipos custom usando las constantes
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
-
-# Tipos de archivo predefinidos
 ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp'))]
 DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
 TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
 DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
 AnyFile = Annotated[str, Field(pattern=r'^.+\..+$')]
 
-# Mapeo usando las MISMAS constantes
 PATTERN_TO_HTML_TYPE = {
     COLOR_PATTERN: 'color',
     EMAIL_PATTERN: 'email',
 }
 
 
-# ========== DATACLASS ==========
 @dataclass
 class ParamInfo:
     type: type
@@ -43,7 +36,6 @@ class ParamInfo:
     field_info: any = None
 
 
-# ========== ANALYZE ==========
 def analyze(func):
     result = {}
     
@@ -79,9 +71,7 @@ def analyze(func):
     return result
 
 
-# ========== BUILD FORM ==========
 def build_form_fields(params_info):
-    """Construye campos HTML desde ParamInfo"""
     fields = []
     
     for name, info in params_info.items():
@@ -91,7 +81,6 @@ def build_form_fields(params_info):
             'required': True
         }
         
-        # Determinar tipo de input
         if get_origin(info.field_info) is Literal:
             field['type'] = 'select'
             field['options'] = get_args(info.field_info)
@@ -122,29 +111,25 @@ def build_form_fields(params_info):
                     elif cn == 'Gt': field['min'] = c.gt + (1 if info.type is int else 0.01)
                     elif cn == 'Lt': field['max'] = c.lt - (1 if info.type is int else 0.01)
                     
-        else:  # str
+        else:
             field['type'] = 'text'
             
             if info.field_info and hasattr(info.field_info, 'metadata'):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
                     
-                    # Pattern - verificar atributo directamente
                     if hasattr(c, 'pattern') and c.pattern:
                         pattern = c.pattern
                         
-                        # Detectar patterns de archivo: ^.+\.(ext1|ext2|...)$
                         if pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
                             field['type'] = 'file'
-                            # Extraer extensiones del pattern
-                            exts = pattern[6:-2].split('|')  # Quitar ^.+\.( y )$
+                            exts = pattern[6:-2].split('|')
                             field['accept'] = '.' + ',.'.join(exts)
                         elif pattern in PATTERN_TO_HTML_TYPE:
                             field['type'] = PATTERN_TO_HTML_TYPE[pattern]
                         
                         field['pattern'] = pattern
                     
-                    # Constraints de string
                     if cn == 'MinLen': 
                         field['minlength'] = c.min_length
                     if cn == 'MaxLen':
@@ -155,20 +140,16 @@ def build_form_fields(params_info):
     return fields
 
 
-# ========== VALIDATE ==========
 def validate_params(form_data, params_info):
-    """Valida y convierte datos del formulario"""
     validated = {}
     
     for name, info in params_info.items():
         value = form_data.get(name)
         
-        # Checkbox
         if info.type is bool:
             validated[name] = value is not None
             continue
         
-        # Date
         if info.type is date:
             if value:
                 validated[name] = date.fromisoformat(value)
@@ -176,7 +157,6 @@ def validate_params(form_data, params_info):
                 validated[name] = None
             continue
         
-        # Time
         if info.type is time:
             if value:
                 validated[name] = time.fromisoformat(value)
@@ -184,7 +164,6 @@ def validate_params(form_data, params_info):
                 validated[name] = None
             continue
         
-        # Literal/Selected
         if get_origin(info.field_info) is Literal:
             opts = get_args(info.field_info)
             if info.type is int:
@@ -197,11 +176,9 @@ def validate_params(form_data, params_info):
             validated[name] = value
             continue
         
-        # Normalizar colores: #RGB -> #RRGGBB
         if value and isinstance(value, str) and value.startswith('#') and len(value) == 4:
             value = '#' + ''.join(c*2 for c in value[1:])
         
-        # Con Field (incluye patterns, limits, etc.)
         if info.field_info and hasattr(info.field_info, 'metadata'):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
             validated[name] = adapter.validate_python(value)
@@ -211,27 +188,30 @@ def validate_params(form_data, params_info):
     return validated
 
 
-# ========== RUN ==========
-def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
+def run(func, host="0.0.0.0", port=8000, template_dir=None):
     from fastapi import FastAPI, Request
     from fastapi.responses import JSONResponse
     from fastapi.templating import Jinja2Templates
-    from pathlib import Path
     import uvicorn
+    import tempfile
     
     app = FastAPI()
     params = analyze(func)
     fields = build_form_fields(params)
     func_name = func.__name__.replace('_', ' ').title()
     
-    template_path = Path(template_dir)
-    if not template_path.exists():
+    if template_dir is None:
+        template_dir = Path(__file__).parent / "templates"
+    else:
+        template_dir = Path(template_dir)
+    
+    if not template_dir.exists():
         raise FileNotFoundError(
             f"Template directory '{template_dir}' not found. "
             f"Create it and add 'form.html' template."
         )
     
-    templates = Jinja2Templates(directory=str(template_path))
+    templates = Jinja2Templates(directory=str(template_dir))
     
     @app.get("/")
     async def form(request: Request):
@@ -246,21 +226,14 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
             form_data = await request.form()
             data = {}
             
-            # Procesar cada campo
             for name, value in form_data.items():
-                # Si es un archivo subido
                 if hasattr(value, 'filename'):
-                    import tempfile
-                    import os
-                    
-                    # Obtener extensión del archivo
                     suffix = os.path.splitext(value.filename)[1]
                     
-                    # Crear archivo temporal (multiplataforma)
                     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                         content = await value.read()
                         tmp.write(content)
-                        data[name] = tmp.name  # tmp.name funciona en Windows, Linux y Mac
+                        data[name] = tmp.name
                 else:
                     data[name] = value
             
