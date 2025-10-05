@@ -1,5 +1,5 @@
 from typing import Annotated, get_args, get_origin, Any, Literal
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 from dataclasses import dataclass
 import inspect
 
@@ -36,11 +36,16 @@ def analyze(func):
             types = {type(o) for o in opts}
             if len(types) > 1:
                 raise TypeError(f"'{name}': mixed types in Literal")
+            if default is not None and default not in opts:
+                raise ValueError(f"'{name}': default '{default}' not in options {opts}")
             f = t
             t = types.pop()
         
         if t not in VALID:
             raise TypeError(f"'{name}': {t} not supported")
+        
+        if f and default is not None and hasattr(f, 'metadata'):
+            TypeAdapter(Annotated[t, f]).validate_python(default)
         
         result[name] = ParamInfo(t, default, f)
     
