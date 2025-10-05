@@ -205,5 +205,4 @@ def run(func, host="0.0.0.0", port=8000, template_dir="templates"):
         except Exception as e:
             return JSONResponse({"success": False, "error": str(e)}, status_code=400)
     
-    print(f"🚀 Server starting at http://{host}:{port}")
     uvicorn.run(app, host=host, port=port, reload=False)

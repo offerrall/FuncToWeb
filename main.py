@@ -1,16 +1,25 @@
-from bbb import run, UI, Limits, Selected
+from bbb import run, UI, Limits, Selected, Color, Email
 
 
-def test_func(
-    times: UI[int, Limits(ge=1, le=5)],
-    name: str = "World",
-    name_limit: UI[str, Limits(min_length=3, max_length=20)] = "User",
-    excited: bool = False,
-    mood: Selected['happy', 'sad', 'neutral'] = 'neutral',
-    mood2: Selected[2, 3, 5] = 3
+def create_profile(
+    name: UI[str, Limits(min_length=3, max_length=50)] = "John Doe",
+    email: Email = "user@example.com",
+    primary_color: Color = "#4f46e5",
+    secondary_color: Color = "#10b981",
+    age: UI[int, Limits(ge=18, le=120)] = 25,
+    theme: Selected['light', 'dark', 'auto'] = 'auto',
+    newsletter: bool = True
 ):
-    types_info = ", ".join(f"{k}={type(v).__name__}" for k, v in locals().items())
-    excitement = "!" * (3 if excited else 1)
-    return f"Hello, {name_limit} the {mood} ({mood2})! " + (f"{'Yay' + excitement} " * times) + f"[{types_info}]"
+    return {
+        "name": name,
+        "email": email,
+        "colors": {
+            "primary": primary_color,
+            "secondary": secondary_color
+        },
+        "age": age,
+        "theme": theme,
+        "newsletter": newsletter
+    }
 
-run(test_func)
+run(create_profile)
