@@ -6,7 +6,6 @@ def calculate_bmi(
     weight_kg: Annotated[float, Field(ge=20, le=300)],
     height_m: Annotated[float, Field(ge=0.5, le=2.5)]
 ):
-    """Calculate Body Mass Index"""
     bmi = weight_kg / (height_m ** 2)
     
     if bmi < 18.5:
@@ -25,13 +24,11 @@ def calculate_bmi(
 
 
 def celsius_to_fahrenheit(celsius: float = 0):
-    """Convert Celsius to Fahrenheit"""
     fahrenheit = (celsius * 9/5) + 32
     return f"{celsius}°C = {fahrenheit}°F"
 
 
 def reverse_text(text: str = "Hello World"):
-    """Reverse a text string"""
     return text[::-1]
 
 
@@ -39,11 +36,9 @@ def divide_numbers(
     numerator: float,
     denominator: Annotated[int, Field(ge=1)]
 ):
-    """Divide two numbers"""
     return numerator / denominator
 
 def greet(name: str = "User"):
-    """Greet a user"""
     return f"Hello, {name}!"
 
 # Run multiple tools on one server
