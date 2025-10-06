@@ -219,16 +219,9 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])
 - **Matplotlib Figures** - Rendered as PNG
 - **Any object** - Converted with `str()`
 
-### UI Features
-- Modern, responsive design
-- Real-time validation
-- Client-side and server-side checks
-- Error messages
-- Mobile-friendly
-- Accessible
-
 ## Configuration
 
+### One function:
 ```python
 from FuncToWeb import run
 
@@ -237,8 +230,18 @@ def my_function(x: int):
 
 run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 ```
+### Multiple functions:
+```python
+from FuncToWeb import run
+
+def func1(x: int): return x
+def func2(y: str): return y
+run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
+```
+
 
 **Parameters:**
+- `func` - Single function or list of functions to serve
 - `host` - Server host (default: `"0.0.0.0"`)
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (optional)
@@ -259,9 +262,10 @@ run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Zero boilerplate** - Just type hints and you're done
 - **Powerful** - Supports all common input types including files
 - **Smart output** - Automatically displays images, plots, and data
-- **Beautiful UI** - Modern, responsive interface out of the box
 - **Type-safe** - Full Pydantic validation
+- **Client + server validation** - Instant feedback and robust checks
 - **Batteries included** - 15+ examples in the `examples/` folder
+- **Multi-function support** - Serve multiple tools from one server
 
 ## Requirements
 
