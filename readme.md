@@ -246,16 +246,6 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (optional)
 
-## How It Works
-
-1. **Analysis** - Inspects function signature using `inspect`
-2. **Validation** - Validates type hints and constraints using `pydantic`
-3. **Form Generation** - Builds HTML form fields from metadata
-4. **File Handling** - Saves uploaded files to temp locations
-5. **Server** - Runs FastAPI server with auto-generated routes
-6. **Result Processing** - Detects return type and formats accordingly
-7. **Display** - Shows results as text, JSON, images, or plots
-
 ## Why FuncToWeb?
 
 - **Minimalist** - Only 300 lines of Python + 600 lines of HTML/CSS/JS
@@ -266,6 +256,16 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Client + server validation** - Instant feedback and robust checks
 - **Batteries included** - 15+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
+
+## How It Works
+
+1. **Analysis** - Inspects function signature using `inspect`
+2. **Validation** - Validates type hints and constraints using `pydantic`
+3. **Form Generation** - Builds HTML form fields from metadata
+4. **File Handling** - Saves uploaded files to temp locations
+5. **Server** - Runs FastAPI server with auto-generated routes
+6. **Result Processing** - Detects return type and formats accordingly
+7. **Display** - Shows results as text, JSON, images, or plots
 
 ## Requirements
 
