@@ -1,6 +1,8 @@
-from func_to_web import run, Literal
 import matplotlib.pyplot as plt
 import numpy as np
+
+from func_to_web import Literal, run
+
 
 def compare_functions(
     func1: Literal['sin', 'cos', 'tan'] = 'sin',

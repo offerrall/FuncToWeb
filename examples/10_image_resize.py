@@ -1,5 +1,7 @@
-from func_to_web import run, ImageFile, Field, Annotated, Literal
 from PIL import Image
+
+from func_to_web import Annotated, Field, ImageFile, Literal, run
+
 
 def resize_image(
     image: ImageFile,

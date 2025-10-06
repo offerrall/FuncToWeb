@@ -1,5 +1,7 @@
-from func_to_web import run, Email, Field
 from typing import Annotated
+
+from func_to_web import Email, Field, run
+
 
 def register_user(
     username: Annotated[str, Field(min_length=3, max_length=20)],

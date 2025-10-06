@@ -1,19 +1,19 @@
-from typing import Annotated, Literal, get_args, get_origin
-from pydantic import Field, TypeAdapter
-from dataclasses import dataclass
+import base64
 import inspect
+import io
+import os
+import tempfile
+from dataclasses import dataclass
 from datetime import date, time
 from pathlib import Path
-import os
-import base64
-import io
+from typing import Annotated, Literal, get_args, get_origin
+
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import uvicorn
-import tempfile
-
+from fastapi.templating import Jinja2Templates
+from pydantic import Field, TypeAdapter
 
 VALID = {int, float, str, bool, date, time}
 

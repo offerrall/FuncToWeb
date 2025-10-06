@@ -1,5 +1,7 @@
-from func_to_web import run, ImageFile, Annotated, Field
 from PIL import Image, ImageFilter
+
+from func_to_web import Annotated, Field, ImageFile, run
+
 
 def blur_image(
     image: ImageFile,

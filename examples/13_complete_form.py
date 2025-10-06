@@ -1,5 +1,7 @@
-from func_to_web import run, Color, Email, ImageFile, Annotated, Literal, Field
 from datetime import date, time
+
+from func_to_web import Annotated, Color, Email, Field, ImageFile, Literal, run
+
 
 def complete_profile(
     full_name: Annotated[str, Field(min_length=3, max_length=50)] = "John Doe",

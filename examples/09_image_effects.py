@@ -1,5 +1,7 @@
-from func_to_web import run, ImageFile, Literal
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFilter
+
+from func_to_web import ImageFile, Literal, run
+
 
 def apply_effect(
     image: ImageFile,

@@ -1,5 +1,7 @@
-from func_to_web import run
 from datetime import date, time
+
+from func_to_web import run
+
 
 def showcase_types(
     name: str = "John",
