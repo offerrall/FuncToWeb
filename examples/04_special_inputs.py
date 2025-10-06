@@ -1,4 +1,4 @@
-from FuncToWeb import run, Color, Email
+from func_to_web import run, Color, Email
 
 def create_account(
     email: Email,

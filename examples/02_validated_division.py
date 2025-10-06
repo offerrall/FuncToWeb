@@ -1,4 +1,4 @@
-from FuncToWeb import run, Field, Annotated
+from func_to_web import run, Field, Annotated
 
 def safe_divide(
     numerator: int,

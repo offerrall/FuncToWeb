@@ -1,4 +1,4 @@
-from FuncToWeb import run, Literal
+from func_to_web import run, Literal
 
 def configure_app(
     theme: Literal['light', 'dark', 'auto'] = 'auto',

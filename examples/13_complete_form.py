@@ -1,4 +1,4 @@
-from FuncToWeb import run, Color, Email, ImageFile, Annotated, Literal, Field
+from func_to_web import run, Color, Email, ImageFile, Annotated, Literal, Field
 from datetime import date, time
 
 def complete_profile(

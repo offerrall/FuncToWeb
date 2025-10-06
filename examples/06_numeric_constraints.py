@@ -1,4 +1,4 @@
-from FuncToWeb import run, Field, Annotated
+from func_to_web import run, Field, Annotated
 
 def calculate_bmi(
     weight_kg: Annotated[float, Field(ge=20, le=300)],

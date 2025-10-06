@@ -1,17 +1,17 @@
-# FuncToWeb
+# Func To Web
 
 **Transform any Python function into a web interface automatically.**
 
-FuncToWeb is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
+func-to-web is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
 
 **The entire library is just 350 lines of Python and 700 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
 
-![FuncToWeb Demo](images/functoweb.jpg)
+![func-to-web Demo](images/functoweb.jpg)
 
 ## Quick Start (Minimal Example)
 
 ```python
-from FuncToWeb import run
+from func_to_web import run
 
 def divide(a: int, b: int):
     return a / b
@@ -21,7 +21,7 @@ run(divide)
 
 Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated form.
 
-![FuncToWeb Demo](images/demo.jpg)
+![func-to-web Demo](images/demo.jpg)
 
 
 ## Installation
@@ -30,6 +30,12 @@ Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated fo
 git clone https://github.com/offerrall/FuncToWeb
 cd FuncToWeb
 pip install .
+```
+
+Or install directly from GitHub:
+
+```bash
+pip install git+https://github.com/offerrall/FuncToWeb.git
 ```
 
 ## Examples
@@ -51,7 +57,7 @@ python examples/11_plot_sine.py
 All Python built-in types work out of the box:
 
 ```python
-from FuncToWeb import run
+from func_to_web import run
 from datetime import date, time
 
 def example(
@@ -72,7 +78,7 @@ run(example)
 ### Special Input Types
 
 ```python
-from FuncToWeb import run, Color, Email
+from func_to_web import run, Color, Email
 
 def special_inputs(
     favorite_color: Color,  # Color picker
@@ -88,7 +94,7 @@ run(special_inputs)
 ### File Uploads
 
 ```python
-from FuncToWeb import run, ImageFile, DataFile, TextFile, DocumentFile
+from func_to_web import run, ImageFile, DataFile, TextFile, DocumentFile
 
 def process_files(
     photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
@@ -107,7 +113,7 @@ run(process_files)
 
 ```python
 from typing import Literal
-from FuncToWeb import run
+from func_to_web import run
 
 def preferences(
     theme: Literal['light', 'dark', 'auto'],
@@ -125,7 +131,7 @@ run(preferences)
 ```python
 from typing import Annotated
 from pydantic import Field
-from FuncToWeb import run
+from func_to_web import run
 
 def register(
     age: Annotated[int, Field(ge=18, le=120)],              # Min/max values
@@ -141,10 +147,10 @@ run(register)
 
 ### Return Images & Plots
 
-FuncToWeb automatically detects and displays images from PIL/Pillow and matplotlib:
+func-to-web automatically detects and displays images from PIL/Pillow and matplotlib:
 
 ```python
-from FuncToWeb import run, ImageFile
+from func_to_web import run, ImageFile
 from PIL import Image, ImageFilter
 
 def blur_image(image: ImageFile, radius: int = 5):
@@ -157,7 +163,7 @@ run(blur_image)
 ![Image Processing](images/image.jpg)
 
 ```python
-from FuncToWeb import run
+from func_to_web import run
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -176,23 +182,28 @@ run(plot_sine)
 ![Plot Result](images/plot.jpg)
 
 ## Run Multiple Functions 
-You can serve multiple functions simultaneously. When passing a list of functions, FuncToWeb automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 14.
+
+You can serve multiple functions simultaneously. When passing a list of functions, func-to-web automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 14.
 
 ```python
-from FuncToWeb import run
+from func_to_web import run
 
 def calculate_bmi(weight_kg: float, height_m: float):
     """Calculate Body Mass Index"""
-    # ... implementation details
-    return "BMI result"
+    bmi = weight_kg / (height_m ** 2)
+    return f"BMI: {bmi:.2f}"
 
 def celsius_to_fahrenheit(celsius: float):
     """Convert Celsius to Fahrenheit"""
-    # ... implementation details
-    return "Fahrenheit result"
+    fahrenheit = (celsius * 9/5) + 32
+    return f"{celsius}°C = {fahrenheit}°F"
+
+def reverse_text(text: str):
+    """Reverse a string"""
+    return text[::-1]
 
 # Pass a list of functions to create an index page
-run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])
+run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 ```
 
 ![Multiple Tools](images/multiple.jpg)
@@ -205,7 +216,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])
 - `Color` - Color picker with preview
 - `Email` - Email validation
 - `Literal[...]` - Dropdown selections
-- `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`, `AnyFile` - File uploads
+- `ImageFile`, `DataFile`, `TextFile`, `DocumentFile` - File uploads
 
 ### Validation
 - **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)
@@ -223,30 +234,34 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])
 
 ### One function:
 ```python
-from FuncToWeb import run
+from func_to_web import run
 
 def my_function(x: int):
     return x * 2
 
 run(my_function, host="127.0.0.1", port=5000, template_dir="my_templates")
 ```
+
 ### Multiple functions:
 ```python
-from FuncToWeb import run
+from func_to_web import run
 
-def func1(x: int): return x
-def func2(y: str): return y
+def func1(x: int): 
+    return x * 2
+
+def func2(y: str): 
+    return y.upper()
+
 run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 ```
 
-
 **Parameters:**
-- `func` - Single function or list of functions to serve
+- `func_or_list` - Single function or list of functions to serve
 - `host` - Server host (default: `"0.0.0.0"`)
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (optional)
 
-## Why FuncToWeb?
+## Why func-to-web?
 
 - **Minimalist** - Only 350 lines of Python + 700 lines of HTML/CSS/JS
 - **Zero boilerplate** - Just type hints and you're done
@@ -269,15 +284,17 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.8+
 - FastAPI
 - Uvicorn
 - Pydantic
 - Jinja2
+- python-multipart
 
 Optional for examples:
 - Pillow (for image processing)
 - Matplotlib (for plots)
+- NumPy (for numerical computations)
 
 ## License
 
@@ -286,3 +303,7 @@ MIT
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Author
+
+Beltrán Offerrall

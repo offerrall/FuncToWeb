@@ -1,4 +1,4 @@
-from FuncToWeb import run, Email, Field
+from func_to_web import run, Email, Field
 from typing import Annotated
 
 def register_user(
