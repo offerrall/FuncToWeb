@@ -284,7 +284,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.12+
 - FastAPI
 - Uvicorn
 - Pydantic
