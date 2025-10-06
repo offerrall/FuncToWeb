@@ -248,7 +248,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Why FuncToWeb?
 
-- **Minimalist** - Only 300 lines of Python + 600 lines of HTML/CSS/JS
+- **Minimalist** - Only 350 lines of Python + 700 lines of HTML/CSS/JS
 - **Zero boilerplate** - Just type hints and you're done
 - **Powerful** - Supports all common input types including files
 - **Smart output** - Automatically displays images, plots, and data
