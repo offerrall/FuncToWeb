@@ -36,7 +36,7 @@ def reverse_text(text: str = "Hello World"):
 
 
 def divide_numbers(
-    numerator: Annotated[float, Field()],
+    numerator: float,
     denominator: Annotated[int, Field(ge=1)]
 ):
     """Divide two numbers"""
