@@ -227,7 +227,7 @@ def process_result(result):
     }
 
 
-def run(func_or_list, host="0.0.0.0", port=8000, template_dir=None):
+def run(func_or_list: callable | list[callable], host: str="0.0.0.0", port: int=8000, template_dir: str | Path=None):
     from fastapi import FastAPI, Request
     from fastapi.responses import JSONResponse, RedirectResponse
     from fastapi.templating import Jinja2Templates
