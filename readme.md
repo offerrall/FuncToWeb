@@ -27,15 +27,7 @@ Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated fo
 ## Installation
 
 ```bash
-git clone https://github.com/offerrall/FuncToWeb
-cd FuncToWeb
-pip install .
-```
-
-Or install directly from GitHub:
-
-```bash
-pip install git+https://github.com/offerrall/FuncToWeb.git
+pip install func-to-web
 ```
 
 ## Examples
