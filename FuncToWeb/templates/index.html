@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Tools</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="index-page">
+    <div class="container">
+        {% if tools %}
+            <div class="tools-grid">
+                {% for tool in tools %}
+                    <a href="{{ tool.path }}" class="tool-card">
+                        <div class="tool-name">{{ tool.name }}</div>
+                        <div class="tool-arrow">→</div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-title">No Tools Available</div>
+                <p class="empty-state-text">No functions have been registered yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

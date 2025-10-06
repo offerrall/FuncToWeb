@@ -191,7 +191,6 @@ def validate_params(form_data, params_info):
 
 def process_result(result):
     """Convert result to appropriate format for display"""
-    # Check if it's a PIL Image
     try:
         from PIL import Image
         if isinstance(result, Image.Image):
@@ -206,7 +205,6 @@ def process_result(result):
     except ImportError:
         pass
     
-    # Check if it's a matplotlib figure
     try:
         import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
@@ -223,24 +221,23 @@ def process_result(result):
     except ImportError:
         pass
     
-    # Default to text
     return {
         'type': 'text',
         'data': str(result)
     }
 
 
-def run(func, host="0.0.0.0", port=8000, template_dir=None):
+def run(func_or_list, host="0.0.0.0", port=8000, template_dir=None):
     from fastapi import FastAPI, Request
-    from fastapi.responses import JSONResponse
+    from fastapi.responses import JSONResponse, RedirectResponse
     from fastapi.templating import Jinja2Templates
+    from fastapi.staticfiles import StaticFiles
     import uvicorn
     import tempfile
     
+    funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
+    
     app = FastAPI()
-    params = analyze(func)
-    fields = build_form_fields(params)
-    func_name = func.__name__.replace('_', ' ').title()
     
     if template_dir is None:
         template_dir = Path(__file__).parent / "templates"
@@ -249,46 +246,114 @@ def run(func, host="0.0.0.0", port=8000, template_dir=None):
     
     if not template_dir.exists():
         raise FileNotFoundError(
-            f"Template directory '{template_dir}' not found. "
-            f"Create it and add 'form.html' template."
+            f"Template directory '{template_dir}' not found."
         )
     
     templates = Jinja2Templates(directory=str(template_dir))
+    app.mount("/static", StaticFiles(directory=template_dir / "static"), name="static")
     
-    @app.get("/")
-    async def form(request: Request):
-        return templates.TemplateResponse(
-            "form.html",
-            {"request": request, "title": func_name, "fields": fields}
-        )
+    # Single function mode
+    if len(funcs) == 1:
+        func = funcs[0]
+        params = analyze(func)
+        fields = build_form_fields(params)
+        func_name = func.__name__.replace('_', ' ').title()
+        
+        @app.get("/")
+        async def form(request: Request):
+            return templates.TemplateResponse(
+                "form.html",
+                {"request": request, "title": func_name, "fields": fields, "submit_url": "/submit"}
+            )
 
-    @app.post("/submit")
-    async def submit(request: Request):
-        try:
-            form_data = await request.form()
-            data = {}
+        @app.post("/submit")
+        async def submit(request: Request):
+            try:
+                form_data = await request.form()
+                data = {}
+                
+                for name, value in form_data.items():
+                    if hasattr(value, 'filename'):
+                        suffix = os.path.splitext(value.filename)[1]
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                            content = await value.read()
+                            tmp.write(content)
+                            data[name] = tmp.name
+                    else:
+                        data[name] = value
+                
+                validated = validate_params(data, params)
+                result = func(**validated)
+                processed = process_result(result)
+                
+                return JSONResponse({
+                    "success": True,
+                    "result_type": processed['type'],
+                    "result": processed['data']
+                })
+            except Exception as e:
+                return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+    
+    # Multiple functions mode
+    else:
+        @app.get("/")
+        async def index(request: Request):
+            tools = [{
+                "name": f.__name__.replace('_', ' ').title(),
+                "path": f"/{f.__name__}"
+            } for f in funcs]
+            return templates.TemplateResponse(
+                "index.html",
+                {"request": request, "tools": tools}
+            )
+        
+        # Create endpoint for each function
+        for func in funcs:
+            params = analyze(func)
+            fields = build_form_fields(params)
+            func_name = func.__name__.replace('_', ' ').title()
+            route = f"/{func.__name__}"
+            submit_route = f"{route}/submit"
             
-            for name, value in form_data.items():
-                if hasattr(value, 'filename'):
-                    suffix = os.path.splitext(value.filename)[1]
-                    
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                        content = await value.read()
-                        tmp.write(content)
-                        data[name] = tmp.name
-                else:
-                    data[name] = value
+            # Use default parameter to capture variable
+            def make_form_handler(fn, title, flds, submit_path):
+                async def form_view(request: Request):
+                    return templates.TemplateResponse(
+                        "form.html",
+                        {"request": request, "title": title, "fields": flds, "submit_url": submit_path}
+                    )
+                return form_view
             
-            validated = validate_params(data, params)
-            result = func(**validated)
-            processed = process_result(result)
+            def make_submit_handler(fn, prms):
+                async def submit_view(request: Request):
+                    try:
+                        form_data = await request.form()
+                        data = {}
+                        
+                        for name, value in form_data.items():
+                            if hasattr(value, 'filename'):
+                                suffix = os.path.splitext(value.filename)[1]
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                                    content = await value.read()
+                                    tmp.write(content)
+                                    data[name] = tmp.name
+                            else:
+                                data[name] = value
+                        
+                        validated = validate_params(data, prms)
+                        result = fn(**validated)
+                        processed = process_result(result)
+                        
+                        return JSONResponse({
+                            "success": True,
+                            "result_type": processed['type'],
+                            "result": processed['data']
+                        })
+                    except Exception as e:
+                        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+                return submit_view
             
-            return JSONResponse({
-                "success": True,
-                "result_type": processed['type'],
-                "result": processed['data']
-            })
-        except Exception as e:
-            return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+            app.get(route)(make_form_handler(func, func_name, fields, submit_route))
+            app.post(submit_route)(make_submit_handler(func, params))
     
     uvicorn.run(app, host=host, port=port, reload=False)

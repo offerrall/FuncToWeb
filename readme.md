@@ -4,7 +4,7 @@
 
 FuncToWeb is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
 
-**The entire library is just 300 lines of Python and 600 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
+**The entire library is just 350 lines of Python and 700 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
 
 ![FuncToWeb Demo](images/functoweb.jpg)
 
@@ -34,7 +34,7 @@ pip install .
 
 ## Examples
 
-**Check the `examples/` folder** for 13+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 14+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
@@ -174,6 +174,28 @@ run(plot_sine)
 ```
 
 ![Plot Result](images/plot.jpg)
+
+## Run Multiple Functions 
+You can serve multiple functions simultaneously. When passing a list of functions, FuncToWeb automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 14.
+
+```python
+from FuncToWeb import run
+
+def calculate_bmi(weight_kg: float, height_m: float):
+    """Calculate Body Mass Index"""
+    # ... implementation details
+    return "BMI result"
+
+def celsius_to_fahrenheit(celsius: float):
+    """Convert Celsius to Fahrenheit"""
+    # ... implementation details
+    return "Fahrenheit result"
+
+# Pass a list of functions to create an index page
+run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])
+```
+
+![Multiple Tools](images/multiple.jpg)
 
 ## Features
 

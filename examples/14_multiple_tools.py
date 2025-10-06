@@ -35,5 +35,16 @@ def reverse_text(text: str = "Hello World"):
     return text[::-1]
 
 
+def divide_numbers(
+    numerator: Annotated[float, Field()],
+    denominator: Annotated[int, Field(ge=1)]
+):
+    """Divide two numbers"""
+    return numerator / denominator
+
+def greet(name: str = "User"):
+    """Greet a user"""
+    return f"Hello, {name}!"
+
 # Run multiple tools on one server
-run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
+run([calculate_bmi, celsius_to_fahrenheit, reverse_text, divide_numbers, greet])

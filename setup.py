@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     author="Beltrán Offerrall",
     packages=find_packages(),
-    package_data={'FuncToWeb': ['templates/*.html']},
+    package_data={'FuncToWeb': ['templates/*.html', 'templates/static/*']},
     install_requires=[
         'fastapi',
         'uvicorn',
