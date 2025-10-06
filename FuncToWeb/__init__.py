@@ -7,6 +7,13 @@ from pathlib import Path
 import os
 import base64
 import io
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+import tempfile
+
 
 VALID = {int, float, str, bool, date, time}
 
@@ -14,9 +21,11 @@ COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
 
 def _file_pattern(*extensions):
+    """Generate regex pattern for file extensions."""
     exts = [e.lstrip('.').lower() for e in extensions]
     return r'^.+\.(' + '|'.join(exts) + r')$'
 
+# Pre-configured type aliases for common input types
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
 ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp'))]
@@ -32,12 +41,26 @@ PATTERN_TO_HTML_TYPE = {
 
 @dataclass
 class ParamInfo:
+    """Metadata about a function parameter."""
     type: type
     default: any = None
     field_info: any = None
 
 
 def analyze(func):
+    """
+    Analyze a function's signature and extract parameter metadata.
+    
+    Args:
+        func: The function to analyze
+        
+    Returns:
+        dict: Mapping of parameter names to ParamInfo objects
+        
+    Raises:
+        TypeError: If parameter type is not supported
+        ValueError: If default value doesn't match Literal options
+    """
     result = {}
     
     for name, p in inspect.signature(func).parameters.items():
@@ -45,12 +68,14 @@ def analyze(func):
         t = p.annotation
         f = None
         
+        # Extract base type from Annotated
         if get_origin(t) is Annotated:
             args = get_args(t)
             t = args[0]
             if len(args) > 1:
                 f = args[1]
         
+        # Handle Literal types (dropdowns)
         if get_origin(t) is Literal:
             opts = get_args(t)
             types = {type(o) for o in opts}
@@ -64,6 +89,7 @@ def analyze(func):
         if t not in VALID:
             raise TypeError(f"'{name}': {t} not supported")
         
+        # Validate default value against field constraints
         if f and default is not None and hasattr(f, 'metadata'):
             TypeAdapter(Annotated[t, f]).validate_python(default)
         
@@ -73,6 +99,15 @@ def analyze(func):
 
 
 def build_form_fields(params_info):
+    """
+    Build form field specifications from parameter metadata.
+    
+    Args:
+        params_info: dict mapping parameter names to ParamInfo objects
+        
+    Returns:
+        list: List of field dictionaries for template rendering
+    """
     fields = []
     
     for name, info in params_info.items():
@@ -82,28 +117,34 @@ def build_form_fields(params_info):
             'required': True
         }
         
+        # Dropdown select
         if get_origin(info.field_info) is Literal:
             field['type'] = 'select'
             field['options'] = get_args(info.field_info)
             
+        # Checkbox
         elif info.type is bool:
             field['type'] = 'checkbox'
             field['required'] = False
             
+        # Date picker
         elif info.type is date:
             field['type'] = 'date'
             if isinstance(info.default, date):
                 field['default'] = info.default.isoformat()
         
+        # Time picker
         elif info.type is time:
             field['type'] = 'time'
             if isinstance(info.default, time):
                 field['default'] = info.default.strftime('%H:%M')
             
+        # Number input
         elif info.type in (int, float):
             field['type'] = 'number'
             field['step'] = '1' if info.type is int else 'any'
             
+            # Extract numeric constraints from Pydantic Field
             if info.field_info and hasattr(info.field_info, 'metadata'):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
@@ -112,6 +153,7 @@ def build_form_fields(params_info):
                     elif cn == 'Gt': field['min'] = c.gt + (1 if info.type is int else 0.01)
                     elif cn == 'Lt': field['max'] = c.lt - (1 if info.type is int else 0.01)
                     
+        # Text/email/color/file input
         else:
             field['type'] = 'text'
             
@@ -119,18 +161,22 @@ def build_form_fields(params_info):
                 for c in info.field_info.metadata:
                     cn = type(c).__name__
                     
+                    # Check for pattern constraints
                     if hasattr(c, 'pattern') and c.pattern:
                         pattern = c.pattern
                         
+                        # File input detection
                         if pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
                             field['type'] = 'file'
                             exts = pattern[6:-2].split('|')
                             field['accept'] = '.' + ',.'.join(exts)
+                        # Special input types (color, email)
                         elif pattern in PATTERN_TO_HTML_TYPE:
                             field['type'] = PATTERN_TO_HTML_TYPE[pattern]
                         
                         field['pattern'] = pattern
                     
+                    # String length constraints
                     if cn == 'MinLen': 
                         field['minlength'] = c.min_length
                     if cn == 'MaxLen':
@@ -142,15 +188,30 @@ def build_form_fields(params_info):
 
 
 def validate_params(form_data, params_info):
+    """
+    Validate and convert form data to function parameters.
+    
+    Args:
+        form_data: Raw form data from request
+        params_info: Parameter metadata from analyze()
+        
+    Returns:
+        dict: Validated parameters ready for function call
+        
+    Raises:
+        ValueError: If validation fails
+    """
     validated = {}
     
     for name, info in params_info.items():
         value = form_data.get(name)
         
+        # Checkbox handling
         if info.type is bool:
             validated[name] = value is not None
             continue
         
+        # Date conversion
         if info.type is date:
             if value:
                 validated[name] = date.fromisoformat(value)
@@ -158,6 +219,7 @@ def validate_params(form_data, params_info):
                 validated[name] = None
             continue
         
+        # Time conversion
         if info.type is time:
             if value:
                 validated[name] = time.fromisoformat(value)
@@ -165,6 +227,7 @@ def validate_params(form_data, params_info):
                 validated[name] = None
             continue
         
+        # Literal validation
         if get_origin(info.field_info) is Literal:
             opts = get_args(info.field_info)
             if info.type is int:
@@ -177,9 +240,11 @@ def validate_params(form_data, params_info):
             validated[name] = value
             continue
         
+        # Expand shorthand hex colors (#RGB -> #RRGGBB)
         if value and isinstance(value, str) and value.startswith('#') and len(value) == 4:
             value = '#' + ''.join(c*2 for c in value[1:])
         
+        # Pydantic validation with constraints
         if info.field_info and hasattr(info.field_info, 'metadata'):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
             validated[name] = adapter.validate_python(value)
@@ -190,7 +255,19 @@ def validate_params(form_data, params_info):
 
 
 def process_result(result):
-    """Convert result to appropriate format for display"""
+    """
+    Convert function result to appropriate display format.
+    
+    Detects PIL Images and matplotlib Figures and converts them to base64.
+    All other types are converted to strings.
+    
+    Args:
+        result: The function's return value
+        
+    Returns:
+        dict: {'type': 'image'|'text', 'data': str}
+    """
+    # PIL Image detection
     try:
         from PIL import Image
         if isinstance(result, Image.Image):
@@ -205,6 +282,7 @@ def process_result(result):
     except ImportError:
         pass
     
+    # Matplotlib Figure detection
     try:
         import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
@@ -221,6 +299,7 @@ def process_result(result):
     except ImportError:
         pass
     
+    # Default: convert to string
     return {
         'type': 'text',
         'data': str(result)
@@ -228,12 +307,22 @@ def process_result(result):
 
 
 def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | Path=None):
-    from fastapi import FastAPI, Request
-    from fastapi.responses import JSONResponse, RedirectResponse
-    from fastapi.templating import Jinja2Templates
-    from fastapi.staticfiles import StaticFiles
-    import uvicorn
-    import tempfile
+    """
+    Generate and run a web UI for one or more Python functions.
+    
+    Single function mode: Creates a form at root (/) for the function.
+    Multiple functions mode: Creates an index page with links to individual function forms.
+    
+    Args:
+        func_or_list: A single function or list of functions to wrap
+        host: Server host address (default: "0.0.0.0")
+        port: Server port (default: 8000)
+        template_dir: Optional custom template directory
+        
+    Raises:
+        FileNotFoundError: If template directory doesn't exist
+        TypeError: If function parameters use unsupported types
+    """
     
     funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
     
@@ -315,7 +404,7 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
             route = f"/{func.__name__}"
             submit_route = f"{route}/submit"
             
-            # Use default parameter to capture variable
+            # Closure factories to capture loop variables
             def make_form_handler(fn, title, flds, submit_path):
                 async def form_view(request: Request):
                     return templates.TemplateResponse(
