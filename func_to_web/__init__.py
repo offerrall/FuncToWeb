@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import inspect
 import io
@@ -478,4 +479,6 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
             app.get(route)(make_form_handler(func, func_name, params, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
-    uvicorn.run(app, host=host, port=port, reload=False)
+    config = uvicorn.Config(app, host=host, port=port, reload=False)
+    server = uvicorn.Server(config)
+    asyncio.run(server.serve())
