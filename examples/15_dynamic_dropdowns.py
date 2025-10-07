@@ -1,5 +1,5 @@
 from typing import Literal
-from random import randint, sample
+from random import sample
 from func_to_web import run
 
 # Available options pool
