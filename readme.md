@@ -1,10 +1,10 @@
-# Func To Web 0.1.0
+# Func To Web 0.2.0
 
 **Transform any Python function into a web interface automatically.**
 
 func-to-web is a minimalist library that generates web UIs from your Python functions with zero boilerplate. Just add type hints, call `run()`, and you're done.
 
-**The entire library is just 350 lines of Python and 700 lines of HTML/CSS/JS.** Simple, powerful, and easy to understand.
+Simple, powerful, and easy to understand.
 
 ![func-to-web Demo](images/functoweb.jpg)
 
@@ -32,7 +32,7 @@ pip install func-to-web
 
 ## Examples
 
-**Check the `examples/` folder** for 14+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 15+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
@@ -101,7 +101,9 @@ run(process_files)
 
 ![File Upload](images/files.jpg)
 
-### Dropdowns
+### Dropdowns (Static)
+
+Use `Literal` for fixed dropdown options:
 
 ```python
 from typing import Literal
@@ -117,6 +119,40 @@ run(preferences)
 ```
 
 ![Dropdowns](images/drop.jpg)
+
+All options must be literals (strings, numbers, booleans) and all options must be of the same type.
+
+### Dropdowns (Dynamic)
+
+Use functions inside `Literal` to generate options dynamically at runtime:
+
+```python
+from typing import Literal
+from random import sample
+from func_to_web import run
+
+THEMES = ['light', 'dark', 'auto', 'neon', 'retro']
+
+def get_themes():
+    """Generate random subset of themes"""
+    return sample(THEMES, k=3)
+
+def configure_app(
+    theme: Literal[get_themes],  # type: ignore
+):
+    """Configure app with dynamic dropdown"""
+    return f"Selected theme: {theme}"
+
+run(configure_app)
+```
+
+**Use cases for dynamic dropdowns:**
+- Load options from a database
+- Fetch data from an API
+- Generate options based on time or context
+- Filter available choices based on business logic
+
+The function is called each time the form is generated, ensuring fresh options every time. The `# type: ignore` comment is needed to suppress type checker warnings, the 15_dynamic_dropdown.py example demonstrates this.
 
 ### Constraints & Validation
 
@@ -175,7 +211,7 @@ run(plot_sine)
 
 ## Run Multiple Functions 
 
-You can serve multiple functions simultaneously. When passing a list of functions, func-to-web automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 14.
+You can serve multiple functions simultaneously. When passing a list of functions, func-to-web automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 15.
 
 ```python
 from func_to_web import run
@@ -207,7 +243,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 - `date`, `time` - Date and time pickers
 - `Color` - Color picker with preview
 - `Email` - Email validation
-- `Literal[...]` - Dropdown selections
+- `Literal[...]` - Dropdown selections, static or dynamic
 - `ImageFile`, `DataFile`, `TextFile`, `DocumentFile` - File uploads
 
 ### Validation
@@ -255,7 +291,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Why func-to-web?
 
-- **Minimalist** - Only 350 lines of Python + 700 lines of HTML/CSS/JS
+- **Minimalist** - Under 1500 lines total, backend + frontend + docs
 - **Zero boilerplate** - Just type hints and you're done
 - **Powerful** - Supports all common input types including files
 - **Smart output** - Automatically displays images, plots, and data

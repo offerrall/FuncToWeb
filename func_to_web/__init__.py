@@ -42,9 +42,10 @@ PATTERN_TO_HTML_TYPE = {
 @dataclass
 class ParamInfo:
     """Metadata about a function parameter."""
-    type: type
-    default: any = None
-    field_info: any = None
+    type: type # The base type (int, float, str, bool, date, time)
+    default: any = None # The default value, or None if required
+    field_info: any = None # Additional Field or Literal info
+    dynamic_func: any = None # Store the dynamic function for later re-execution
 
 
 def analyze(func):
@@ -67,6 +68,7 @@ def analyze(func):
         default = None if p.default == inspect.Parameter.empty else p.default
         t = p.annotation
         f = None
+        dynamic_func = None
         
         # Extract base type from Annotated
         if get_origin(t) is Annotated:
@@ -78,13 +80,27 @@ def analyze(func):
         # Handle Literal types (dropdowns)
         if get_origin(t) is Literal:
             opts = get_args(t)
-            types = {type(o) for o in opts}
-            if len(types) > 1:
-                raise TypeError(f"'{name}': mixed types in Literal")
-            if default is not None and default not in opts:
-                raise ValueError(f"'{name}': default '{default}' not in options {opts}")
-            f = t
-            t = types.pop()
+            
+            # Check if opts contains a single callable (dynamic Literal)
+            if len(opts) == 1 and callable(opts[0]):
+                # Store the function for later execution, don't execute now
+                dynamic_func = opts[0]
+                opts = tuple(dynamic_func())
+            
+            # Validate options
+            if opts:  # Only validate if we have options
+                types = {type(o) for o in opts}
+                if len(types) > 1:
+                    raise TypeError(f"'{name}': mixed types in Literal")
+                if default is not None and default not in opts:
+                    raise ValueError(f"'{name}': default '{default}' not in options {opts}")
+                
+                # Store the original Literal type for field info
+                f = Literal[opts] if len(opts) > 0 else t
+                t = types.pop() if types else type(None)
+            else:
+                # No options available
+                t = type(None)
         
         if t not in VALID:
             raise TypeError(f"'{name}': {t} not supported")
@@ -93,7 +109,7 @@ def analyze(func):
         if f and default is not None and hasattr(f, 'metadata'):
             TypeAdapter(Annotated[t, f]).validate_python(default)
         
-        result[name] = ParamInfo(t, default, f)
+        result[name] = ParamInfo(t, default, f, dynamic_func)
     
     return result
 
@@ -101,6 +117,7 @@ def analyze(func):
 def build_form_fields(params_info):
     """
     Build form field specifications from parameter metadata.
+    Re-executes dynamic functions to get fresh options.
     
     Args:
         params_info: dict mapping parameter names to ParamInfo objects
@@ -120,7 +137,15 @@ def build_form_fields(params_info):
         # Dropdown select
         if get_origin(info.field_info) is Literal:
             field['type'] = 'select'
-            field['options'] = get_args(info.field_info)
+            
+            # Re-execute dynamic function if present
+            if info.dynamic_func is not None:
+                fresh_options = tuple(info.dynamic_func())
+                field['options'] = fresh_options
+                # Update the field_info with fresh options
+                info.field_info = Literal[fresh_options]
+            else:
+                field['options'] = get_args(info.field_info)
             
         # Checkbox
         elif info.type is bool:
@@ -190,6 +215,7 @@ def build_form_fields(params_info):
 def validate_params(form_data, params_info):
     """
     Validate and convert form data to function parameters.
+    Re-executes dynamic functions to get current valid options.
     
     Args:
         form_data: Raw form data from request
@@ -229,7 +255,12 @@ def validate_params(form_data, params_info):
         
         # Literal validation
         if get_origin(info.field_info) is Literal:
-            opts = get_args(info.field_info)
+            # Re-execute dynamic function if present to get current valid options
+            if info.dynamic_func is not None:
+                opts = tuple(info.dynamic_func())
+            else:
+                opts = get_args(info.field_info)
+            
             if info.type is int:
                 value = int(value)
             elif info.type is float:
@@ -345,11 +376,12 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
     if len(funcs) == 1:
         func = funcs[0]
         params = analyze(func)
-        fields = build_form_fields(params)
         func_name = func.__name__.replace('_', ' ').title()
         
         @app.get("/")
         async def form(request: Request):
+            # Re-build fields on each request to get fresh dynamic options
+            fields = build_form_fields(params)
             return templates.TemplateResponse(
                 "form.html",
                 {"request": request, "title": func_name, "fields": fields, "submit_url": "/submit"}
@@ -399,14 +431,15 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
         # Create endpoint for each function
         for func in funcs:
             params = analyze(func)
-            fields = build_form_fields(params)
             func_name = func.__name__.replace('_', ' ').title()
             route = f"/{func.__name__}"
             submit_route = f"{route}/submit"
             
             # Closure factories to capture loop variables
-            def make_form_handler(fn, title, flds, submit_path):
+            def make_form_handler(fn, title, prms, submit_path):
                 async def form_view(request: Request):
+                    # Re-build fields on each request to get fresh dynamic options
+                    flds = build_form_fields(prms)
                     return templates.TemplateResponse(
                         "form.html",
                         {"request": request, "title": title, "fields": flds, "submit_url": submit_path}
@@ -442,7 +475,7 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                         return JSONResponse({"success": False, "error": str(e)}, status_code=400)
                 return submit_view
             
-            app.get(route)(make_form_handler(func, func_name, fields, submit_route))
+            app.get(route)(make_form_handler(func, func_name, params, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
     uvicorn.run(app, host=host, port=port, reload=False)
