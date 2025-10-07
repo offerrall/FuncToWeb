@@ -1,6 +1,6 @@
-from typing import Literal
 from random import sample
-from func_to_web import run
+
+from func_to_web import run, Literal
 
 # Available options pool
 THEMES = ['light', 'dark', 'auto', 'neon', 'retro']
