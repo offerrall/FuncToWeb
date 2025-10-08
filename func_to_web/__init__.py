@@ -21,6 +21,9 @@ VALID = {int, float, str, bool, date, time}
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
 
+CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
+FILE_BUFFER_SIZE = 8 * 1024 * 1024  # 8MB
+
 def _file_pattern(*extensions):
     """Generate regex pattern for file extensions."""
     exts = [e.lstrip('.').lower() for e in extensions]
@@ -338,6 +341,13 @@ def process_result(result):
     }
 
 
+async def save_uploaded_file(uploaded_file, suffix):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix, buffering=FILE_BUFFER_SIZE) as tmp:
+        while chunk := await uploaded_file.read(CHUNK_SIZE):
+            tmp.write(chunk)
+        return tmp.name
+
+
 def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | Path=None):
     """
     Generate and run a web UI for one or more Python functions.
@@ -397,10 +407,8 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                 for name, value in form_data.items():
                     if hasattr(value, 'filename'):
                         suffix = os.path.splitext(value.filename)[1]
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                            content = await value.read()
-                            tmp.write(content)
-                            data[name] = tmp.name
+                        # Use streaming to save uploaded files
+                        data[name] = await save_uploaded_file(value, suffix)
                     else:
                         data[name] = value
                 
@@ -456,10 +464,8 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                         for name, value in form_data.items():
                             if hasattr(value, 'filename'):
                                 suffix = os.path.splitext(value.filename)[1]
-                                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                                    content = await value.read()
-                                    tmp.write(content)
-                                    data[name] = tmp.name
+                                # Usa streaming optimizado para archivos
+                                data[name] = await save_uploaded_file(value, suffix)
                             else:
                                 data[name] = value
                         
@@ -479,6 +485,15 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
             app.get(route)(make_form_handler(func, func_name, params, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
-    config = uvicorn.Config(app, host=host, port=port, reload=False)
+    config = uvicorn.Config(
+        app, 
+        host=host, 
+        port=port, 
+        reload=False,
+        limit_concurrency=100,
+        limit_max_requests=1000,
+        timeout_keep_alive=30,
+        h11_max_incomplete_event_size=16 * 1024 * 1024
+    )
     server = uvicorn.Server(config)
     asyncio.run(server.serve())

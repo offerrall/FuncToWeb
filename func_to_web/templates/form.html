@@ -5,8 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        /* Loading indicator styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 300px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        button[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
-<body class="form-page"> <div class="container"> <div class="form-page"> 
+<body class="form-page">
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3 id="loadingTitle">Uploading...</h3>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="progressText" class="progress-text">0%</div>
+        </div>
+    </div>
+
+    <div class="container"> 
+        <div class="form-page"> 
             <h1>{{ title }}</h1>
             <form id="form" novalidate>
                 {% for field in fields %}
@@ -83,16 +167,60 @@
                         </div>
                     {% endif %}
                 {% endfor %}
-                <button type="submit">Submit</button>
+                <button type="submit" id="submitBtn">Submit</button>
             </form>
             
             <div id="result"></div>
             <div id="error"></div>
         </div>
-    </div> <script>
+    </div> 
+    
+    <script>
         const form = document.getElementById('form');
         const resultDiv = document.getElementById('result');
         const errorDiv = document.getElementById('error');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingTitle = document.getElementById('loadingTitle');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        
+        // Show/hide loading overlay
+        function setLoading(show, title = 'Uploading...') {
+            if (show) {
+                loadingOverlay.classList.add('active');
+                loadingTitle.textContent = title;
+                submitBtn.disabled = true;
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+            } else {
+                loadingOverlay.classList.remove('active');
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Update progress bar
+        function updateProgress(percent) {
+            progressBar.style.width = percent + '%';
+            progressText.textContent = Math.round(percent) + '%';
+        }
+        
+        // Detect file size for custom messages
+        function getFileSize() {
+            const fileInput = form.querySelector('input[type="file"]');
+            if (fileInput && fileInput.files.length > 0) {
+                return fileInput.files[0].size;
+            }
+            return 0;
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
         
         document.querySelectorAll('[data-color-input]').forEach(input => {
             const preview = document.querySelector(`[data-color-preview="${input.name}"]`);
@@ -194,26 +322,93 @@
             resultDiv.style.display = 'none';
             errorDiv.style.display = 'none';
             
+            // Get file size and customize message
+            const fileSize = getFileSize();
+            let loadingMsg = 'Uploading...';
+            if (fileSize > 0) {
+                loadingMsg = `Uploading ${formatBytes(fileSize)}...`;
+            }
+            
+            setLoading(true, loadingMsg);
+            
             try {
-                const response = await fetch('{{ submit_url }}', {
-                    method: 'POST',
-                    body: new FormData(form)
+                const formData = new FormData(form);
+                
+                // Use XMLHttpRequest for progress tracking
+                const xhr = new XMLHttpRequest();
+                
+                // Upload progress tracking
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        updateProgress(percent);
+                        
+                        if (fileSize > 0) {
+                            loadingTitle.textContent = `Uploading ${formatBytes(e.loaded)} of ${formatBytes(e.total)}`;
+                        }
+                    }
                 });
                 
-                const data = await response.json();
+                // When upload starts
+                xhr.addEventListener('loadstart', () => {
+                    setLoading(true, loadingMsg);
+                });
                 
-                if (data.success) {
-                    if (data.result_type === 'image') {
-                        resultDiv.innerHTML = '<img src="' + data.result + '" alt="Result">';
-                    } else {
-                        resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
+                // When server is processing (after upload)
+                xhr.addEventListener('readystatechange', () => {
+                    if (xhr.readyState === 3) { // LOADING
+                        loadingTitle.textContent = 'Processing...';
+                        progressBar.style.width = '100%';
+                        progressText.textContent = '100%';
                     }
-                    resultDiv.style.display = 'block';
-                } else {
-                    errorDiv.textContent = 'Error: ' + data.error;
+                });
+                
+                xhr.addEventListener('load', () => {
+                    setLoading(false);
+                    
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        
+                        if (data.success) {
+                            if (data.result_type === 'image') {
+                                resultDiv.innerHTML = '<img src="' + data.result + '" alt="Result">';
+                            } else {
+                                resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
+                            }
+                            resultDiv.style.display = 'block';
+                        } else {
+                            errorDiv.textContent = 'Error: ' + data.error;
+                            errorDiv.style.display = 'block';
+                        }
+                    } catch (parseError) {
+                        errorDiv.textContent = 'Error: Invalid server response';
+                        errorDiv.style.display = 'block';
+                    }
+                });
+                
+                xhr.addEventListener('error', () => {
+                    setLoading(false);
+                    errorDiv.textContent = 'Error: Network error';
                     errorDiv.style.display = 'block';
-                }
+                });
+                
+                xhr.addEventListener('abort', () => {
+                    setLoading(false);
+                    errorDiv.textContent = 'Upload cancelled';
+                    errorDiv.style.display = 'block';
+                });
+                
+                xhr.addEventListener('timeout', () => {
+                    setLoading(false);
+                    errorDiv.textContent = 'Error: Request timeout';
+                    errorDiv.style.display = 'block';
+                });
+                
+                xhr.open('POST', '{{ submit_url }}');
+                xhr.send(formData);
+                
             } catch (err) {
+                setLoading(false);
                 errorDiv.textContent = 'Error: ' + err.message;
                 errorDiv.style.display = 'block';
             }

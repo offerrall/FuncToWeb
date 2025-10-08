@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.3.0] - 2025-10-08
+
+### Added
+- **Upload Progress Tracking**: Real-time progress bar and file size display during uploads
+  - Visual spinner and overlay while uploading/processing
+  - Dynamic progress percentage (0-100%)
+  - File size display in human-readable format (KB, MB, GB)
+  - Status messages: "Uploading X of Y", "Processing..."
+  - Disabled submit button during upload to prevent duplicate submissions
+
+### Fixed
+- **Debug Mode Compatibility**: Fixed uvicorn.run() crash when running in debug mode
+  - Replaced direct `uvicorn.run()` call with manual server setup using `uvicorn.Config` and `uvicorn.Server`
+  - Resolves `loop_factory` parameter conflict with asyncio debugger patching
+  - Server now starts correctly in both normal and debug modes
+(Thanks to @vmatt for reporting and solving this issue)
+
+### Changed
+- **Optimized File Upload Performance**: Implemented streaming for large file uploads
+  - Replaced full-file memory loading with chunked streaming (8MB chunks)
+  - Reduced memory footprint for large files (1GB+ uploads)
+  - Added configurable `CHUNK_SIZE` and `FILE_BUFFER_SIZE` constants
+  - New `save_uploaded_file()` async function for optimized file handling
+  - Enhanced uvicorn configuration with increased limits:
+    - `limit_concurrency=100` for more simultaneous connections
+    - `limit_max_requests=1000` for longer-running workers
+    - `timeout_keep_alive=30` for persistent connections
+    - `h11_max_incomplete_event_size=16MB` for larger upload buffer
+  - Performance improvement: ~237 MB/s for 1GB files on localhost on normal SSD
+- Replaced `fetch()` with `XMLHttpRequest` in frontend for upload progress tracking
+- Refactored server initialization to use explicit uvicorn configuration object
+- Improved compatibility with Python debugging tools and IDEs
+
 ## [0.2.0] - 2025-10-07
 
 ### Added
