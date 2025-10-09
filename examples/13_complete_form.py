@@ -15,7 +15,7 @@ def complete_profile(
     wake_time: time = time(7, 0),
     newsletter: bool = True,
     notifications: bool = False,
-    avatar: ImageFile = None
+    avatar: ImageFile | None = None,
 ):
     """Complete profile with all input types"""
     return {

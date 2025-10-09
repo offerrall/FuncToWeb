@@ -6,10 +6,11 @@ from func_to_web import ImageFile, Literal, run
 def apply_effect(
     image: ImageFile,
     effect: Literal['blur', 'sharpen', 'contour', 'emboss', 'edge_enhance'] = 'blur',
-    intensity: float = 1.0
+    intensity: float | None = None,
 ):
     """Apply various effects to images"""
     img = Image.open(image)
+    intensity = intensity or 1.0
     
     if effect == 'blur':
         return img.filter(ImageFilter.GaussianBlur(intensity * 5))

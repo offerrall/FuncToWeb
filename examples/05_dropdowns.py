@@ -4,7 +4,7 @@ from func_to_web import Literal, run
 def configure_app(
     theme: Literal['light', 'dark', 'auto'] = 'auto',
     language: Literal['en', 'es', 'fr', 'de'] = 'en',
-    size: Literal['small', 'medium', 'large'] = 'medium'
+    size: Literal['small', 'medium', 'large'] | None = None,
 ):
     """Configure application settings"""
     return {

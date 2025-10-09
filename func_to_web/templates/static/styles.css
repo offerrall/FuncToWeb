@@ -25,6 +25,76 @@ body {
     min-height: 100vh;
 }
 
+/* ==================== LOADING OVERLAY STYLES ==================== */
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 300px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* ==================== FORM PAGE STYLES ==================== */
 
 body.form-page {
@@ -148,10 +218,24 @@ select.was-validated:invalid {
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
+.color-preview.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+.color-preview.disabled:hover {
+    border-color: var(--border);
+    box-shadow: none;
+}
+
 .color-picker-hidden {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 input[type="file"] {
@@ -300,7 +384,6 @@ body.index-page {
     max-width: 900px;
     margin: 0 auto;
     animation: fadeIn 0.3s ease-out;
-    /* Ajuste para el espaciado superior sin el header */
     padding-top: 1rem; 
 }
 
@@ -320,7 +403,6 @@ body.index-page {
     cursor: pointer;
     text-decoration: none;
     color: var(--text);
-    /* Ajustado para centrar el texto verticalmente sin el ícono */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -352,13 +434,10 @@ body.index-page {
     transform: scaleX(1);
 }
 
-/* El estilo .tool-icon fue eliminado a petición tuya */
-
 .tool-name {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text);
-    /* Ajuste de margen para centrar */
     margin-bottom: 0;
 }
 
@@ -425,6 +504,93 @@ body.index-page {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ==================== OPTIONAL FIELDS STYLES ==================== */
+
+.optional-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--text-light);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: lowercase;
+}
+
+.optional-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.toggle-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    user-select: none;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.toggle-switch input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Disabled field styles */
+.optional-field input:disabled,
+.optional-field select:disabled,
+.optional-field textarea:disabled {
+    background-color: var(--bg);
+    color: var(--text-light);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */

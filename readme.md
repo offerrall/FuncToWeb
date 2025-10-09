@@ -1,4 +1,4 @@
-# Func To Web 0.3.0
+# Func To Web 0.4.0
 
 **Transform any Python function into a web interface automatically.**
 
@@ -32,7 +32,7 @@ pip install func-to-web
 
 ## Examples
 
-**Check the `examples/` folder** for 15+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 16+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
@@ -66,6 +66,43 @@ run(example)
 ```
 
 ![Basic Types](images/basic.jpg)
+
+
+### Optional Parameters
+
+Use `Type | None` syntax to make parameters optional with a visual toggle switch:
+
+```python
+from func_to_web import run, Field, Annotated
+
+def create_user(
+    username: str, # Required field
+    age: int | None = None, # Optional, disabled by default
+    email: str | None = "user@example.com", # Optional, enabled with default
+    bio: Annotated[str, Field(max_length=500)] | None = None  # Optional with constraints
+):
+    result = f"Username: {username}"
+    if age:
+        result += f", Age: {age}"
+    if email:
+        result += f", Email: {email}"
+    if bio:
+        result += f", Bio: {bio}"
+    return result
+
+run(create_user)
+```
+
+![Optional Parameters](images/optional_fields.jpg)
+
+**How it works:**
+- Optional fields display a toggle switch to enable/disable them
+- Fields with default values (e.g., `= "default"`) start **enabled**
+- Fields without defaults (e.g., `= None`) start **disabled**
+- Disabled fields automatically send `None` to your function
+- Works with all field types and constraints
+
+![Optional Fields](images/optional.jpg)
 
 ### Special Input Types
 
@@ -264,6 +301,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 - `Email` - Email validation
 - `Literal[...]` - Dropdown selections, static or dynamic
 - `ImageFile`, `DataFile`, `TextFile`, `DocumentFile` - File uploads
+(All input types support optional `| None` for toggles)
 
 ### Validation
 - **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)

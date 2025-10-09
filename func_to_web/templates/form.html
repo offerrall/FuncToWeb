@@ -5,79 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        /* Loading indicator styles */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        
-        .loading-overlay.active {
-            display: flex;
-        }
-        
-        .loading-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            text-align: center;
-            min-width: 300px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .progress-bar-container {
-            width: 100%;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 1rem;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2ecc71);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        .progress-text {
-            margin-top: 0.5rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        button[type="submit"]:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-    </style>
 </head>
 <body class="form-page">
-    <!-- Loading overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
             <div class="spinner"></div>
@@ -103,9 +32,27 @@
                             <label for="{{ field.name }}">{{ field.name }}</label>
                         </div>
                     {% elif field.type == 'select' %}
-                        <div class="field">
-                            <label for="{{ field.name }}">{{ field.name }}</label>
-                            <select name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
+                        <div class="field {% if field.is_optional %}optional-field{% endif %}">
+                            <label for="{{ field.name }}">
+                                {{ field.name }}
+                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                            </label>
+                            {% if field.is_optional %}
+                            <div class="optional-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ field.name }}_optional_toggle" 
+                                           data-optional-toggle="{{ field.name }}"
+                                           {% if field.optional_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enable field</span>
+                            </div>
+                            {% endif %}
+                            <select name="{{ field.name }}" 
+                                    id="{{ field.name }}" 
+                                    {% if field.required %}required{% endif %}
+                                    {% if field.is_optional and not field.optional_enabled %}disabled{% endif %}>
                                 {% for option in field.options %}
                                     <option value="{{ option }}" 
                                             {% if field.default == option %}selected{% endif %}>
@@ -116,8 +63,23 @@
                             <div class="field-error" id="error-{{ field.name }}"></div>
                         </div>
                     {% elif field.type == 'color' %}
-                        <div class="field">
-                            <label for="{{ field.name }}">{{ field.name }}</label>
+                        <div class="field {% if field.is_optional %}optional-field{% endif %}">
+                            <label for="{{ field.name }}">
+                                {{ field.name }}
+                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                            </label>
+                            {% if field.is_optional %}
+                            <div class="optional-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ field.name }}_optional_toggle" 
+                                           data-optional-toggle="{{ field.name }}"
+                                           {% if field.optional_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enable field</span>
+                            </div>
+                            {% endif %}
                             <div class="color-input-wrapper">
                                 <input type="text" 
                                        name="{{ field.name }}" 
@@ -126,11 +88,13 @@
                                        {% if field.get('pattern') %}pattern="{{ field.pattern }}"{% endif %}
                                        {% if field.default is not none %}value="{{ field.default }}"{% endif %}
                                        placeholder="#000000"
-                                       data-color-input>
+                                       data-color-input
+                                       {% if field.is_optional and not field.optional_enabled %}disabled{% endif %}>
                                 <input type="color" 
                                        class="color-picker-hidden"
                                        data-color-picker="{{ field.name }}"
-                                       {% if field.default is not none %}value="{{ field.default }}"{% endif %}>
+                                       {% if field.default is not none %}value="{{ field.default }}"{% endif %}
+                                       {% if field.is_optional and not field.optional_enabled %}disabled{% endif %}>
                                 <div class="color-preview" 
                                      data-color-preview="{{ field.name }}"
                                      style="background-color: {{ field.default or '#000000' }}"
@@ -139,19 +103,50 @@
                             <div class="field-error" id="error-{{ field.name }}"></div>
                         </div>
                     {% elif field.type == 'file' %}
-                        <div class="field">
-                            <label for="{{ field.name }}">{{ field.name }}</label>
+                        <div class="field {% if field.is_optional %}optional-field{% endif %}">
+                            <label for="{{ field.name }}">
+                                {{ field.name }}
+                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                            </label>
+                            {% if field.is_optional %}
+                            <div class="optional-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ field.name }}_optional_toggle" 
+                                           data-optional-toggle="{{ field.name }}"
+                                           {% if field.optional_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enable field</span>
+                            </div>
+                            {% endif %}
                             <input type="file" 
                                    name="{{ field.name }}" 
                                    id="{{ field.name }}"
                                    {% if field.required %}required{% endif %}
                                    {% if field.get('accept') %}accept="{{ field.accept }}"{% endif %}
-                                   class="file-input">
+                                   class="file-input"
+                                   {% if field.is_optional and not field.optional_enabled %}disabled{% endif %}>
                             <div class="field-error" id="error-{{ field.name }}"></div>
                         </div>
                     {% else %}
-                        <div class="field">
-                            <label for="{{ field.name }}">{{ field.name }}</label>
+                        <div class="field {% if field.is_optional %}optional-field{% endif %}">
+                            <label for="{{ field.name }}">
+                                {{ field.name }}
+                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                            </label>
+                            {% if field.is_optional %}
+                            <div class="optional-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ field.name }}_optional_toggle" 
+                                           data-optional-toggle="{{ field.name }}"
+                                           {% if field.optional_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enable field</span>
+                            </div>
+                            {% endif %}
                             <input type="{{ field.type }}" 
                                    name="{{ field.name }}" 
                                    id="{{ field.name }}"
@@ -162,7 +157,8 @@
                                    {% if field.get('minlength') %}minlength="{{ field.minlength }}"{% endif %}
                                    {% if field.get('maxlength') %}maxlength="{{ field.maxlength }}"{% endif %}
                                    {% if field.get('pattern') %}pattern="{{ field.pattern }}"{% endif %}
-                                   {% if field.default is not none %}value="{{ field.default }}"{% endif %}>
+                                   {% if field.default is not none %}value="{{ field.default }}"{% endif %}
+                                   {% if field.is_optional and not field.optional_enabled %}disabled{% endif %}>
                             <div class="field-error" id="error-{{ field.name }}"></div>
                         </div>
                     {% endif %}
@@ -175,244 +171,9 @@
         </div>
     </div> 
     
+    <script src="/static/form.js"></script>
     <script>
-        const form = document.getElementById('form');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
-        const submitBtn = document.getElementById('submitBtn');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingTitle = document.getElementById('loadingTitle');
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        
-        // Show/hide loading overlay
-        function setLoading(show, title = 'Uploading...') {
-            if (show) {
-                loadingOverlay.classList.add('active');
-                loadingTitle.textContent = title;
-                submitBtn.disabled = true;
-                progressBar.style.width = '0%';
-                progressText.textContent = '0%';
-            } else {
-                loadingOverlay.classList.remove('active');
-                submitBtn.disabled = false;
-            }
-        }
-        
-        // Update progress bar
-        function updateProgress(percent) {
-            progressBar.style.width = percent + '%';
-            progressText.textContent = Math.round(percent) + '%';
-        }
-        
-        // Detect file size for custom messages
-        function getFileSize() {
-            const fileInput = form.querySelector('input[type="file"]');
-            if (fileInput && fileInput.files.length > 0) {
-                return fileInput.files[0].size;
-            }
-            return 0;
-        }
-        
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-        
-        document.querySelectorAll('[data-color-input]').forEach(input => {
-            const preview = document.querySelector(`[data-color-preview="${input.name}"]`);
-            const picker = document.querySelector(`[data-color-picker="${input.name}"]`);
-            
-            input.addEventListener('input', (e) => {
-                const value = e.target.value;
-                if (/^#[0-9a-fA-F]{6}$/.test(value) || /^#[0-9a-fA-F]{3}$/.test(value)) {
-                    preview.style.backgroundColor = value;
-                    picker.value = value.length === 4 ? '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3] : value;
-                }
-            });
-            
-            preview.addEventListener('click', () => {
-                picker.click();
-            });
-            
-            picker.addEventListener('input', (e) => {
-                input.value = e.target.value;
-                preview.style.backgroundColor = e.target.value;
-                if (input.classList.contains('was-validated')) {
-                    validateField(input);
-                }
-            });
-        });
-        
-        form.querySelectorAll('input, select').forEach(input => {
-            input.addEventListener('blur', () => validateField(input));
-            input.addEventListener('input', () => {
-                if (input.classList.contains('was-validated')) {
-                    validateField(input);
-                }
-            });
-        });
-        
-        function validateField(input) {
-            const errorEl = document.getElementById(`error-${input.name}`);
-            if (!errorEl) return true;
-            
-            input.classList.add('was-validated');
-            
-            if (!input.validity.valid) {
-                if (input.validity.valueMissing) {
-                    errorEl.textContent = 'This field is required';
-                } else if (input.validity.rangeUnderflow) {
-                    errorEl.textContent = `Minimum value is ${input.min}`;
-                } else if (input.validity.rangeOverflow) {
-                    errorEl.textContent = `Maximum value is ${input.max}`;
-                } else if (input.validity.tooShort) {
-                    errorEl.textContent = `Minimum length is ${input.minLength} characters`;
-                } else if (input.validity.tooLong) {
-                    errorEl.textContent = `Maximum length is ${input.maxLength} characters`;
-                } else if (input.validity.stepMismatch) {
-                    errorEl.textContent = `Value must be a valid number`;
-                } else if (input.validity.typeMismatch) {
-                    if (input.type === 'email') {
-                        errorEl.textContent = 'Please enter a valid email';
-                    } else if (input.type === 'url') {
-                        errorEl.textContent = 'Please enter a valid URL';
-                    } else {
-                        errorEl.textContent = 'Invalid format';
-                    }
-                } else if (input.validity.patternMismatch) {
-                    if (input.dataset.colorInput !== undefined) {
-                        errorEl.textContent = 'Please enter a valid color (#RGB or #RRGGBB)';
-                    } else if (input.type === 'file') {
-                        errorEl.textContent = 'Please select a valid file type';
-                    } else {
-                        errorEl.textContent = 'Invalid format';
-                    }
-                } else {
-                    errorEl.textContent = 'Invalid value';
-                }
-                errorEl.style.display = 'block';
-                return false;
-            } else {
-                errorEl.style.display = 'none';
-                return true;
-            }
-        }
-        
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            let isValid = true;
-            form.querySelectorAll('input:not([type="checkbox"]):not(.color-picker-hidden), select').forEach(input => {
-                if (!validateField(input)) {
-                    isValid = false;
-                }
-            });
-            
-            if (!isValid) {
-                errorDiv.textContent = 'Please fix the errors above';
-                errorDiv.style.display = 'block';
-                resultDiv.style.display = 'none';
-                return;
-            }
-            
-            resultDiv.style.display = 'none';
-            errorDiv.style.display = 'none';
-            
-            // Get file size and customize message
-            const fileSize = getFileSize();
-            let loadingMsg = 'Uploading...';
-            if (fileSize > 0) {
-                loadingMsg = `Uploading ${formatBytes(fileSize)}...`;
-            }
-            
-            setLoading(true, loadingMsg);
-            
-            try {
-                const formData = new FormData(form);
-                
-                // Use XMLHttpRequest for progress tracking
-                const xhr = new XMLHttpRequest();
-                
-                // Upload progress tracking
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percent = (e.loaded / e.total) * 100;
-                        updateProgress(percent);
-                        
-                        if (fileSize > 0) {
-                            loadingTitle.textContent = `Uploading ${formatBytes(e.loaded)} of ${formatBytes(e.total)}`;
-                        }
-                    }
-                });
-                
-                // When upload starts
-                xhr.addEventListener('loadstart', () => {
-                    setLoading(true, loadingMsg);
-                });
-                
-                // When server is processing (after upload)
-                xhr.addEventListener('readystatechange', () => {
-                    if (xhr.readyState === 3) { // LOADING
-                        loadingTitle.textContent = 'Processing...';
-                        progressBar.style.width = '100%';
-                        progressText.textContent = '100%';
-                    }
-                });
-                
-                xhr.addEventListener('load', () => {
-                    setLoading(false);
-                    
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        
-                        if (data.success) {
-                            if (data.result_type === 'image') {
-                                resultDiv.innerHTML = '<img src="' + data.result + '" alt="Result">';
-                            } else {
-                                resultDiv.innerHTML = '<pre>' + JSON.stringify(data.result, null, 2) + '</pre>';
-                            }
-                            resultDiv.style.display = 'block';
-                        } else {
-                            errorDiv.textContent = 'Error: ' + data.error;
-                            errorDiv.style.display = 'block';
-                        }
-                    } catch (parseError) {
-                        errorDiv.textContent = 'Error: Invalid server response';
-                        errorDiv.style.display = 'block';
-                    }
-                });
-                
-                xhr.addEventListener('error', () => {
-                    setLoading(false);
-                    errorDiv.textContent = 'Error: Network error';
-                    errorDiv.style.display = 'block';
-                });
-                
-                xhr.addEventListener('abort', () => {
-                    setLoading(false);
-                    errorDiv.textContent = 'Upload cancelled';
-                    errorDiv.style.display = 'block';
-                });
-                
-                xhr.addEventListener('timeout', () => {
-                    setLoading(false);
-                    errorDiv.textContent = 'Error: Request timeout';
-                    errorDiv.style.display = 'block';
-                });
-                
-                xhr.open('POST', '{{ submit_url }}');
-                xhr.send(formData);
-                
-            } catch (err) {
-                setLoading(false);
-                errorDiv.textContent = 'Error: ' + err.message;
-                errorDiv.style.display = 'block';
-            }
-        });
+        initializeForm('{{ submit_url }}');
     </script>
 </body>
 </html>

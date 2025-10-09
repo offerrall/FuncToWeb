@@ -7,7 +7,8 @@ import tempfile
 from dataclasses import dataclass
 from datetime import date, time
 from pathlib import Path
-from typing import Annotated, Literal, get_args, get_origin
+from typing import Annotated, Literal, get_args, get_origin, Union
+import types
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -50,6 +51,7 @@ class ParamInfo:
     default: any = None # The default value, or None if required
     field_info: any = None # Additional Field or Literal info
     dynamic_func: any = None # Store the dynamic function for later re-execution
+    is_optional: bool = False # True if parameter is Optional (i.e., allows None)
 
 
 def analyze(func):
@@ -73,6 +75,7 @@ def analyze(func):
         t = p.annotation
         f = None
         dynamic_func = None
+        is_optional = False
         
         # Extract base type from Annotated
         if get_origin(t) is Annotated:
@@ -81,29 +84,57 @@ def analyze(func):
             if len(args) > 1:
                 f = args[1]
         
+        # Check for Union types (including | None syntax)
+        if get_origin(t) is types.UnionType or str(get_origin(t)) == 'typing.Union':
+            union_args = get_args(t)
+            
+            # Check if None is in the union (making it optional)
+            if type(None) in union_args:
+                is_optional = True
+                # Remove None from the types and get the actual type
+                non_none_types = [arg for arg in union_args if arg is not type(None)]
+                
+                if len(non_none_types) == 0:
+                    raise TypeError(f"'{name}': Cannot have only None type")
+                elif len(non_none_types) > 1:
+                    raise TypeError(f"'{name}': Union with multiple non-None types not supported")
+                
+                # Extract the actual type
+                t = non_none_types[0]
+                
+                # Check again if this is Annotated
+                if get_origin(t) is Annotated:
+                    args = get_args(t)
+                    t = args[0]
+                    if len(args) > 1 and f is None:
+                        f = args[1]
+        
         # Handle Literal types (dropdowns)
         if get_origin(t) is Literal:
             opts = get_args(t)
             
             # Check if opts contains a single callable (dynamic Literal)
             if len(opts) == 1 and callable(opts[0]):
-                # Store the function for later execution, don't execute now
                 dynamic_func = opts[0]
-                opts = tuple(dynamic_func())
+                result_value = dynamic_func()
+                
+                # Convert result to tuple properly
+                if isinstance(result_value, (list, tuple)):
+                    opts = tuple(result_value)
+                else:
+                    opts = (result_value,)
             
             # Validate options
-            if opts:  # Only validate if we have options
-                types = {type(o) for o in opts}
-                if len(types) > 1:
+            if opts:
+                types_set = {type(o) for o in opts}
+                if len(types_set) > 1:
                     raise TypeError(f"'{name}': mixed types in Literal")
                 if default is not None and default not in opts:
                     raise ValueError(f"'{name}': default '{default}' not in options {opts}")
                 
-                # Store the original Literal type for field info
                 f = Literal[opts] if len(opts) > 0 else t
-                t = types.pop() if types else type(None)
+                t = types_set.pop() if types_set else type(None)
             else:
-                # No options available
                 t = type(None)
         
         if t not in VALID:
@@ -113,7 +144,7 @@ def analyze(func):
         if f and default is not None and hasattr(f, 'metadata'):
             TypeAdapter(Annotated[t, f]).validate_python(default)
         
-        result[name] = ParamInfo(t, default, f, dynamic_func)
+        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional)
     
     return result
 
@@ -135,7 +166,9 @@ def build_form_fields(params_info):
         field = {
             'name': name, 
             'default': info.default,
-            'required': True
+            'required': not info.is_optional,
+            'is_optional': info.is_optional,
+            'optional_enabled': info.default is not None
         }
         
         # Dropdown select
@@ -144,9 +177,15 @@ def build_form_fields(params_info):
             
             # Re-execute dynamic function if present
             if info.dynamic_func is not None:
-                fresh_options = tuple(info.dynamic_func())
+                result_value = info.dynamic_func()
+                
+                # Convert result to tuple properly
+                if isinstance(result_value, (list, tuple)):
+                    fresh_options = tuple(result_value)
+                else:
+                    fresh_options = (result_value,)
+                
                 field['options'] = fresh_options
-                # Update the field_info with fresh options
                 info.field_info = Literal[fresh_options]
             else:
                 field['options'] = get_args(info.field_info)
@@ -215,7 +254,6 @@ def build_form_fields(params_info):
     
     return fields
 
-
 def validate_params(form_data, params_info):
     """
     Validate and convert form data to function parameters.
@@ -235,6 +273,13 @@ def validate_params(form_data, params_info):
     
     for name, info in params_info.items():
         value = form_data.get(name)
+        
+        # Check if optional field is disabled
+        optional_toggle_name = f"{name}_optional_toggle"
+        if info.is_optional and optional_toggle_name not in form_data:
+            # Optional field is disabled, send None
+            validated[name] = None
+            continue
         
         # Checkbox handling
         if info.type is bool:
@@ -259,19 +304,21 @@ def validate_params(form_data, params_info):
         
         # Literal validation
         if get_origin(info.field_info) is Literal:
-            # Re-execute dynamic function if present to get current valid options
-            if info.dynamic_func is not None:
-                opts = tuple(info.dynamic_func())
-            else:
-                opts = get_args(info.field_info)
-            
+            # Convert to correct type
             if info.type is int:
                 value = int(value)
             elif info.type is float:
                 value = float(value)
             
-            if value not in opts:
-                raise ValueError(f"'{name}': value '{value}' not in {opts}")
+            # Only validate against options if Literal is NOT dynamic
+            # Dynamic literals can change between form render and submit
+            if info.dynamic_func is None:
+                # Static literal - validate against fixed options
+                opts = get_args(info.field_info)
+                if value not in opts:
+                    raise ValueError(f"'{name}': value '{value}' not in {opts}")
+            # else: Dynamic literal - skip validation, trust the value from the form
+            
             validated[name] = value
             continue
         
@@ -284,7 +331,7 @@ def validate_params(form_data, params_info):
             adapter = TypeAdapter(Annotated[info.type, info.field_info])
             validated[name] = adapter.validate_python(value)
         else:
-            validated[name] = info.type(value)
+            validated[name] = info.type(value) if value else None
     
     return validated
 
@@ -391,7 +438,6 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
         
         @app.get("/")
         async def form(request: Request):
-            # Re-build fields on each request to get fresh dynamic options
             fields = build_form_fields(params)
             return templates.TemplateResponse(
                 "form.html",
@@ -407,7 +453,6 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                 for name, value in form_data.items():
                     if hasattr(value, 'filename'):
                         suffix = os.path.splitext(value.filename)[1]
-                        # Use streaming to save uploaded files
                         data[name] = await save_uploaded_file(value, suffix)
                     else:
                         data[name] = value
@@ -437,17 +482,14 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                 {"request": request, "tools": tools}
             )
         
-        # Create endpoint for each function
         for func in funcs:
             params = analyze(func)
             func_name = func.__name__.replace('_', ' ').title()
             route = f"/{func.__name__}"
             submit_route = f"{route}/submit"
             
-            # Closure factories to capture loop variables
             def make_form_handler(fn, title, prms, submit_path):
                 async def form_view(request: Request):
-                    # Re-build fields on each request to get fresh dynamic options
                     flds = build_form_fields(prms)
                     return templates.TemplateResponse(
                         "form.html",
@@ -464,7 +506,6 @@ def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | P
                         for name, value in form_data.items():
                             if hasattr(value, 'filename'):
                                 suffix = os.path.splitext(value.filename)[1]
-                                # Usa streaming optimizado para archivos
                                 data[name] = await save_uploaded_file(value, suffix)
                             else:
                                 data[name] = value
