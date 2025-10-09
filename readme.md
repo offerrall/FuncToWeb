@@ -299,7 +299,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 - `Email` - Email validation
 - `Literal[...]` - Dropdown selections, static or dynamic
 - `ImageFile`, `DataFile`, `TextFile`, `DocumentFile` - File uploads
-(All input types support optional `| None` for toggles)
+- (All input types support optional `| None` for toggles)
 
 ### Validation
 - **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)
