@@ -22,7 +22,7 @@ run(divide)
 Open `http://127.0.0.1:8000` in your browser and you'll see an auto-generated form.
 
 ![func-to-web Demo](images/demo.jpg)
-
+> **Note:** Try entering `b=0` to see how errors are automatically handled and displayed in the UI.
 
 ## Installation
 
