@@ -102,8 +102,6 @@ run(create_user)
 - Disabled fields automatically send `None` to your function
 - Works with all field types and constraints
 
-![Optional Fields](images/optional.jpg)
-
 ### Special Input Types
 
 ```python
