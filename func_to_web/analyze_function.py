@@ -6,6 +6,8 @@ import types
 from pydantic import TypeAdapter
 from datetime import date, time
 
+from .types import _OptionalEnabledMarker, _OptionalDisabledMarker
+
 VALID = {int, float, str, bool, date, time}
 
 @dataclass
@@ -50,6 +52,17 @@ class ParamInfo:
             - Default: False
             Example: `name: str | None` has is_optional=True
             Example: `age: int = 25` has is_optional=False (even with default)
+            
+        optional_enabled (bool): Initial state of optional toggle.
+            - Only relevant when is_optional=True
+            - True: toggle starts enabled (field active)
+            - False: toggle starts disabled (field inactive, sends None)
+            - Determined by: explicit marker > default value > False
+            - Default: False
+            Example: `name: str | OptionalEnabled` starts enabled
+            Example: `name: str | OptionalDisabled` starts disabled
+            Example: `name: str | None = "John"` starts enabled (has default)
+            Example: `name: str | None` starts disabled (no default)
     
     """
     type: type
@@ -57,6 +70,7 @@ class ParamInfo:
     field_info: any = None
     dynamic_func: any = None
     is_optional: bool = False
+    optional_enabled: bool = False
 
 def analyze(func):
     """
@@ -75,6 +89,8 @@ def analyze(func):
         ValueError: If Union has multiple non-None types
         ValueError: If default value type doesn't match parameter type
     """
+    from .types import _OptionalEnabledMarker, _OptionalDisabledMarker
+    
     result = {}
     
     for name, p in inspect.signature(func).parameters.items():
@@ -83,6 +99,7 @@ def analyze(func):
         f = None
         dynamic_func = None
         is_optional = False
+        optional_default_enabled = None  # None = auto, True = enabled, False = disabled
         
         # Extract base type from Annotated
         if get_origin(t) is Annotated:
@@ -95,11 +112,40 @@ def analyze(func):
         if get_origin(t) is types.UnionType or str(get_origin(t)) == 'typing.Union':
             union_args = get_args(t)
             
-            # Check if None is in the union (making it optional)
-            if type(None) in union_args:
+            # First pass: detect markers and check for None
+            has_none = type(None) in union_args
+            
+            for arg in union_args:
+                if get_origin(arg) is Annotated:
+                    annotated_args = get_args(arg)
+                    # Check if this is Annotated[None, Marker]
+                    if annotated_args[0] is type(None) and len(annotated_args) > 1:
+                        for marker in annotated_args[1:]:
+                            if isinstance(marker, _OptionalEnabledMarker):
+                                optional_default_enabled = True
+                                is_optional = True
+                            elif isinstance(marker, _OptionalDisabledMarker):
+                                optional_default_enabled = False
+                                is_optional = True
+            
+            # Second pass: extract the actual type (not None, not markers)
+            if has_none or is_optional:
                 is_optional = True
-                # Remove None from the types and get the actual type
-                non_none_types = [arg for arg in union_args if arg is not type(None)]
+                non_none_types = []
+                
+                for arg in union_args:
+                    # Skip plain None
+                    if arg is type(None):
+                        continue
+                    
+                    # Skip Annotated[None, Marker] (the markers)
+                    if get_origin(arg) is Annotated:
+                        annotated_args = get_args(arg)
+                        if annotated_args[0] is type(None):
+                            continue
+                    
+                    # This is the actual type
+                    non_none_types.append(arg)
                 
                 if len(non_none_types) == 0:
                     raise TypeError(f"'{name}': Cannot have only None type")
@@ -109,7 +155,7 @@ def analyze(func):
                 # Extract the actual type
                 t = non_none_types[0]
                 
-                # Check again if this is Annotated
+                # Check again if this is Annotated (for Field constraints)
                 if get_origin(t) is Annotated:
                     args = get_args(t)
                     t = args[0]
@@ -156,6 +202,18 @@ def analyze(func):
         if f and default is not None and hasattr(f, 'metadata'):
             TypeAdapter(Annotated[t, f]).validate_python(default)
         
-        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional)
+        # Determine optional_enabled state
+        # Priority: explicit marker > default value presence > False
+        if optional_default_enabled is not None:
+            # Explicit marker takes priority
+            final_optional_enabled = optional_default_enabled
+        elif default is not None:
+            # Has default value, start enabled
+            final_optional_enabled = True
+        else:
+            # No default, start disabled
+            final_optional_enabled = False
+        
+        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional, final_optional_enabled)
     
     return result

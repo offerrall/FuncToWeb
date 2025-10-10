@@ -1269,3 +1269,463 @@ def test_all_constraints_in_one():
     assert params['age'].field_info is not None
     assert params['username'].field_info is not None
     assert params['rating'].field_info is not None
+
+import pytest
+from datetime import date, time
+from func_to_web import analyze
+from func_to_web.types import OptionalEnabled, OptionalDisabled, Color, Email
+
+
+# Basic OptionalEnabled tests
+def test_optional_enabled_int():
+    def func(x: int | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'x' in params
+    assert params['x'].type == int
+    assert params['x'].default is None
+    assert params['x'].field_info is None
+    assert params['x'].dynamic_func is None
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is True
+
+
+def test_optional_enabled_str():
+    def func(name: str | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'name' in params
+    assert params['name'].type == str
+    assert params['name'].default is None
+    assert params['name'].is_optional is True
+    assert params['name'].optional_enabled is True
+
+
+def test_optional_enabled_float():
+    def func(price: float | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'price' in params
+    assert params['price'].type == float
+    assert params['price'].is_optional is True
+    assert params['price'].optional_enabled is True
+
+
+def test_optional_enabled_bool():
+    def func(active: bool | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'active' in params
+    assert params['active'].type == bool
+    assert params['active'].is_optional is True
+    assert params['active'].optional_enabled is True
+
+
+def test_optional_enabled_date():
+    def func(birthday: date | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'birthday' in params
+    assert params['birthday'].type == date
+    assert params['birthday'].is_optional is True
+    assert params['birthday'].optional_enabled is True
+
+
+def test_optional_enabled_time():
+    def func(meeting: time | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'meeting' in params
+    assert params['meeting'].type == time
+    assert params['meeting'].is_optional is True
+    assert params['meeting'].optional_enabled is True
+
+
+# Basic OptionalDisabled tests
+def test_optional_disabled_int():
+    def func(x: int | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'x' in params
+    assert params['x'].type == int
+    assert params['x'].default is None
+    assert params['x'].field_info is None
+    assert params['x'].dynamic_func is None
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is False
+
+
+def test_optional_disabled_str():
+    def func(name: str | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'name' in params
+    assert params['name'].type == str
+    assert params['name'].default is None
+    assert params['name'].is_optional is True
+    assert params['name'].optional_enabled is False
+
+
+def test_optional_disabled_float():
+    def func(price: float | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'price' in params
+    assert params['price'].type == float
+    assert params['price'].is_optional is True
+    assert params['price'].optional_enabled is False
+
+
+def test_optional_disabled_bool():
+    def func(active: bool | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'active' in params
+    assert params['active'].type == bool
+    assert params['active'].is_optional is True
+    assert params['active'].optional_enabled is False
+
+
+def test_optional_disabled_date():
+    def func(birthday: date | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'birthday' in params
+    assert params['birthday'].type == date
+    assert params['birthday'].is_optional is True
+    assert params['birthday'].optional_enabled is False
+
+
+def test_optional_disabled_time():
+    def func(meeting: time | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'meeting' in params
+    assert params['meeting'].type == time
+    assert params['meeting'].is_optional is True
+    assert params['meeting'].optional_enabled is False
+
+
+# Tests with defaults - OptionalEnabled
+def test_optional_enabled_with_default_int():
+    def func(age: int | OptionalEnabled = 25): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].default == 25
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is True
+
+
+def test_optional_enabled_with_default_str():
+    def func(name: str | OptionalEnabled = "John"): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['name'].type == str
+    assert params['name'].default == "John"
+    assert params['name'].is_optional is True
+    assert params['name'].optional_enabled is True
+
+
+def test_optional_enabled_with_default_float():
+    def func(price: float | OptionalEnabled = 9.99): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['price'].type == float
+    assert params['price'].default == 9.99
+    assert params['price'].is_optional is True
+    assert params['price'].optional_enabled is True
+
+
+# Tests with defaults - OptionalDisabled (marker overrides default)
+def test_optional_disabled_with_default_int():
+    def func(age: int | OptionalDisabled = 25): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].default == 25
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is False  # Marker overrides default
+
+
+def test_optional_disabled_with_default_str():
+    def func(name: str | OptionalDisabled = "John"): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['name'].type == str
+    assert params['name'].default == "John"
+    assert params['name'].is_optional is True
+    assert params['name'].optional_enabled is False  # Marker overrides default
+
+
+def test_optional_disabled_with_default_float():
+    def func(price: float | OptionalDisabled = 9.99): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['price'].type == float
+    assert params['price'].default == 9.99
+    assert params['price'].is_optional is True
+    assert params['price'].optional_enabled is False  # Marker overrides default
+
+
+# Tests with special types
+def test_optional_enabled_color():
+    def func(color: Color | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['color'].type == str
+    assert params['color'].field_info is not None
+    assert params['color'].is_optional is True
+    assert params['color'].optional_enabled is True
+
+
+def test_optional_disabled_color():
+    def func(color: Color | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['color'].type == str
+    assert params['color'].field_info is not None
+    assert params['color'].is_optional is True
+    assert params['color'].optional_enabled is False
+
+
+def test_optional_enabled_email():
+    def func(email: Email | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['email'].type == str
+    assert params['email'].field_info is not None
+    assert params['email'].is_optional is True
+    assert params['email'].optional_enabled is True
+
+
+def test_optional_disabled_email():
+    def func(email: Email | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['email'].type == str
+    assert params['email'].field_info is not None
+    assert params['email'].is_optional is True
+    assert params['email'].optional_enabled is False
+
+
+def test_optional_enabled_color_with_default():
+    def func(color: Color | OptionalEnabled = "#ff0000"): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['color'].type == str
+    assert params['color'].default == "#ff0000"
+    assert params['color'].field_info is not None
+    assert params['color'].is_optional is True
+    assert params['color'].optional_enabled is True
+
+
+def test_optional_disabled_email_with_default():
+    def func(email: Email | OptionalDisabled = "test@example.com"): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['email'].type == str
+    assert params['email'].default == "test@example.com"
+    assert params['email'].field_info is not None
+    assert params['email'].is_optional is True
+    assert params['email'].optional_enabled is False
+
+
+# Tests with constraints
+def test_optional_enabled_with_constraints():
+    from pydantic import Field
+    from typing import Annotated
+    
+    def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].field_info is not None
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is True
+
+
+def test_optional_disabled_with_constraints():
+    from pydantic import Field
+    from typing import Annotated
+    
+    def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].field_info is not None
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is False
+
+
+def test_optional_enabled_with_constraints_and_default():
+    from pydantic import Field
+    from typing import Annotated
+    
+    def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalEnabled = 25): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].default == 25
+    assert params['age'].field_info is not None
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is True
+
+
+def test_optional_disabled_with_constraints_and_default():
+    from pydantic import Field
+    from typing import Annotated
+    
+    def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalDisabled = 25): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['age'].type == int
+    assert params['age'].default == 25
+    assert params['age'].field_info is not None
+    assert params['age'].is_optional is True
+    assert params['age'].optional_enabled is False  # Marker overrides default
+
+
+# Comparison tests: automatic vs explicit behavior
+def test_auto_optional_without_default():
+    """Standard: int | None without default → disabled"""
+    def func(x: int | None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is False  # Auto: disabled (no default)
+
+
+def test_auto_optional_with_default():
+    """Standard: int | None with default → enabled"""
+    def func(x: int | None = 42): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is True  # Auto: enabled (has default)
+
+
+def test_explicit_enabled_overrides_no_default():
+    """Explicit: OptionalEnabled without default → enabled"""
+    def func(x: int | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is True  # Explicit overrides
+
+
+def test_explicit_disabled_overrides_default():
+    """Explicit: OptionalDisabled with default → disabled"""
+    def func(x: int | OptionalDisabled = 42): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].optional_enabled is False  # Explicit overrides
+
+
+# Mixed usage in one function
+def test_mixed_optional_styles():
+    """Test all three styles together"""
+    def func(
+        auto_disabled: int | None,  # Auto: no default → disabled
+        explicit_enabled: int | OptionalEnabled,  # Explicit → enabled
+        auto_enabled: int | None = 10,  # Auto: has default → enabled
+        explicit_disabled: int | OptionalDisabled = 20,  # Explicit → disabled (overrides default)
+    ): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['auto_disabled'].optional_enabled is False
+    assert params['auto_enabled'].optional_enabled is True
+    assert params['explicit_enabled'].optional_enabled is True
+    assert params['explicit_disabled'].optional_enabled is False
+
+
+# Edge cases
+def test_optional_enabled_with_none_default():
+    """OptionalEnabled with explicit None default → still enabled"""
+    def func(x: int | OptionalEnabled = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].default is None
+    assert params['x'].optional_enabled is True  # Marker takes priority
+
+
+def test_optional_disabled_with_none_default():
+    """OptionalDisabled with explicit None default → disabled"""
+    def func(x: int | OptionalDisabled = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['x'].is_optional is True
+    assert params['x'].default is None
+    assert params['x'].optional_enabled is False

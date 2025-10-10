@@ -9,10 +9,23 @@ def _file_pattern(*extensions):
     exts = [e.lstrip('.').lower() for e in extensions]
     return r'^.+\.(' + '|'.join(exts) + r')$'
 
-# Pre-configured type aliases for common input types
+
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
 ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp'))]
 DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
 TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
 DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
+
+
+class _OptionalEnabledMarker:
+    """Internal marker for OptionalEnabled"""
+    pass
+
+class _OptionalDisabledMarker:
+    """Internal marker for OptionalDisabled"""
+    pass
+
+
+OptionalEnabled = Annotated[None, _OptionalEnabledMarker()]
+OptionalDisabled = Annotated[None, _OptionalDisabledMarker()]

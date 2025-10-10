@@ -62,7 +62,7 @@ def build_form_fields(params_info):
             'default': info.default,
             'required': not info.is_optional,
             'is_optional': info.is_optional,
-            'optional_enabled': info.default is not None
+            'optional_enabled': info.optional_enabled
         }
         
         # Dropdown select

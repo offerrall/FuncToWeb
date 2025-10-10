@@ -1,4 +1,4 @@
-# Func To Web 0.4.3
+# Func To Web 0.4.4
 
 **Transform any Python function into a web interface automatically.**
 
@@ -67,27 +67,37 @@ run(example)
 
 ![Basic Types](images/basic.jpg)
 
-
 ### Optional Parameters
 
 Use `Type | None` syntax to make parameters optional with a visual toggle switch:
 
 ```python
+from func_to_web import run
+from func_to_web.types import OptionalEnabled, OptionalDisabled, Email
 from typing import Annotated
 from pydantic import Field
-from func_to_web import run
 
 def create_user(
     username: str,  # Required field
-    age: int | None = None,  # Optional, disabled by default
-    email: str | None = "user@example.com",  # Optional, enabled with default
-    bio: Annotated[str, Field(max_length=500)] | None = None  # Optional with constraints
+    
+    # Automatic behavior (standard Python syntax)
+    age: int | None = None,  # Disabled (no default value)
+    city: str | None = "Madrid",  # Enabled (has default value)
+    
+    # Explicit control (new in 0.4.4)
+    email: Email | OptionalEnabled,  # Always starts enabled
+    phone: str | OptionalDisabled,  # Always starts disabled
+    bio: Annotated[str, Field(max_length=500)] | OptionalDisabled = "Dev",  # Disabled despite default
 ):
     result = f"Username: {username}"
     if age:
         result += f", Age: {age}"
+    if city:
+        result += f", City: {city}"
     if email:
         result += f", Email: {email}"
+    if phone:
+        result += f", Phone: {phone}"
     if bio:
         result += f", Bio: {bio}"
     return result
@@ -99,10 +109,12 @@ run(create_user)
 
 **How it works:**
 - Optional fields display a toggle switch to enable/disable them
-- Fields with default values (e.g., `= "default"`) start **enabled**
-- Fields without defaults (e.g., `= None`) start **disabled**
+- **Automatic mode** (`Type | None`): Enabled if has default value, disabled if no default
+- **Explicit mode** (`Type | OptionalEnabled/OptionalDisabled`): You control the initial state, overriding defaults
 - Disabled fields automatically send `None` to your function
 - Works with all field types and constraints
+
+Use automatic mode for standard Python conventions, or explicit mode when you need precise control over which fields start active.
 
 ### Special Input Types
 
@@ -366,8 +378,9 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Powerful** - Supports all common input types including files
 - **Smart output** - Automatically displays images, plots, and data
 - **Type-safe** - Full Pydantic validation
+- **Optional toggles** - Enable/disable optional fields easily
 - **Client + server validation** - Instant feedback and robust checks
-- **Well-tested** - 272 unit tests ensuring reliability
+- **Well-tested** - 307 unit tests ensuring reliability
 - **Batteries included** - 15+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
@@ -385,11 +398,11 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Testing & Quality Assurance
 
-**272 unit tests** ensuring reliability:
+**307 unit tests** ensuring reliability:
 
 ### Test Coverage
 
-- **96 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction
+- **130 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction
 - **88 tests** - `validate_params()`: Type conversion, constraint validation, optional toggles
 - **88 tests** - `build_form_fields()`: HTML field generation, format conversion, edge cases
 
@@ -407,15 +420,6 @@ pytest tests/test_validate.py -v
 pytest tests/test_build_form_fields.py -v
 ```
 
-### Performance
-
-- **96 analyze tests**: 0.42s
-- **88 validate tests**: 0.53s  
-- **88 build_form tests**: 0.58s
-- **Total**: <2s for complete suite
-
-All tests maintain 100% pass rate with comprehensive coverage of types, constraints, optionals, and error handling.
-
 ## Requirements
 
 - Python 3.12+
@@ -432,7 +436,6 @@ Optional for examples:
 
 Development dependencies:
 - pytest (for running tests)
-- pytest-cov (for coverage reports)
 
 ## Performance Notes
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.4] - 2025-10-11
+
+### Added
+- **Explicit Optional Control**: New `OptionalEnabled` and `OptionalDisabled` markers for precise control over optional field initial state
+  - `Type | OptionalEnabled`: Field always starts enabled, regardless of default value
+  - `Type | OptionalDisabled`: Field always starts disabled, even with default value
+  - Explicit markers override automatic behavior (presence of default value)
+  - Works with all types: basic types, special types (Color, Email), constraints, and Literals
+  - Backwards compatible: standard `Type | None` syntax continues working with automatic behavior
+- **Test Suite for Optional Markers**: 44 tests covering explicit optional control
+  - All basic types with both markers (int, str, float, bool, date, time)
+  - Special types (Color, Email) with markers
+  - Constraints combined with markers
+  - Default value override behavior
+  - Mixed usage (automatic + explicit in same function)
+  - Edge cases (markers with `= None`)
+  - **316 total tests** across all modules (130 + 88 + 88)
+
+### Changed
+- **ParamInfo dataclass**: Added `optional_enabled` field to store initial toggle state
+- **analyze()**: Enhanced Union type detection to identify OptionalEnabled/OptionalDisabled markers
+- **types.py**: Added marker classes and type aliases for explicit optional control
+
 ## [0.4.3] - 2025-10-10
 
 ### Added
