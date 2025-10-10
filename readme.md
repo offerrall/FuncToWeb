@@ -1,4 +1,4 @@
-# Func To Web 0.4.1
+# Func To Web 0.4.2
 
 **Transform any Python function into a web interface automatically.**
 
@@ -373,6 +373,41 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 6. **Result Processing** - Detects return type and formats accordingly
 7. **Display** - Shows results as text, JSON, images, or plots
 8. **Progress Tracking** - Real-time feedback during uploads and processing
+
+
+### Test Coverage
+
+**184 unit tests** covering all core functionality:
+
+- **96 tests for `analyze()`** - Function signature analysis
+  - All basic types (int, float, str, bool, date, time)
+  - Type annotations with Pydantic Field constraints
+  - Special types (Color, Email, File types)
+  - Static and dynamic Literal dropdowns
+  - Optional parameters with Union types
+  - Error cases and edge conditions
+  
+- **88 tests for `validate_params()`** - Form data validation
+  - Type conversion from strings to Python types
+  - Constraint validation (numeric bounds, string length)
+  - Optional parameter toggle behavior
+  - Special input handling (colors, emails, files)
+  - Edge cases (Unicode, special characters, boundary values)
+  - Complex multi-parameter scenarios
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_analyze.py -v
+pytest tests/test_validate.py -v
+
+# Run with coverage report
+pytest tests/ --cov=func_to_web --cov-report=html
+```
 
 ## Requirements
 

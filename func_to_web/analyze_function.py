@@ -21,7 +21,7 @@ class ParamInfo:
             int, float, str, bool, date, or time.
             Example: int, str, date
             
-        default (Any, optional): The default value specified in the function signature.
+        default (Any, optional): The default value specified in the parameter.
             - None if the parameter has no default
             - The actual default value if specified (e.g., 42, "hello", True)
             - Independent of is_optional (a parameter can be optional with or without a default)

@@ -1,5 +1,42 @@
 # Changelog
 
+# Changelog
+
+## [0.4.2] - 2025-10-10
+
+### Added
+- **Comprehensive Test Suite for validate_params()**: Added 88 unit tests for the `validate_params()` function
+  - Tests for all basic type conversions (int, float, str, bool, date, time)
+  - Tests for boolean checkbox handling (checked/unchecked states)
+  - Tests for date and time parsing with various formats
+  - Tests for Field constraint validation (ge, le, gt, lt, min_length, max_length)
+  - Tests for special types (Color with hex expansion, Email with various formats)
+  - Tests for static Literal validation and dynamic Literal flexibility
+  - Tests for optional parameter toggle behavior (enabled/disabled states)
+  - Tests for optional parameters with all types and constraints
+  - Tests for edge cases:
+    - Negative numbers, zero values, very large numbers
+    - Scientific notation for floats
+    - Date/time boundary values (midnight, leap years, end of year)
+    - Unicode characters, special characters, newlines in strings
+    - Empty strings and whitespace handling
+    - Hex color case variations and 3-character expansion
+    - Constraint validation at exact boundaries
+    - Multiple dynamic literals in single function
+  - Tests for complex functions combining multiple parameter types
+  - Full coverage of validate_params() functionality
+  - All 88 tests pass successfully in 0.53 seconds
+
+### Technical Details
+- **Test Organization**: Added `tests/test_validate.py` with comprehensive validation testing
+- **Edge Case Coverage**: 
+  - Numeric: negative values, zero, large numbers (999999999), scientific notation (1.5e10)
+  - Floats: with/without leading zero (0.5 vs .5), leading zeros in integers (00042)
+  - Dates: century boundaries (2000-01-01), leap years (2024-02-29), year end (2024-12-31)
+  - Times: midnight (00:00), noon (12:00), end of day (23:59), with seconds (14:30:45)
+  - Strings: whitespace preservation, special characters, Unicode (Héllo 世界 🌍), newlines
+  - Colors: case variations (#f00, #F00, #ABC), 3-char expansion (#abc → #aabbcc)
+
 ## [0.4.1] - 2025-10-10
 
 ### Added
