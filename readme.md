@@ -1,4 +1,4 @@
-# Func To Web 0.4.2
+# Func To Web 0.4.3
 
 **Transform any Python function into a web interface automatically.**
 
@@ -73,12 +73,14 @@ run(example)
 Use `Type | None` syntax to make parameters optional with a visual toggle switch:
 
 ```python
-from func_to_web import run, Field, Annotated
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run
 
 def create_user(
-    username: str, # Required field
-    age: int | None = None, # Optional, disabled by default
-    email: str | None = "user@example.com", # Optional, enabled with default
+    username: str,  # Required field
+    age: int | None = None,  # Optional, disabled by default
+    email: str | None = "user@example.com",  # Optional, enabled with default
     bio: Annotated[str, Field(max_length=500)] | None = None  # Optional with constraints
 ):
     result = f"Username: {username}"
@@ -105,15 +107,19 @@ run(create_user)
 ### Special Input Types
 
 ```python
-from func_to_web import run, Color, Email
+from func_to_web import run
+from func_to_web.custom_pydantic_types import Color, Email
 
-def special_inputs(
-    favorite_color: Color,  # Color picker
-    contact: Email          # Email validation
+def create_account(
+    email: Email,
+    favorite_color: Color = "#3b82f6",  # Default blue, required
+    secondary_color: Color | None = "#10b981",  # Default green, optional
+    tertiary_color: Color | None = None,  # No default, optional
 ):
-    return f"Color: {favorite_color}, Email: {contact}"
+    """Create account with special input types"""
+    return f"Account for {email} with colors {favorite_color}, {secondary_color}, {tertiary_color}"
 
-run(special_inputs)
+run(create_account)
 ```
 
 ![Color Picker](images/color.jpg)
@@ -121,13 +127,14 @@ run(special_inputs)
 ### File Uploads
 
 ```python
-from func_to_web import run, ImageFile, DataFile, TextFile, DocumentFile
+from func_to_web import run
+from func_to_web.custom_pydantic_types import ImageFile, DataFile, TextFile, DocumentFile
 
 def process_files(
     photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
     data: DataFile,         # .csv, .xlsx, .xls, .json
     notes: TextFile,        # .txt, .md, .log
-    report: DocumentFile,   # .pdf, .doc, .docx
+    report: DocumentFile    # .pdf, .doc, .docx
 ):
     return "Files uploaded!"
 
@@ -212,13 +219,13 @@ The function is called each time the form is generated, ensuring fresh options e
 
 ```python
 from typing import Annotated
-from pydantic import Field
 from func_to_web import run
+from func_to_web.custom_pydantic_types import Field
 
 def register(
-    age: Annotated[int, Field(ge=18, le=120)],              # Min/max values
+    age: Annotated[int, Field(ge=18, le=120)],  # Min/max values
     username: Annotated[str, Field(min_length=3, max_length=20)],  # Length limits
-    rating: Annotated[float, Field(gt=0, lt=5)]             # Exclusive bounds
+    rating: Annotated[float, Field(gt=0, lt=5)]  # Exclusive bounds
 ):
     return f"User {username}, age {age}, rating {rating}"
 
@@ -232,7 +239,8 @@ run(register)
 func-to-web automatically detects and displays images from PIL/Pillow and matplotlib:
 
 ```python
-from func_to_web import run, ImageFile
+from func_to_web import run
+from func_to_web.custom_pydantic_types import ImageFile
 from PIL import Image, ImageFilter
 
 def blur_image(image: ImageFile, radius: int = 5):
@@ -359,6 +367,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Smart output** - Automatically displays images, plots, and data
 - **Type-safe** - Full Pydantic validation
 - **Client + server validation** - Instant feedback and robust checks
+- **Well-tested** - 272 unit tests ensuring reliability
 - **Batteries included** - 15+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
@@ -374,14 +383,13 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 7. **Display** - Shows results as text, JSON, images, or plots
 8. **Progress Tracking** - Real-time feedback during uploads and processing
 
-
 ## Testing & Quality Assurance
 
 **272 unit tests** ensuring reliability:
 
 ### Test Coverage
 
-- **96 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction, constraint validation
+- **96 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction
 - **88 tests** - `validate_params()`: Type conversion, constraint validation, optional toggles
 - **88 tests** - `build_form_fields()`: HTML field generation, format conversion, edge cases
 
@@ -422,6 +430,10 @@ Optional for examples:
 - Matplotlib (for plots)
 - NumPy (for numerical computations)
 
+Development dependencies:
+- pytest (for running tests)
+- pytest-cov (for coverage reports)
+
 ## Performance Notes
 
 ### Startup Performance
@@ -439,6 +451,11 @@ MIT
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+When contributing, please:
+- Add tests for new features
+- Ensure all existing tests pass (`pytest tests/ -v`)
+- Update documentation as needed
 
 ## Author
 
