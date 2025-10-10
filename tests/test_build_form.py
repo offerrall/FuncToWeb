@@ -3,7 +3,7 @@ from datetime import date, time
 from func_to_web import *
 from func_to_web.analyze_function import analyze, ParamInfo
 from func_to_web.build_form_fields import build_form_fields
-
+from func_to_web.custom_pydantic_types import *
 
 def test_int_field():
     def func(x: int):
