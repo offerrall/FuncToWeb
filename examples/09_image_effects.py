@@ -1,4 +1,4 @@
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageFilter
 
 from func_to_web import ImageFile, Literal, run
 

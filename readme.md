@@ -375,39 +375,41 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 8. **Progress Tracking** - Real-time feedback during uploads and processing
 
 
+## Testing & Quality Assurance
+
+**272 unit tests** ensuring reliability:
+
 ### Test Coverage
 
-**184 unit tests** covering all core functionality:
+- **96 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction, constraint validation
+- **88 tests** - `validate_params()`: Type conversion, constraint validation, optional toggles
+- **88 tests** - `build_form_fields()`: HTML field generation, format conversion, edge cases
 
-- **96 tests for `analyze()`** - Function signature analysis
-  - All basic types (int, float, str, bool, date, time)
-  - Type annotations with Pydantic Field constraints
-  - Special types (Color, Email, File types)
-  - Static and dynamic Literal dropdowns
-  - Optional parameters with Union types
-  - Error cases and edge conditions
-  
-- **88 tests for `validate_params()`** - Form data validation
-  - Type conversion from strings to Python types
-  - Constraint validation (numeric bounds, string length)
-  - Optional parameter toggle behavior
-  - Special input handling (colors, emails, files)
-  - Edge cases (Unicode, special characters, boundary values)
-  - Complex multi-parameter scenarios
+**Edge cases covered**: Unicode (😀🚀), negative/large numbers (1e100), scientific notation, leap years, boundary values, empty lists, mixed types
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# All tests
 pytest tests/ -v
 
-# Run specific test file
+# Specific module
 pytest tests/test_analyze.py -v
 pytest tests/test_validate.py -v
+pytest tests/test_build_form_fields.py -v
 
-# Run with coverage report
+# With coverage
 pytest tests/ --cov=func_to_web --cov-report=html
 ```
+
+### Performance
+
+- **96 analyze tests**: 0.42s
+- **88 validate tests**: 0.53s  
+- **88 build_form tests**: 0.58s
+- **Total**: <2s for complete suite
+
+All tests maintain 100% pass rate with comprehensive coverage of types, constraints, optionals, and error handling.
 
 ## Requirements
 

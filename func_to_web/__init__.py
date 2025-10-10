@@ -3,10 +3,9 @@ import base64
 import io
 import os
 import tempfile
-from datetime import date, time
 from pathlib import Path
 from typing import Annotated, Literal, get_args, get_origin
-
+from datetime import date, time
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -16,6 +15,7 @@ from pydantic import Field, TypeAdapter
 
 from .analyze_function import analyze, ParamInfo
 from .validate_params import validate_params
+from .build_form_fields import build_form_fields
 
 
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
@@ -36,114 +36,6 @@ ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gi
 DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
 TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
 DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
-
-PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
-
-
-def build_form_fields(params_info):
-    """
-    Build form field specifications from parameter metadata.
-    Re-executes dynamic functions to get fresh options.
-    
-    Args:
-        params_info: dict mapping parameter names to ParamInfo objects
-        
-    Returns:
-        list: List of field dictionaries for template rendering
-    """
-    fields = []
-    
-    for name, info in params_info.items():
-        field = {
-            'name': name, 
-            'default': info.default,
-            'required': not info.is_optional,
-            'is_optional': info.is_optional,
-            'optional_enabled': info.default is not None
-        }
-        
-        # Dropdown select
-        if get_origin(info.field_info) is Literal:
-            field['type'] = 'select'
-            
-            # Re-execute dynamic function if present
-            if info.dynamic_func is not None:
-                result_value = info.dynamic_func()
-                
-                # Convert result to tuple properly
-                if isinstance(result_value, (list, tuple)):
-                    fresh_options = tuple(result_value)
-                else:
-                    fresh_options = (result_value,)
-                
-                field['options'] = fresh_options
-                info.field_info = Literal[fresh_options]
-            else:
-                field['options'] = get_args(info.field_info)
-            
-        # Checkbox
-        elif info.type is bool:
-            field['type'] = 'checkbox'
-            field['required'] = False
-            
-        # Date picker
-        elif info.type is date:
-            field['type'] = 'date'
-            if isinstance(info.default, date):
-                field['default'] = info.default.isoformat()
-        
-        # Time picker
-        elif info.type is time:
-            field['type'] = 'time'
-            if isinstance(info.default, time):
-                field['default'] = info.default.strftime('%H:%M')
-            
-        # Number input
-        elif info.type in (int, float):
-            field['type'] = 'number'
-            field['step'] = '1' if info.type is int else 'any'
-            
-            # Extract numeric constraints from Pydantic Field
-            if info.field_info and hasattr(info.field_info, 'metadata'):
-                for c in info.field_info.metadata:
-                    cn = type(c).__name__
-                    if cn == 'Ge': field['min'] = c.ge
-                    elif cn == 'Le': field['max'] = c.le
-                    elif cn == 'Gt': field['min'] = c.gt + (1 if info.type is int else 0.01)
-                    elif cn == 'Lt': field['max'] = c.lt - (1 if info.type is int else 0.01)
-                    
-        # Text/email/color/file input
-        else:
-            field['type'] = 'text'
-            
-            if info.field_info and hasattr(info.field_info, 'metadata'):
-                for c in info.field_info.metadata:
-                    cn = type(c).__name__
-                    
-                    # Check for pattern constraints
-                    if hasattr(c, 'pattern') and c.pattern:
-                        pattern = c.pattern
-                        
-                        # File input detection
-                        if pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
-                            field['type'] = 'file'
-                            exts = pattern[6:-2].split('|')
-                            field['accept'] = '.' + ',.'.join(exts)
-                        # Special input types (color, email)
-                        elif pattern in PATTERN_TO_HTML_TYPE:
-                            field['type'] = PATTERN_TO_HTML_TYPE[pattern]
-                        
-                        field['pattern'] = pattern
-                    
-                    # String length constraints
-                    if cn == 'MinLen': 
-                        field['minlength'] = c.min_length
-                    if cn == 'MaxLen':
-                        field['maxlength'] = c.max_length
-        
-        fields.append(field)
-    
-    return fields
 
 
 def process_result(result):

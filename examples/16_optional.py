@@ -1,4 +1,5 @@
-from func_to_web import run, Email, Annotated, Field, ImageFile, Color, date, time, Literal
+from func_to_web import run, Email, Annotated, Field, ImageFile, Color, Literal
+from datetime import date, time
 
 def create_user(
     username: str, # Required field
