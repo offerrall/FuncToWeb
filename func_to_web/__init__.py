@@ -1,23 +1,21 @@
 import asyncio
 import base64
-import inspect
 import io
 import os
 import tempfile
-from dataclasses import dataclass
 from datetime import date, time
 from pathlib import Path
-from typing import Annotated, Literal, get_args, get_origin, Union
-import types
+from typing import Annotated, Literal, get_args, get_origin
 
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import Field, TypeAdapter
 
-VALID = {int, float, str, bool, date, time}
+from .analyze_function import analyze, ParamInfo
+
 
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
@@ -38,115 +36,7 @@ DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'jso
 TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
 DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
 
-PATTERN_TO_HTML_TYPE = {
-    COLOR_PATTERN: 'color',
-    EMAIL_PATTERN: 'email',
-}
-
-
-@dataclass
-class ParamInfo:
-    """Metadata about a function parameter."""
-    type: type # The base type (int, float, str, bool, date, time)
-    default: any = None # The default value, or None if required
-    field_info: any = None # Additional Field or Literal info
-    dynamic_func: any = None # Store the dynamic function for later re-execution
-    is_optional: bool = False # True if parameter is Optional (i.e., allows None)
-
-
-def analyze(func):
-    """
-    Analyze a function's signature and extract parameter metadata.
-    
-    Args:
-        func: The function to analyze
-        
-    Returns:
-        dict: Mapping of parameter names to ParamInfo objects
-        
-    Raises:
-        TypeError: If parameter type is not supported
-        ValueError: If default value doesn't match Literal options
-    """
-    result = {}
-    
-    for name, p in inspect.signature(func).parameters.items():
-        default = None if p.default == inspect.Parameter.empty else p.default
-        t = p.annotation
-        f = None
-        dynamic_func = None
-        is_optional = False
-        
-        # Extract base type from Annotated
-        if get_origin(t) is Annotated:
-            args = get_args(t)
-            t = args[0]
-            if len(args) > 1:
-                f = args[1]
-        
-        # Check for Union types (including | None syntax)
-        if get_origin(t) is types.UnionType or str(get_origin(t)) == 'typing.Union':
-            union_args = get_args(t)
-            
-            # Check if None is in the union (making it optional)
-            if type(None) in union_args:
-                is_optional = True
-                # Remove None from the types and get the actual type
-                non_none_types = [arg for arg in union_args if arg is not type(None)]
-                
-                if len(non_none_types) == 0:
-                    raise TypeError(f"'{name}': Cannot have only None type")
-                elif len(non_none_types) > 1:
-                    raise TypeError(f"'{name}': Union with multiple non-None types not supported")
-                
-                # Extract the actual type
-                t = non_none_types[0]
-                
-                # Check again if this is Annotated
-                if get_origin(t) is Annotated:
-                    args = get_args(t)
-                    t = args[0]
-                    if len(args) > 1 and f is None:
-                        f = args[1]
-        
-        # Handle Literal types (dropdowns)
-        if get_origin(t) is Literal:
-            opts = get_args(t)
-            
-            # Check if opts contains a single callable (dynamic Literal)
-            if len(opts) == 1 and callable(opts[0]):
-                dynamic_func = opts[0]
-                result_value = dynamic_func()
-                
-                # Convert result to tuple properly
-                if isinstance(result_value, (list, tuple)):
-                    opts = tuple(result_value)
-                else:
-                    opts = (result_value,)
-            
-            # Validate options
-            if opts:
-                types_set = {type(o) for o in opts}
-                if len(types_set) > 1:
-                    raise TypeError(f"'{name}': mixed types in Literal")
-                if default is not None and default not in opts:
-                    raise ValueError(f"'{name}': default '{default}' not in options {opts}")
-                
-                f = Literal[opts] if len(opts) > 0 else t
-                t = types_set.pop() if types_set else type(None)
-            else:
-                t = type(None)
-        
-        if t not in VALID:
-            raise TypeError(f"'{name}': {t} not supported")
-        
-        # Validate default value against field constraints
-        if f and default is not None and hasattr(f, 'metadata'):
-            TypeAdapter(Annotated[t, f]).validate_python(default)
-        
-        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional)
-    
-    return result
+PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
 
 
 def build_form_fields(params_info):

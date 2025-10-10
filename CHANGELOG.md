@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.4.1] - 2025-10-10
+
+### Added
+- **Comprehensive Test Suite**: Added 96 unit tests for the `analyze()` function
+  - Tests for all basic types (int, float, str, bool, date, time)
+  - Tests for type annotations with Field constraints (ge, le, gt, lt, min_length, max_length)
+  - Tests for special types (Color, Email, ImageFile, DataFile, TextFile, DocumentFile)
+  - Tests for static and dynamic Literal dropdowns
+  - Tests for optional parameters (Type | None) with and without defaults
+  - Tests for error cases (unsupported types, invalid defaults, type mismatches)
+  - Tests for complex functions combining multiple features
+  - Full coverage of analyze() functionality
+
+### Fixed
+- **Default Value Type Validation**: Added type checking for default values in `analyze()`
+  - Default values must match their parameter type (e.g., `int = "string"` now raises TypeError)
+  - Validation skips optional parameters and Literal types (which have their own validation)
+  - Prevents runtime errors from type mismatches between defaults and parameter types
+  - Error message: `"'{param}': default value type mismatch"`
+
+### Changed
+- **Code Refactoring**: Improved code organization and maintainability
+  - Extracted `analyze()` function and `ParamInfo` dataclass to separate module `analyze_function.py`
+  - Cleaner separation of concerns between analysis logic and web interface
+  - Easier to test and maintain individual components
+  - `__init__.py` now focuses on web interface functionality
+- **Testing Infrastructure**: Set up pytest-based testing framework
+  - Organized tests in `tests/` directory
+  - Tests run with: `pytest tests/test_analyze.py -v`
+
 ## [0.4.0] - 2025-10-09
 
 ### Added

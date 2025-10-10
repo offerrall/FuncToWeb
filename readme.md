@@ -1,4 +1,4 @@
-# Func To Web 0.4.0
+# Func To Web 0.4.1
 
 **Transform any Python function into a web interface automatically.**
 
