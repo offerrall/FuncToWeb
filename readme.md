@@ -397,9 +397,6 @@ pytest tests/ -v
 pytest tests/test_analyze.py -v
 pytest tests/test_validate.py -v
 pytest tests/test_build_form_fields.py -v
-
-# With coverage
-pytest tests/ --cov=func_to_web --cov-report=html
 ```
 
 ### Performance
