@@ -7,7 +7,7 @@ from func_to_web import Annotated, Field, run
 def plot_sine(
     frequency: Annotated[float, Field(ge=0.1, le=10)] = 1.0,
     amplitude: Annotated[float, Field(ge=0.1, le=10)] = 1.0,
-    phase: Annotated[float, Field(ge=0, le=6.28)] = 0
+    phase: Annotated[float, Field(ge=0, le=6.28)] = 0.0
 ):
     """Plot a sine wave with custom parameters"""
     x = np.linspace(0, 10, 1000)
