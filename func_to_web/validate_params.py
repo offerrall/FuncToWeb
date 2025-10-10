@@ -5,7 +5,7 @@ from pydantic import TypeAdapter
 from .analyze_function import ParamInfo
 
 
-def validate_params(form_data, params_info):
+def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
     """
     Validate and convert form data to function parameters.
     
