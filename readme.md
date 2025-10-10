@@ -108,7 +108,7 @@ run(create_user)
 
 ```python
 from func_to_web import run
-from func_to_web.custom_pydantic_types import Color, Email
+from func_to_web.types import Color, Email
 
 def create_account(
     email: Email,
@@ -128,7 +128,7 @@ run(create_account)
 
 ```python
 from func_to_web import run
-from func_to_web.custom_pydantic_types import ImageFile, DataFile, TextFile, DocumentFile
+from func_to_web.types import ImageFile, DataFile, TextFile, DocumentFile
 
 def process_files(
     photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
@@ -220,7 +220,7 @@ The function is called each time the form is generated, ensuring fresh options e
 ```python
 from typing import Annotated
 from func_to_web import run
-from func_to_web.custom_pydantic_types import Field
+from func_to_web.types import Field
 
 def register(
     age: Annotated[int, Field(ge=18, le=120)],  # Min/max values
@@ -240,7 +240,7 @@ func-to-web automatically detects and displays images from PIL/Pillow and matplo
 
 ```python
 from func_to_web import run
-from func_to_web.custom_pydantic_types import ImageFile
+from func_to_web.types import ImageFile
 from PIL import Image, ImageFilter
 
 def blur_image(image: ImageFile, radius: int = 5):

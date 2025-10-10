@@ -1,7 +1,7 @@
 from datetime import date, time
 from typing import Literal, get_args, get_origin
 
-from .custom_pydantic_types import COLOR_PATTERN, EMAIL_PATTERN
+from .types import COLOR_PATTERN, EMAIL_PATTERN
 
 PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
 

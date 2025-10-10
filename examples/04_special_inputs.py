@@ -1,5 +1,5 @@
 from func_to_web import run
-from func_to_web.custom_pydantic_types import Color, Email
+from func_to_web.types import Color, Email
 
 
 def create_account(

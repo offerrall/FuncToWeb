@@ -1,5 +1,5 @@
 from func_to_web import run, Annotated, Field, Literal
-from func_to_web.custom_pydantic_types import Color, Email, ImageFile
+from func_to_web.types import Color, Email, ImageFile
 from datetime import date, time
 
 def create_user(

@@ -2,7 +2,7 @@ import pytest
 from datetime import date, time
 from func_to_web import *
 from func_to_web.validate_params import validate_params
-from func_to_web.custom_pydantic_types import *
+from func_to_web.types import *
 
 def test_int_parameter():
     def func(x: int): 
