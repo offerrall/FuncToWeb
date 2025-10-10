@@ -15,6 +15,7 @@
 ### Changed
 - **Code Refactoring**: Extracted `build_form_fields()` to dedicated module
   - New module: `build_form_fields.py` with pattern constants
+  - New module: `process_result.py` for result handling
   - New module for custom patterns: `custom_pydantic_types.py`
   - Three core modules: `analyze_function.py`, `validate_params.py`, `build_form_fields.py`
   - **272 total tests** across all modules (96 + 88 + 88)
