@@ -1,12 +1,9 @@
 from datetime import date, time
 from typing import Literal, get_args, get_origin
 
-
-COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
-EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
+from .custom_pydantic_types import COLOR_PATTERN, EMAIL_PATTERN
 
 PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
-
 
 def build_form_fields(params_info):
     """
