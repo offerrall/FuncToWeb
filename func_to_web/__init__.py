@@ -16,6 +16,7 @@ from pydantic import Field, TypeAdapter
 from .analyze_function import analyze, ParamInfo
 from .validate_params import validate_params
 from .build_form_fields import build_form_fields
+from .process_result import process_result
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 FILE_BUFFER_SIZE = 8 * 1024 * 1024  # 8MB
