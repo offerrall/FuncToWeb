@@ -2,12 +2,7 @@ import pytest
 from func_to_web import *
 
 
-# ==============================================
-# TESTS BÁSICOS - TIPOS SIMPLES
-# ==============================================
-
 def test_int_parameter():
-
     def func(x: int): 
         pass
     
@@ -22,7 +17,6 @@ def test_int_parameter():
 
 
 def test_float_parameter():
-
     def func(price: float): 
         pass
     
@@ -37,7 +31,6 @@ def test_float_parameter():
 
 
 def test_str_parameter():
-
     def func(name: str): 
         pass
     
@@ -52,7 +45,6 @@ def test_str_parameter():
 
 
 def test_bool_parameter():
-
     def func(active: bool): 
         pass
     
@@ -67,7 +59,6 @@ def test_bool_parameter():
 
 
 def test_date_parameter():
-
     def func(birthday: date): 
         pass
     
@@ -82,7 +73,6 @@ def test_date_parameter():
 
 
 def test_time_parameter():
-
     def func(meeting: time): 
         pass
     
@@ -96,12 +86,7 @@ def test_time_parameter():
     assert params['meeting'].is_optional is False
 
 
-# ==============================================
-# TESTS DE ERRORES - TIPOS NO SOPORTADOS
-# ==============================================
-
 def test_dict_type_raises():
-
     with pytest.raises(TypeError, match="not supported"):
         def func(data: dict): 
             pass
@@ -109,7 +94,6 @@ def test_dict_type_raises():
 
 
 def test_list_type_raises():
-
     with pytest.raises(TypeError, match="not supported"):
         def func(items: list): 
             pass
@@ -117,7 +101,6 @@ def test_list_type_raises():
 
 
 def test_set_type_raises():
-
     with pytest.raises(TypeError, match="not supported"):
         def func(items: set): 
             pass
@@ -125,7 +108,6 @@ def test_set_type_raises():
 
 
 def test_tuple_type_raises():
-
     with pytest.raises(TypeError, match="not supported"):
         def func(items: tuple): 
             pass
@@ -133,7 +115,6 @@ def test_tuple_type_raises():
 
 
 def test_custom_class_raises():
-
     class CustomClass: 
         pass
     
@@ -144,7 +125,6 @@ def test_custom_class_raises():
 
 
 def test_any_type_raises():
-
     from typing import Any
     
     with pytest.raises(TypeError, match="not supported"):
@@ -154,19 +134,13 @@ def test_any_type_raises():
 
 
 def test_none_type_raises():
-
     with pytest.raises(TypeError, match="not supported"):
         def func(data: None): 
             pass
         analyze(func)
 
 
-# ==============================================
-# TESTS CON DEFAULTS
-# ==============================================
-
 def test_int_with_default():
-
     def func(age: int = 25): 
         pass
     
@@ -181,7 +155,6 @@ def test_int_with_default():
 
 
 def test_str_with_default():
-
     def func(name: str = "John"): 
         pass
     
@@ -196,7 +169,6 @@ def test_str_with_default():
 
 
 def test_bool_with_default():
-
     def func(active: bool = True): 
         pass
     
@@ -211,7 +183,6 @@ def test_bool_with_default():
 
 
 def test_float_with_default():
-
     def func(price: float = 9.99): 
         pass
     
@@ -226,7 +197,6 @@ def test_float_with_default():
 
 
 def test_date_with_default():
-
     default_date = date(2000, 1, 1)
     
     def func(birthday: date = default_date): 
@@ -243,7 +213,6 @@ def test_date_with_default():
 
 
 def test_time_with_default():
-
     default_time = time(14, 30)
     
     def func(meeting: time = default_time): 
@@ -258,12 +227,8 @@ def test_time_with_default():
     assert params['meeting'].dynamic_func is None
     assert params['meeting'].is_optional is False
 
-# ==============================================
-# TESTS DE ERRORES - DEFAULTS DE TIPO INCORRECTO
-# ==============================================
 
 def test_int_with_str_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(age: int = "twenty"): 
             pass
@@ -271,7 +236,6 @@ def test_int_with_str_default_raises():
 
 
 def test_float_with_str_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(price: float = "nine"): 
             pass
@@ -279,7 +243,6 @@ def test_float_with_str_default_raises():
 
 
 def test_bool_with_int_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(active: bool = 1): 
             pass
@@ -287,7 +250,6 @@ def test_bool_with_int_default_raises():
 
 
 def test_date_with_str_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(birthday: date = "2000-01-01"): 
             pass
@@ -295,7 +257,6 @@ def test_date_with_str_default_raises():
 
 
 def test_time_with_str_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(meeting: time = "14:30"): 
             pass
@@ -303,18 +264,13 @@ def test_time_with_str_default_raises():
 
 
 def test_str_with_int_default_raises():
-
     with pytest.raises((TypeError, ValueError)):
         def func(name: str = 123): 
             pass
         analyze(func)
 
-# ==============================================
-# TESTS CON ANNOTATED Y FIELD
-# ==============================================
 
 def test_int_with_constraints():
-
     def func(age: Annotated[int, Field(ge=0, le=120)]): 
         pass
     
@@ -329,7 +285,6 @@ def test_int_with_constraints():
 
 
 def test_int_with_ge_only():
-
     def func(age: Annotated[int, Field(ge=18)]): 
         pass
     
@@ -344,7 +299,6 @@ def test_int_with_ge_only():
 
 
 def test_int_with_le_only():
-
     def func(age: Annotated[int, Field(le=100)]): 
         pass
     
@@ -359,7 +313,6 @@ def test_int_with_le_only():
 
 
 def test_float_with_gt_lt():
-
     def func(rating: Annotated[float, Field(gt=0, lt=5)]): 
         pass
     
@@ -374,7 +327,6 @@ def test_float_with_gt_lt():
 
 
 def test_str_with_length_constraints():
-
     def func(username: Annotated[str, Field(min_length=3, max_length=20)]): 
         pass
     
@@ -389,7 +341,6 @@ def test_str_with_length_constraints():
 
 
 def test_str_with_min_length_only():
-
     def func(password: Annotated[str, Field(min_length=8)]): 
         pass
     
@@ -404,7 +355,6 @@ def test_str_with_min_length_only():
 
 
 def test_str_with_max_length_only():
-
     def func(bio: Annotated[str, Field(max_length=500)]): 
         pass
     
@@ -419,7 +369,6 @@ def test_str_with_max_length_only():
 
 
 def test_annotated_with_default():
-
     def func(age: Annotated[int, Field(ge=0, le=120)] = 25): 
         pass
     
@@ -434,7 +383,6 @@ def test_annotated_with_default():
 
 
 def test_annotated_str_with_default():
-
     def func(username: Annotated[str, Field(min_length=3, max_length=20)] = "john"): 
         pass
     
@@ -448,12 +396,7 @@ def test_annotated_str_with_default():
     assert params['username'].is_optional is False
 
 
-# ==============================================
-# TESTS DE ERRORES - ANNOTATED CON DEFAULT INVÁLIDO
-# ==============================================
-
 def test_annotated_int_default_below_minimum_raises():
-
     with pytest.raises(ValueError):
         def func(age: Annotated[int, Field(ge=18)] = 10): 
             pass
@@ -461,7 +404,6 @@ def test_annotated_int_default_below_minimum_raises():
 
 
 def test_annotated_int_default_above_maximum_raises():
-
     with pytest.raises(ValueError):
         def func(age: Annotated[int, Field(le=100)] = 150): 
             pass
@@ -469,7 +411,6 @@ def test_annotated_int_default_above_maximum_raises():
 
 
 def test_annotated_str_default_too_short_raises():
-
     with pytest.raises(ValueError):
         def func(username: Annotated[str, Field(min_length=5)] = "ab"): 
             pass
@@ -477,7 +418,6 @@ def test_annotated_str_default_too_short_raises():
 
 
 def test_annotated_str_default_too_long_raises():
-
     with pytest.raises(ValueError):
         def func(bio: Annotated[str, Field(max_length=10)] = "a" * 20): 
             pass
@@ -485,7 +425,6 @@ def test_annotated_str_default_too_long_raises():
 
 
 def test_annotated_float_default_below_gt_raises():
-
     with pytest.raises(ValueError):
         def func(rating: Annotated[float, Field(gt=0)] = 0.0): 
             pass
@@ -493,18 +432,13 @@ def test_annotated_float_default_below_gt_raises():
 
 
 def test_annotated_float_default_above_lt_raises():
-
     with pytest.raises(ValueError):
         def func(rating: Annotated[float, Field(lt=5)] = 5.0): 
             pass
         analyze(func)
 
-# ==============================================
-# TESTS CON TIPOS ESPECIALES (Color, Email, Files)
-# ==============================================
 
 def test_color_type():
-    """Test: Color type (str con patrón hex)."""
     def func(color: Color): 
         pass
     
@@ -519,7 +453,6 @@ def test_color_type():
 
 
 def test_color_with_default():
-    """Test: Color con default válido."""
     def func(color: Color = "#ff0000"): 
         pass
     
@@ -534,7 +467,6 @@ def test_color_with_default():
 
 
 def test_email_type():
-    """Test: Email type (str con patrón email)."""
     def func(email: Email): 
         pass
     
@@ -549,7 +481,6 @@ def test_email_type():
 
 
 def test_email_with_default():
-    """Test: Email con default válido."""
     def func(email: Email = "test@example.com"): 
         pass
     
@@ -564,7 +495,6 @@ def test_email_with_default():
 
 
 def test_image_file_type():
-    """Test: ImageFile type."""
     def func(photo: ImageFile): 
         pass
     
@@ -579,7 +509,6 @@ def test_image_file_type():
 
 
 def test_data_file_type():
-    """Test: DataFile type."""
     def func(data: DataFile): 
         pass
     
@@ -594,7 +523,6 @@ def test_data_file_type():
 
 
 def test_text_file_type():
-    """Test: TextFile type."""
     def func(notes: TextFile): 
         pass
     
@@ -609,7 +537,6 @@ def test_text_file_type():
 
 
 def test_document_file_type():
-    """Test: DocumentFile type."""
     def func(report: DocumentFile): 
         pass
     
@@ -623,12 +550,7 @@ def test_document_file_type():
     assert params['report'].is_optional is False
 
 
-# ==============================================
-# TESTS DE ERRORES - TIPOS ESPECIALES CON DEFAULTS INVÁLIDOS
-# ==============================================
-
 def test_color_with_invalid_default_raises():
-    """Test: Color con default inválido debe fallar."""
     with pytest.raises(ValueError):
         def func(color: Color = "red"): 
             pass
@@ -636,7 +558,6 @@ def test_color_with_invalid_default_raises():
 
 
 def test_color_with_invalid_hex_default_raises():
-    """Test: Color con hex inválido debe fallar."""
     with pytest.raises(ValueError):
         def func(color: Color = "#gggggg"): 
             pass
@@ -644,7 +565,6 @@ def test_color_with_invalid_hex_default_raises():
 
 
 def test_email_with_invalid_default_raises():
-    """Test: Email con default sin @ debe fallar."""
     with pytest.raises(ValueError):
         def func(email: Email = "notanemail"): 
             pass
@@ -652,18 +572,13 @@ def test_email_with_invalid_default_raises():
 
 
 def test_email_with_invalid_format_raises():
-    """Test: Email con formato inválido debe fallar."""
     with pytest.raises(ValueError):
         def func(email: Email = "@example.com"): 
             pass
         analyze(func)
 
-# ==============================================
-# TESTS CON LITERAL (DROPDOWNS ESTÁTICOS)
-# ==============================================
 
 def test_literal_string():
-    """Test: Literal con strings."""
     def func(theme: Literal['light', 'dark', 'auto']): 
         pass
     
@@ -678,7 +593,6 @@ def test_literal_string():
 
 
 def test_literal_int():
-    """Test: Literal con integers."""
     def func(size: Literal[1, 2, 3]): 
         pass
     
@@ -693,8 +607,7 @@ def test_literal_int():
 
 
 def test_literal_float():
-    """Test: Literal con floats."""
-    def func(multiplier: Literal[0.5, 1.0, 1.5, 2.0]):  # type: ignore
+    def func(multiplier: Literal[0.5, 1.0, 1.5, 2.0]):
         pass
     
     params = analyze(func)
@@ -708,7 +621,6 @@ def test_literal_float():
 
 
 def test_literal_bool():
-    """Test: Literal con bools."""
     def func(enabled: Literal[True, False]): 
         pass
     
@@ -723,7 +635,6 @@ def test_literal_bool():
 
 
 def test_literal_with_default():
-    """Test: Literal con valor por defecto válido."""
     def func(theme: Literal['light', 'dark'] = 'light'): 
         pass
     
@@ -738,7 +649,6 @@ def test_literal_with_default():
 
 
 def test_literal_single_option():
-    """Test: Literal con una sola opción."""
     def func(mode: Literal['readonly']): 
         pass
     
@@ -752,12 +662,7 @@ def test_literal_single_option():
     assert params['mode'].is_optional is False
 
 
-# ==============================================
-# TESTS DE ERRORES - LITERAL
-# ==============================================
-
 def test_literal_invalid_default_raises():
-    """Test: Literal con default no en opciones debe fallar."""
     with pytest.raises(ValueError, match="not in options"):
         def func(theme: Literal['light', 'dark'] = 'neon'): 
             pass
@@ -765,7 +670,6 @@ def test_literal_invalid_default_raises():
 
 
 def test_literal_mixed_types_raises():
-    """Test: Literal con tipos mezclados debe fallar."""
     with pytest.raises(TypeError, match="mixed types"):
         def func(x: Literal[1, 'two', 3]): 
             pass
@@ -773,23 +677,17 @@ def test_literal_mixed_types_raises():
 
 
 def test_literal_mixed_int_float_raises():
-    """Test: Literal mezclando int y float debe fallar."""
     with pytest.raises(TypeError, match="mixed types"):
-        def func(x: Literal[1, 2.5, 3]): #type: ignore
+        def func(x: Literal[1, 2.5, 3]):
             pass
         analyze(func)
 
 
-# ==============================================
-# TESTS CON LITERAL DINÁMICO
-# ==============================================
-
 def test_dynamic_literal_function():
-    """Test: Literal con función que retorna lista."""
     def get_options():
         return ['A', 'B', 'C']
     
-    def func(choice: Literal[get_options]): # type: ignore
+    def func(choice: Literal[get_options]):
         pass
     
     params = analyze(func)
@@ -803,11 +701,10 @@ def test_dynamic_literal_function():
 
 
 def test_dynamic_literal_single_string():
-    """Test: Literal dinámico que retorna string único (bug fix 0.4.0)."""
     def get_option():
         return "Hello"
     
-    def func(choice: Literal[get_option]): # type: ignore
+    def func(choice: Literal[get_option]):
         pass
     
     params = analyze(func)
@@ -821,11 +718,10 @@ def test_dynamic_literal_single_string():
 
 
 def test_dynamic_literal_returns_tuple():
-    """Test: Literal dinámico que retorna tupla."""
     def get_options():
         return ('X', 'Y', 'Z')
     
-    def func(choice: Literal[get_options]): # type: ignore
+    def func(choice: Literal[get_options]):
         pass
     
     params = analyze(func)
@@ -839,11 +735,10 @@ def test_dynamic_literal_returns_tuple():
 
 
 def test_dynamic_literal_with_ints():
-    """Test: Literal dinámico que retorna integers."""
     def get_numbers():
         return [1, 2, 3, 4, 5]
     
-    def func(number: Literal[get_numbers]): # type: ignore
+    def func(number: Literal[get_numbers]):
         pass
     
     params = analyze(func)
@@ -857,11 +752,10 @@ def test_dynamic_literal_with_ints():
 
 
 def test_dynamic_literal_with_floats():
-    """Test: Literal dinámico que retorna floats."""
     def get_values():
         return [0.1, 0.5, 1.0]
     
-    def func(value: Literal[get_values]): # type: ignore
+    def func(value: Literal[get_values]):
         pass
     
     params = analyze(func)
@@ -873,12 +767,8 @@ def test_dynamic_literal_with_floats():
     assert params['value'].dynamic_func is get_values
     assert params['value'].is_optional is False
 
-# ==============================================
-# TESTS CON PARÁMETROS OPCIONALES (| None)
-# ==============================================
 
 def test_optional_int():
-    """Test: int | None sin default."""
     def func(x: int | None): 
         pass
     
@@ -893,7 +783,6 @@ def test_optional_int():
 
 
 def test_optional_float():
-    """Test: float | None sin default."""
     def func(price: float | None): 
         pass
     
@@ -908,7 +797,6 @@ def test_optional_float():
 
 
 def test_optional_str():
-    """Test: str | None sin default."""
     def func(name: str | None): 
         pass
     
@@ -923,7 +811,6 @@ def test_optional_str():
 
 
 def test_optional_bool():
-    """Test: bool | None sin default."""
     def func(active: bool | None): 
         pass
     
@@ -938,7 +825,6 @@ def test_optional_bool():
 
 
 def test_optional_date():
-    """Test: date | None sin default."""
     def func(birthday: date | None): 
         pass
     
@@ -953,7 +839,6 @@ def test_optional_date():
 
 
 def test_optional_time():
-    """Test: time | None sin default."""
     def func(meeting: time | None): 
         pass
     
@@ -967,12 +852,7 @@ def test_optional_time():
     assert params['meeting'].is_optional is True
 
 
-# ==============================================
-# TESTS OPCIONALES CON DEFAULT
-# ==============================================
-
 def test_optional_int_with_default():
-    """Test: int | None con default."""
     def func(age: int | None = 25): 
         pass
     
@@ -987,7 +867,6 @@ def test_optional_int_with_default():
 
 
 def test_optional_str_with_default():
-    """Test: str | None con default."""
     def func(name: str | None = "John"): 
         pass
     
@@ -1002,7 +881,6 @@ def test_optional_str_with_default():
 
 
 def test_optional_without_default():
-    """Test: str | None con default = None."""
     def func(email: str | None = None): 
         pass
     
@@ -1017,7 +895,6 @@ def test_optional_without_default():
 
 
 def test_optional_float_with_default():
-    """Test: float | None con default."""
     def func(price: float | None = 9.99): 
         pass
     
@@ -1032,7 +909,6 @@ def test_optional_float_with_default():
 
 
 def test_optional_bool_with_default():
-    """Test: bool | None con default."""
     def func(active: bool | None = True): 
         pass
     
@@ -1047,7 +923,6 @@ def test_optional_bool_with_default():
 
 
 def test_optional_date_with_default():
-    """Test: date | None con default."""
     default_date = date(2000, 1, 1)
     
     def func(birthday: date | None = default_date): 
@@ -1064,7 +939,6 @@ def test_optional_date_with_default():
 
 
 def test_optional_time_with_default():
-    """Test: time | None con default."""
     default_time = time(14, 30)
     
     def func(meeting: time | None = default_time): 
@@ -1080,12 +954,7 @@ def test_optional_time_with_default():
     assert params['meeting'].is_optional is True
 
 
-# ==============================================
-# TESTS OPCIONALES CON ANNOTATED + FIELD
-# ==============================================
-
 def test_optional_with_constraints():
-    """Test: Optional con Field constraints."""
     def func(age: Annotated[int, Field(ge=18)] | None = None): 
         pass
     
@@ -1100,7 +969,6 @@ def test_optional_with_constraints():
 
 
 def test_optional_with_constraints_and_default():
-    """Test: Optional con Field constraints y default."""
     def func(age: Annotated[int, Field(ge=18, le=100)] | None = 25): 
         pass
     
@@ -1115,7 +983,6 @@ def test_optional_with_constraints_and_default():
 
 
 def test_optional_str_with_length():
-    """Test: Optional str con length constraints."""
     def func(username: Annotated[str, Field(min_length=3)] | None = None): 
         pass
     
@@ -1129,12 +996,7 @@ def test_optional_str_with_length():
     assert params['username'].is_optional is True
 
 
-# ==============================================
-# TESTS OPCIONALES CON TIPOS ESPECIALES
-# ==============================================
-
 def test_optional_color():
-    """Test: Color | None."""
     def func(color: Color | None = None): 
         pass
     
@@ -1149,7 +1011,6 @@ def test_optional_color():
 
 
 def test_optional_email():
-    """Test: Email | None."""
     def func(email: Email | None = None): 
         pass
     
@@ -1164,7 +1025,6 @@ def test_optional_email():
 
 
 def test_optional_image_file():
-    """Test: ImageFile | None."""
     def func(photo: ImageFile | None = None): 
         pass
     
@@ -1178,12 +1038,7 @@ def test_optional_image_file():
     assert params['photo'].is_optional is True
 
 
-# ==============================================
-# TESTS OPCIONALES CON LITERAL
-# ==============================================
-
 def test_optional_literal():
-    """Test: Literal | None."""
     def func(theme: Literal['light', 'dark'] | None = None): 
         pass
     
@@ -1198,7 +1053,6 @@ def test_optional_literal():
 
 
 def test_optional_literal_with_default():
-    """Test: Literal | None con default válido."""
     def func(theme: Literal['light', 'dark'] | None = 'light'): 
         pass
     
@@ -1212,12 +1066,7 @@ def test_optional_literal_with_default():
     assert params['theme'].is_optional is True
 
 
-# ==============================================
-# TESTS DE ERRORES - OPTIONAL
-# ==============================================
-
 def test_optional_only_none_raises():
-    """Test: Solo None (sin otro tipo) debe fallar."""
     from typing import Union
     
     with pytest.raises(TypeError):
@@ -1225,37 +1074,28 @@ def test_optional_only_none_raises():
             pass
         analyze(func)
 
-
 def test_optional_multiple_types_raises():
-    """Test: Union con múltiples tipos (no-None) debe fallar."""
     with pytest.raises(TypeError, match="multiple non-None types"):
         def func(x: int | str | None): 
             pass
         analyze(func)
 
-# ==============================================
-# TESTS COMPLEJOS - COMBINANDO MÚLTIPLES FEATURES
-# ==============================================
 
 def test_complex_function_all_features():
-    """Test: Función compleja con todos los tipos de parámetros."""
     def get_modes():
         return ['fast', 'slow']
     
     def func(
-        # Básicos requeridos (sin default primero)
         name: str,
         age: int,
         active: bool,
         username: Annotated[str, Field(min_length=3, max_length=20)],
         color: Color,
-        
-        # Con defaults (después)
         score: float = 9.5,
         rating: Annotated[int, Field(ge=1, le=10)] = 5,
         theme: Literal['light', 'dark'] = 'light',
         email: Email | None = None,
-        mode: Literal[get_modes] | None = None,  # type: ignore
+        mode: Literal[get_modes] | None = None, 
         bio: str | None = None,
         birthday: date | None = None,
         password: Annotated[str, Field(min_length=8)] | None = None,
@@ -1264,10 +1104,8 @@ def test_complex_function_all_features():
     
     params = analyze(func)
     
-    # Verificar cantidad total
     assert len(params) == 13
     
-    # Básicos requeridos
     assert params['name'].type == str
     assert params['name'].is_optional is False
     assert params['age'].type == int
@@ -1275,12 +1113,10 @@ def test_complex_function_all_features():
     assert params['active'].type == bool
     assert params['active'].is_optional is False
     
-    # Con defaults
     assert params['score'].type == float
     assert params['score'].default == 9.5
     assert params['score'].is_optional is False
     
-    # Con constraints
     assert params['username'].type == str
     assert params['username'].field_info is not None
     assert params['username'].is_optional is False
@@ -1288,42 +1124,36 @@ def test_complex_function_all_features():
     assert params['rating'].default == 5
     assert params['rating'].field_info is not None
     
-    # Tipos especiales
     assert params['color'].type == str
     assert params['color'].field_info is not None
     assert params['color'].is_optional is False
     assert params['email'].type == str
     assert params['email'].is_optional is True
     
-    # Literal
     assert params['theme'].type == str
     assert params['theme'].default == 'light'
     assert params['theme'].field_info is not None
     assert params['theme'].dynamic_func is None
     
-    # Literal dinámico
     assert params['mode'].type == str
     assert params['mode'].dynamic_func is get_modes
     
-    # Opcionales
     assert params['bio'].type == str
     assert params['bio'].is_optional is True
     assert params['birthday'].type == date
     assert params['birthday'].is_optional is True
     
-    # Opcional con constraints
     assert params['password'].type == str
     assert params['password'].field_info is not None
     assert params['password'].is_optional is True
 
 
 def test_multiple_optionals_with_mixed_defaults():
-    """Test: Múltiples opcionales con diferentes configs de defaults."""
     def func(
-        opt1: int | None,                    # Sin default
-        opt2: int | None = None,             # Default None
-        opt3: int | None = 42,               # Default con valor
-        opt4: str | None = "hello",          # Default string
+        opt1: int | None,
+        opt2: int | None = None,
+        opt3: int | None = 42,
+        opt4: str | None = "hello",
     ): 
         pass
     
@@ -1345,7 +1175,6 @@ def test_multiple_optionals_with_mixed_defaults():
 
 
 def test_all_basic_types_together():
-
     def func(
         a: int,
         b: float,
@@ -1368,7 +1197,6 @@ def test_all_basic_types_together():
 
 
 def test_all_special_types_together():
-
     def func(
         color: Color,
         email: Email,
@@ -1389,7 +1217,6 @@ def test_all_special_types_together():
 
 
 def test_multiple_literals_different_types():
-
     def func(
         str_lit: Literal['a', 'b', 'c'],
         int_lit: Literal[1, 2, 3],
@@ -1408,7 +1235,6 @@ def test_multiple_literals_different_types():
 
 
 def test_nested_annotated_optional_no_default():
-
     def func(
         field1: Annotated[int, Field(ge=0)] | None,
         field2: Annotated[str, Field(min_length=5)] | None = "hello",
@@ -1429,7 +1255,6 @@ def test_nested_annotated_optional_no_default():
 
 
 def test_all_constraints_in_one():
-
     def func(
         age: Annotated[int, Field(ge=18, le=100)],
         username: Annotated[str, Field(min_length=3, max_length=20)],
