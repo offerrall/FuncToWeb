@@ -1,6 +1,7 @@
 from datetime import date, time
 
-from func_to_web import Annotated, Color, Email, Field, ImageFile, Literal, run
+from func_to_web import Annotated, Field, Literal, run
+from func_to_web.custom_pydantic_types import Color, Email, ImageFile
 
 
 def complete_profile(

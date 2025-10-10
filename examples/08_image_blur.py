@@ -1,6 +1,7 @@
 from PIL import Image, ImageFilter
 
-from func_to_web import Annotated, Field, ImageFile, run
+from func_to_web import Annotated, Field, run
+from func_to_web.custom_pydantic_types import ImageFile
 
 
 def blur_image(

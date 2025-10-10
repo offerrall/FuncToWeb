@@ -1,6 +1,7 @@
 from PIL import Image
 
-from func_to_web import Annotated, Field, ImageFile, Literal, run
+from func_to_web import Annotated, Field, Literal, run
+from func_to_web.custom_pydantic_types import ImageFile
 
 
 def resize_image(

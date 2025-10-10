@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from func_to_web import Email, Field, run
+from func_to_web import Field, run
+from func_to_web.custom_pydantic_types import Email
 
 
 def register_user(
