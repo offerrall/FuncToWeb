@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.5] - 2025-10-12
+
+### Fixed
+- **Color Picker UI Bug**: Fixed color picker not opening when clicking on color preview box
+  - Removed CSS properties that prevented programmatic clicks (`pointer-events: none`, extreme positioning)
+  - Simplified hidden color input positioning using `width: 0`, `height: 0`, and `z-index: -1`
+  - Maintained visual appearance while ensuring browser can open native color picker
+  - Color picker now properly opens on preview click for both regular and optional fields
+
 ## [0.4.4] - 2025-10-11
 
 ### Added

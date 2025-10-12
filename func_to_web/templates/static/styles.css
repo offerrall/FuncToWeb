@@ -230,12 +230,12 @@ select.was-validated:invalid {
 }
 
 .color-picker-hidden {
-    position: absolute !important;
-    left: -9999px !important;
-    width: 1px !important;
-    height: 1px !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
 }
 
 input[type="file"] {

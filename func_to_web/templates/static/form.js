@@ -117,6 +117,8 @@ function setupColorInputs() {
         const preview = document.querySelector(`[data-color-preview="${input.name}"]`);
         const picker = document.querySelector(`[data-color-picker="${input.name}"]`);
         
+        if (!preview || !picker) return;
+        
         input.addEventListener('input', (e) => {
             const value = e.target.value;
             if (/^#[0-9a-fA-F]{6}$/.test(value) || /^#[0-9a-fA-F]{3}$/.test(value)) {
@@ -125,13 +127,23 @@ function setupColorInputs() {
             }
         });
         
-        preview.addEventListener('click', () => {
-            if (!preview.classList.contains('disabled')) {
+        preview.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!preview.classList.contains('disabled') && !picker.disabled) {
                 picker.click();
             }
         });
         
         picker.addEventListener('input', (e) => {
+            input.value = e.target.value;
+            preview.style.backgroundColor = e.target.value;
+            if (input.classList.contains('was-validated')) {
+                validateField(input);
+            }
+        });
+        
+        picker.addEventListener('change', (e) => {
             input.value = e.target.value;
             preview.style.backgroundColor = e.target.value;
             if (input.classList.contains('was-validated')) {
