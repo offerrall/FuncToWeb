@@ -32,15 +32,15 @@ pip install func-to-web
 
 ## Examples
 
-**Check the `examples/` folder** for 19+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 20+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
 python examples/08_image_blur.py
-python examples/11_plot_sine.py
+python examples/20_lists_limits.py
 ```
 
-![Examples Preview](images/full_example.jpeg)
+![Examples Preview](images/example_20.jpg)
 
 ## What Can You Do?
 
@@ -535,7 +535,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Dynamic dropdowns** - Generate options at runtime
 - **Optional toggles** - Enable/disable optional fields easily
 - **Client + server validation** - Instant feedback and robust checks
-- **Batteries included** - 19+ examples in the `examples/` folder
+- **Batteries included** - 20+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
 - **Download files** - Return single or multiple files easily
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
