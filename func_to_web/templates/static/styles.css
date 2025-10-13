@@ -123,12 +123,12 @@ body.form-page {
 }
 
 .field {
-    margin-bottom: 0.2rem;
+    margin-bottom: 1.5rem;
 }
 
 label {
     display: block;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.5rem;
     font-weight: 500;
     color: var(--text);
     font-size: 0.875rem;
@@ -524,7 +524,7 @@ body.index-page {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .toggle-label {
@@ -593,6 +593,128 @@ body.index-page {
     opacity: 0.6;
 }
 
+/* ==================== LIST FIELDS STYLES ==================== */
+
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.list-item-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.list-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.list-item input,
+.list-item select {
+    flex: 1;
+    min-width: 0;
+}
+
+.list-item input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+}
+
+.list-item input[type="color"] {
+    flex: 0 0 auto;
+    width: 60px;
+    height: 36px;
+    padding: 2px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.list-item input[type="color"]:hover {
+    border-color: var(--primary);
+}
+
+.list-item input[type="color"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.list-item input[type="date"],
+.list-item input[type="time"] {
+    min-width: 140px;
+}
+
+.list-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    margin: 0;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.list-btn-add {
+    background: var(--primary);
+    color: white;
+}
+
+.list-btn-add:hover {
+    background: var(--primary-dark);
+    transform: none;
+    box-shadow: none;
+}
+
+.list-btn-remove {
+    background: var(--error);
+    color: white;
+}
+
+.list-btn-remove:hover {
+    background: #dc2626;
+    transform: none;
+    box-shadow: none;
+}
+
+.list-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.list-btn:disabled:hover {
+    transform: none;
+}
+
+/* List item error styling */
+.list-item-error {
+    color: var(--error);
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: none;
+    padding-left: 0.25rem;
+    animation: slideIn 0.2s ease-out;
+}
+
+/* Visual feedback for invalid list items */
+.list-item input.was-validated:invalid {
+    border-color: var(--error);
+}
+
 /* ==================== RESPONSIVE DESIGN ==================== */
 
 @media (max-width: 640px) {
@@ -607,6 +729,10 @@ body.index-page {
     .form-page h1 {
         font-size: 1.5rem;
         margin-bottom: 1.5rem;
+    }
+    
+    .field {
+        margin-bottom: 1.25rem;
     }
     
     input[type="text"],
@@ -636,6 +762,22 @@ body.index-page {
     
     .tool-card {
         padding: 1.5rem;
+    }
+    
+    /* List items stack better on mobile */
+    .list-item {
+        flex-wrap: wrap;
+    }
+    
+    .list-item input[type="date"],
+    .list-item input[type="time"] {
+        min-width: 120px;
+    }
+    
+    .list-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
 }
 
@@ -674,4 +816,30 @@ body.index-page {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* ==================== PRINT STYLES ==================== */
+
+@media print {
+    body {
+        background: white;
+    }
+    
+    .loading-overlay,
+    button,
+    .list-btn,
+    .toggle-switch {
+        display: none !important;
+    }
+    
+    .form-page .container {
+        box-shadow: none;
+        max-width: 100%;
+    }
+}
+
+/* ==================== DARK MODE SUPPORT (Optional) ==================== */
+
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles here if needed */
 }

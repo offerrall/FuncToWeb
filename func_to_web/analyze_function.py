@@ -63,7 +63,18 @@ class ParamInfo:
             Example: `name: str | OptionalDisabled` starts disabled
             Example: `name: str | None = "John"` starts enabled (has default)
             Example: `name: str | None` starts disabled (no default)
-    
+            
+        is_list (bool): Whether the parameter is a list type.
+            - True for list[Type] syntax
+            - False for regular parameters
+            - When True, 'type' contains the item type, not list
+            - Default: False
+            
+        list_field_info (Any, optional): Metadata for the list itself (min_items, max_items).
+            - Only relevant when is_list=True
+            - Contains Field constraints for the list container
+            - None if no list-level constraints
+            Example: Field(min_items=2, max_items=5)
     """
     type: type
     default: any = None
@@ -71,6 +82,8 @@ class ParamInfo:
     dynamic_func: any = None
     is_optional: bool = False
     optional_enabled: bool = False
+    is_list: bool = False
+    list_field_info: any = None
 
 def analyze(func):
     """
@@ -84,6 +97,11 @@ def analyze(func):
         
     Raises:
         TypeError: If parameter type is not supported
+        TypeError: If list has no type parameter
+        TypeError: If list item type is not supported
+        TypeError: If list of Literal is used (conceptually confusing)
+        TypeError: If list default is not a list
+        TypeError: If list default items have wrong type
         ValueError: If default value doesn't match Literal options
         ValueError: If Literal options are invalid
         ValueError: If Union has multiple non-None types
@@ -97,18 +115,22 @@ def analyze(func):
         default = None if p.default == inspect.Parameter.empty else p.default
         t = p.annotation
         f = None
+        list_f = None  # Field info for the list itself
         dynamic_func = None
         is_optional = False
         optional_default_enabled = None  # None = auto, True = enabled, False = disabled
+        is_list = False
         
-        # Extract base type from Annotated
+        # 1. Extract base type from Annotated (OUTER level)
+        # This could be constraints for the list itself
         if get_origin(t) is Annotated:
             args = get_args(t)
             t = args[0]
             if len(args) > 1:
-                f = args[1]
+                # Store this temporarily - we'll decide if it's for list or item later
+                list_f = args[1]
         
-        # Check for Union types (including | None syntax)
+        # 2. Check for Union types (including | None syntax) BEFORE list detection
         if get_origin(t) is types.UnionType or str(get_origin(t)) == 'typing.Union':
             union_args = get_args(t)
             
@@ -159,10 +181,45 @@ def analyze(func):
                 if get_origin(t) is Annotated:
                     args = get_args(t)
                     t = args[0]
-                    if len(args) > 1 and f is None:
-                        f = args[1]
+                    if len(args) > 1 and list_f is None:
+                        list_f = args[1]
         
-        # Handle Literal types (dropdowns)
+        # 3. Detect list type
+        if get_origin(t) is list:
+            is_list = True
+            list_args = get_args(t)
+            
+            if not list_args:
+                raise TypeError(f"'{name}': list must have type parameter (e.g., list[int])")
+            
+            # Extract item type
+            t = list_args[0]
+            
+            # Check if item type is Literal (before extracting Annotated)
+            if get_origin(t) is Literal:
+                raise TypeError(f"'{name}': list of Literal not supported")
+            
+            # 4. Extract Annotated from ITEM type
+            if get_origin(t) is Annotated:
+                args = get_args(t)
+                t = args[0]
+                
+                # Check again for Literal after extracting Annotated
+                if get_origin(t) is Literal:
+                    raise TypeError(f"'{name}': list of Literal not supported")
+                
+                if len(args) > 1:
+                    f = args[1]  # Field constraints for EACH ITEM
+        elif t is list:
+            # Handle bare 'list' without type parameter
+            raise TypeError(f"'{name}': list must have type parameter (e.g., list[int])")
+        
+        # If not a list, then list_f is actually the field_info for the item
+        if not is_list and list_f is not None:
+            f = list_f
+            list_f = None
+        
+        # 5. Handle Literal types (dropdowns)
         if get_origin(t) is Literal:
             opts = get_args(t)
             
@@ -182,7 +239,9 @@ def analyze(func):
                 types_set = {type(o) for o in opts}
                 if len(types_set) > 1:
                     raise TypeError(f"'{name}': mixed types in Literal")
-                if default is not None and default not in opts:
+                
+                # For lists, we can't validate default against Literal here (it's a list)
+                if not is_list and default is not None and default not in opts:
                     raise ValueError(f"'{name}': default '{default}' not in options {opts}")
                 
                 f = Literal[opts] if len(opts) > 0 else t
@@ -190,19 +249,45 @@ def analyze(func):
             else:
                 t = type(None)
         
+        # 6. Validate base type
         if t not in VALID:
             raise TypeError(f"'{name}': {t} not supported")
         
-        # Validate default value type matches parameter type
-        if default is not None and not is_optional and get_origin(f) is not Literal:
-            if not isinstance(default, t):
-                raise TypeError(f"'{name}': default value type mismatch")
+        # 7. Validate default value
+        if default is not None:
+            if is_list:
+                # Must be a list
+                if not isinstance(default, list):
+                    raise TypeError(f"'{name}': default must be a list")
+                
+                # Validate list-level constraints BEFORE converting empty list to None
+                if list_f and hasattr(list_f, 'metadata'):
+                    TypeAdapter(Annotated[list[t], list_f]).validate_python(default)
+                
+                # Validate each item
+                for item in default:
+                    # Check type
+                    if not isinstance(item, t):
+                        raise TypeError(f"'{name}': list item type mismatch in default")
+                    
+                    # Validate against Field constraints (for items)
+                    if f and hasattr(f, 'metadata'):
+                        TypeAdapter(Annotated[t, f]).validate_python(item)
+                
+                # Convert empty list to None AFTER validation
+                if len(default) == 0:
+                    default = None
+            else:
+                # Non-list validation (existing logic)
+                if not is_optional and get_origin(f) is not Literal:
+                    if not isinstance(default, t):
+                        raise TypeError(f"'{name}': default value type mismatch")
+                
+                # Validate default value against field constraints
+                if f and hasattr(f, 'metadata'):
+                    TypeAdapter(Annotated[t, f]).validate_python(default)
         
-        # Validate default value against field constraints
-        if f and default is not None and hasattr(f, 'metadata'):
-            TypeAdapter(Annotated[t, f]).validate_python(default)
-        
-        # Determine optional_enabled state
+        # 8. Determine optional_enabled state
         # Priority: explicit marker > default value presence > False
         if optional_default_enabled is not None:
             # Explicit marker takes priority
@@ -214,6 +299,6 @@ def analyze(func):
             # No default, start disabled
             final_optional_enabled = False
         
-        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional, final_optional_enabled)
+        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional, final_optional_enabled, is_list, list_f)
     
     return result

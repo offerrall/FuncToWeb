@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0] - 2025-10-12
+
+### Added
+- **List Support**: Full support for list parameters with dynamic add/remove items
+  - Syntax: `list[int]`, `list[str]`, `list[float]`, `list[Color]`, `list[ImageFile]`, etc.
+  - Works with all basic types: `int`, `float`, `str`, `bool`, `date`, `time`
+  - Works with special types: `Color`, `Email`, `ImageFile`, `DataFile`, etc.
+  - Item-level constraints: `list[Annotated[int, Field(ge=1, le=100)]]`
+  - List-level constraints: `Annotated[list[int], Field(min_length=2, max_length=10)]`
+  - Combined constraints: `Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)]`
+  - Dynamic UI: Add/remove buttons to manage list items
+  - Optional lists: `list[str] | None` or `list[str] | OptionalDisabled`
+  - Default values: `list[str] = ["hello", "world"]`
+  - **Default behavior**: Lists without explicit values default to `None` (not `[]`)
+    - `list[int]` → `default = None`
+    - `list[int] = []` → `default = None` (empty lists converted to `None`)
+    - `list[int] = [1, 2]` → `default = [1, 2]` (only non-empty lists preserved)
+  - Item-level validation: Each list item validates against type constraints
+  - List-level validation: Validates `min_length` and `max_length` constraints
+  - Visual feedback: Individual error messages per list item
+  - Empty/whitespace values automatically filtered out
+
 ## [0.4.5] - 2025-10-12
 
 ### Fixed

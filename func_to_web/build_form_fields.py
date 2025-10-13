@@ -1,9 +1,34 @@
+# build_form_fields.py
 from datetime import date, time
 from typing import Literal, get_args, get_origin
 
 from .types import COLOR_PATTERN, EMAIL_PATTERN
 
 PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
+
+
+def serialize_for_json(value):
+    """
+    Serialize a value to be JSON-safe for template rendering.
+    Converts date/time objects to ISO format strings.
+    """
+    if value is None:
+        return None
+    
+    if isinstance(value, date):
+        return value.isoformat()
+    
+    if isinstance(value, time):
+        return value.isoformat()
+    
+    if isinstance(value, list):
+        return [serialize_for_json(item) for item in value]
+    
+    if isinstance(value, dict):
+        return {k: serialize_for_json(v) for k, v in value.items()}
+    
+    return value
+
 
 def build_form_fields(params_info):
     """
@@ -19,7 +44,8 @@ def build_form_fields(params_info):
         2. Determine the appropriate HTML input type (text, number, select, etc.)
         3. Extract constraints and convert them to HTML attributes
         4. Handle special cases (optional fields, dynamic literals, files, etc.)
-        5. Return list of field dictionaries ready for template rendering
+        5. Serialize defaults to JSON-safe format
+        6. Return list of field dictionaries ready for template rendering
     
     Args:
         params_info (dict): Mapping of parameter names to ParamInfo objects.
@@ -31,10 +57,13 @@ def build_form_fields(params_info):
             Each dictionary contains:
             - name (str): Parameter name
             - type (str): HTML input type ('text', 'number', 'select', etc.)
-            - default (Any): Default value for the field
-            - required (bool): Whether field is required
+            - default (Any): Default value for the field (JSON-serialized)
+            - required (bool): Whether field is required (lists are ALWAYS required)
             - is_optional (bool): Whether field has optional toggle
             - optional_enabled (bool): Whether optional field starts enabled
+            - is_list (bool): Whether this is a list field
+            - list_min_length (int): For list fields, minimum number of items
+            - list_max_length (int): For list fields, maximum number of items
             - options (tuple): For select fields, the dropdown options
             - min/max (int/float): For number fields, numeric constraints
             - minlength/maxlength (int): For text fields, length constraints
@@ -57,13 +86,29 @@ def build_form_fields(params_info):
     fields = []
     
     for name, info in params_info.items():
+        # Serialize default value to JSON-safe format
+        serialized_default = serialize_for_json(info.default)
+        
         field = {
             'name': name, 
-            'default': info.default,
-            'required': not info.is_optional,
+            'default': serialized_default,
+            # REGLA SIMPLE: Las listas SIEMPRE son required=True
+            # Si el campo está habilitado (no opcional O toggle ON), debe tener valor
+            # Las listas nunca pueden estar vacías, si se quiere vacío usar None
+            'required': True if info.is_list else not info.is_optional,
             'is_optional': info.is_optional,
-            'optional_enabled': info.optional_enabled
+            'optional_enabled': info.optional_enabled,
+            'is_list': info.is_list
         }
+        
+        # Si es una lista, extraer los constraints de lista (min_length, max_length)
+        if info.is_list and info.list_field_info and hasattr(info.list_field_info, 'metadata'):
+            for c in info.list_field_info.metadata:
+                cn = type(c).__name__
+                if cn == 'MinLen':
+                    field['list_min_length'] = c.min_length
+                if cn == 'MaxLen':
+                    field['list_max_length'] = c.max_length
         
         # Dropdown select
         if get_origin(info.field_info) is Literal:
@@ -92,14 +137,12 @@ def build_form_fields(params_info):
         # Date picker
         elif info.type is date:
             field['type'] = 'date'
-            if isinstance(info.default, date):
-                field['default'] = info.default.isoformat()
-        
+            # Already serialized above, no need to do it again
+            
         # Time picker
         elif info.type is time:
             field['type'] = 'time'
-            if isinstance(info.default, time):
-                field['default'] = info.default.strftime('%H:%M')
+            # Already serialized above, no need to do it again
             
         # Number input
         elif info.type in (int, float):

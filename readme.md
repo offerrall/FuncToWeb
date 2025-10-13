@@ -1,4 +1,4 @@
-# Func To Web 0.4.5
+# Func To Web 0.5.0
 
 **Transform any Python function into a web interface automatically.**
 
@@ -32,7 +32,7 @@ pip install func-to-web
 
 ## Examples
 
-**Check the `examples/` folder** for 16+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 17+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
@@ -66,6 +66,60 @@ run(example)
 ```
 
 ![Basic Types](images/basic.jpg)
+
+### Lists (New in 0.5.0)
+
+Create dynamic lists of any type with add/remove buttons:
+
+```python
+from func_to_web import run
+from func_to_web.types import Color, Email
+from typing import Annotated
+from pydantic import Field
+
+def process_data(
+    # Basic type lists
+    numbers: list[int],                                         # Default: None
+    colors: list[Color],                                        # List of color pickers
+    names: list[str] = ["Alice", "Bob"],                        # List with defaults
+    
+    # Lists with item constraints
+    scores: list[Annotated[int, Field(ge=0, le=100)]],          # Each item: 0-100
+    usernames: list[Annotated[str, Field(min_length=3)]],       # Each item: min 3 chars
+    
+    # Lists with list-level constraints
+    team: Annotated[list[str], Field(min_length=2, max_length=5)],  # 2-5 items required
+    
+    # Lists with both item and list constraints
+    ratings: Annotated[
+        list[Annotated[int, Field(ge=1, le=5)]], 
+        Field(min_length=3, max_length=10)
+    ],                                                          # 3-10 ratings, each 1-5
+    
+    # Optional lists
+    tags: list[str] | None = None,                              # Can be None or have values
+    emails: list[Email] | None = None                           # Optional email list
+):
+    return f"Processed {len(numbers)} numbers, {len(names)} names"
+
+run(process_data)
+```
+
+**Key features:**
+- Dynamic add/remove buttons for each list
+- Works with all types: `int`, `float`, `str`, `bool`, `date`, `time`, `Color`, `Email`, files
+- Not supported with `Literal`
+- **Item constraints**: `list[Annotated[int, Field(ge=1, le=100)]]` - validates each item
+- **List constraints**: `Annotated[list[int], Field(min_length=2, max_length=10)]` - validates list size
+- **Combined constraints**: `Annotated[list[Annotated[int, Field(...)], Field(...)]]`
+- Optional lists with toggle: `list[str] | None` or `list[str] | OptionalDisabled`
+- Default values: `list[str] = ["hello", "world"]`
+- **Default behavior**: Lists without values default to `None` (empty lists `[]` are converted to `None`)
+- Individual validation per item with error messages
+- List-level validation for size constraints (`min_length`, `max_length`)
+- Empty/whitespace values automatically filtered out
+
+![Dynamic Lists](images/lists.jpg)
 
 ### Optional Parameters
 
@@ -112,7 +166,7 @@ run(create_user)
 - **Automatic mode** (`Type | None`): Enabled if has default value, disabled if no default
 - **Explicit mode** (`Type | OptionalEnabled/OptionalDisabled`): You control the initial state, overriding defaults
 - Disabled fields automatically send `None` to your function
-- Works with all field types and constraints
+- Works with all field types and constraints (including lists!)
 
 Use automatic mode for standard Python conventions, or explicit mode when you need precise control over which fields start active.
 
@@ -151,6 +205,15 @@ def process_files(
     return "Files uploaded!"
 
 run(process_files)
+```
+
+You can also use lists of files:
+
+```python
+def process_images(
+    images: list[ImageFile],  # Upload multiple images
+):
+    return f"Processed {len(images)} images"
 ```
 
 ![File Upload](images/files.jpg)
@@ -232,7 +295,7 @@ The function is called each time the form is generated, ensuring fresh options e
 ```python
 from typing import Annotated
 from func_to_web import run
-from func_to_web.types import Field
+from pydantic import Field
 
 def register(
     age: Annotated[int, Field(ge=18, le=120)],  # Min/max values
@@ -319,11 +382,13 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 - `Email` - Email validation
 - `Literal[...]` - Dropdown selections, static or dynamic
 - `ImageFile`, `DataFile`, `TextFile`, `DocumentFile` - File uploads
-- (All input types support optional `| None` for toggles)
+- `list[Type]` - Dynamic lists of any type (new in 0.5.0)
+- All types support optional `| None` for toggles
 
 ### Validation
 - **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)
 - **String**: `min_length`, `max_length`, `pattern` (regex)
+- **Lists**: Must have at least 1 valid element when enabled
 - **Default values**: Set in function signature
 
 ### Output Types
@@ -373,15 +438,16 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 
 ## Why func-to-web?
 
-- **Minimalist** - Under 1500 lines total, backend + frontend + docs
+- **Minimalist** - Under 2000 lines total, backend + frontend + docs
 - **Zero boilerplate** - Just type hints and you're done
-- **Powerful** - Supports all common input types including files
+- **Powerful** - Supports all common input types including files and lists
 - **Smart output** - Automatically displays images, plots, and data
 - **Type-safe** - Full Pydantic validation
+- **Lists support** - Dynamic add/remove for lists of any type
+- **Dynamic dropdowns** - Generate options at runtime
 - **Optional toggles** - Enable/disable optional fields easily
 - **Client + server validation** - Instant feedback and robust checks
-- **Well-tested** - 307 unit tests ensuring reliability
-- **Batteries included** - 15+ examples in the `examples/` folder
+- **Batteries included** - 17+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
 
@@ -396,17 +462,14 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 7. **Display** - Shows results as text, JSON, images, or plots
 8. **Progress Tracking** - Real-time feedback during uploads and processing
 
-## Testing & Quality Assurance
 
-**307 unit tests** ensuring reliability:
+**454 unit tests** ensuring reliability:
 
 ### Test Coverage
 
-- **130 tests** - `analyze()`: Function signature analysis, type detection, constraint extraction
-- **88 tests** - `validate_params()`: Type conversion, constraint validation, optional toggles
-- **88 tests** - `build_form_fields()`: HTML field generation, format conversion, edge cases
-
-**Edge cases covered**: Unicode (😀🚀), negative/large numbers (1e100), scientific notation, leap years, boundary values, empty lists, mixed types
+- `analyze()`: Function signature analysis, type detection, constraint extraction
+- `validate_params()`: Type conversion, constraint validation, optional toggles
+- `build_form_fields()`: HTML field generation, format conversion, edge cases
 
 ### Running Tests
 

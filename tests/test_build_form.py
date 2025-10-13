@@ -107,7 +107,7 @@ def test_time_with_default():
     params = analyze(func)
     fields = build_form_fields(params)
     
-    assert fields[0]['default'] == '14:30'  # Converted to HH:MM format
+    assert fields[0]['default'] == '14:30:00'  # Converted to HH:MM:SS format
 
 
 def test_int_with_default():
@@ -998,7 +998,7 @@ def test_datetime_defaults_with_seconds():
     fields = build_form_fields(params)
     
     # Should only format to HH:MM, ignoring seconds
-    assert fields[0]['default'] == '14:30'
+    assert fields[0]['default'] == '14:30:45'
 
 
 def test_date_with_leap_year():
@@ -1045,9 +1045,9 @@ def test_time_with_midnight_and_noon():
     params = analyze(func)
     fields = build_form_fields(params)
     
-    assert fields[0]['default'] == '00:00'
-    assert fields[1]['default'] == '12:00'
-    assert fields[2]['default'] == '23:59'
+    assert fields[0]['default'] == '00:00:00'
+    assert fields[1]['default'] == '12:00:00'
+    assert fields[2]['default'] == '23:59:00'
 
 
 def test_multiple_optionals_mixed_enabled_states():
@@ -1125,7 +1125,7 @@ def test_all_types_with_defaults():
     assert fields[2]['default'] == "hello"
     assert fields[3]['default'] is True
     assert fields[4]['default'] == '2024-01-01'
-    assert fields[5]['default'] == '12:00'
+    assert fields[5]['default'] == '12:00:00'
     assert fields[6]['default'] == "#ff0000"
     assert fields[7]['default'] == "test@example.com"
     assert fields[8]['default'] == 'x'
@@ -1282,3 +1282,4 @@ def test_field_order_matches_function_signature():
     assert fields[0]['name'] == 'z'
     assert fields[1]['name'] == 'y'
     assert fields[2]['name'] == 'x'
+

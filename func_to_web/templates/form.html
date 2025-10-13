@@ -23,7 +23,42 @@
             <h1>{{ title }}</h1>
             <form id="form" novalidate>
                 {% for field in fields %}
-                    {% if field.type == 'checkbox' %}
+                    {% if field.is_list %}
+                        <div class="field {% if field.is_optional %}optional-field{% endif %}">
+                            <label for="{{ field.name }}">
+                                {{ field.name }}
+                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                            </label>
+                            {% if field.is_optional %}
+                            <div class="optional-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                        name="{{ field.name }}_optional_toggle" 
+                                        data-optional-toggle="{{ field.name }}"
+                                        {% if field.optional_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enable field</span>
+                            </div>
+                            {% endif %}
+                            <div class="list-container" 
+                                data-list="{{ field.name }}" 
+                                data-list-type="{{ field.type }}"
+                                data-list-default='{{ field.default | tojson }}'
+                                data-list-min="{{ field.get('min', '') }}"
+                                data-list-max="{{ field.get('max', '') }}"
+                                data-list-step="{{ field.get('step', '') }}"
+                                data-list-minlength="{{ field.get('minlength', '') }}"
+                                data-list-maxlength="{{ field.get('maxlength', '') }}"
+                                data-list-pattern="{{ field.get('pattern', '') }}"
+                                data-list-required="{{ 'true' if field.required else 'false' }}"
+                                data-list-container-min="{{ field.get('list_min_length', '') }}"
+                                data-list-container-max="{{ field.get('list_max_length', '') }}"
+                                {% if field.is_optional and not field.optional_enabled %}data-disabled="true"{% endif %}>
+                            </div>
+                            <div class="field-error" id="error-{{ field.name }}"></div>
+                        </div>
+                    {% elif field.type == 'checkbox' %}
                         <div class="field checkbox-field">
                             <input type="checkbox" 
                                    name="{{ field.name }}" 

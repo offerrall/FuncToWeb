@@ -10,13 +10,12 @@ def complete_profile(
     birth_date: date = date(1990, 1, 1),
     theme: Literal['light', 'dark', 'auto'] = 'auto',
     primary_color: Color = "#3b82f6",
-    secondary_color: Color = "#10b981",
     age: Annotated[int, Field(ge=18, le=120)] = 25,
     height: Annotated[float, Field(ge=0.5, le=2.5)] = 1.75,
     wake_time: time = time(7, 0),
-    newsletter: bool = True,
     notifications: bool = False,
     avatar: ImageFile | None = None,
+    tags: list[str] | None = []
 ):
     """Complete profile with all input types"""
     return {
@@ -26,7 +25,6 @@ def complete_profile(
         "theme": theme,
         "colors": {
             "primary": primary_color,
-            "secondary": secondary_color
         },
         "physical": {
             "age": age,
@@ -34,10 +32,10 @@ def complete_profile(
         },
         "wake_time": str(wake_time),
         "preferences": {
-            "newsletter": newsletter,
             "notifications": notifications
         },
-        "avatar": avatar
+        "avatar": avatar,
+        "tags": tags
     }
 
 run(complete_profile)

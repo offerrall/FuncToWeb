@@ -1305,3 +1305,585 @@ def test_all_parameters_types_in_one_function():
     assert validated['opt_ann'] == 5
     assert validated['opt_color'] == '#0000ff'
     assert validated['opt_lit'] == 'x'
+
+# --- LIST VALIDATION TESTS ---
+
+def test_list_of_ints_valid():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+    assert all(isinstance(n, int) for n in validated['numbers'])
+
+
+def test_list_of_strs_valid():
+    def func(names: list[str]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'names': '["Alice", "Bob", "Charlie"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['names'] == ["Alice", "Bob", "Charlie"]
+    assert all(isinstance(n, str) for n in validated['names'])
+
+
+def test_list_of_floats_valid():
+    def func(prices: list[float]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'prices': '[9.99, 19.99, 29.99]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['prices'] == [9.99, 19.99, 29.99]
+    assert all(isinstance(p, float) for p in validated['prices'])
+
+
+def test_list_of_bools_valid():
+    def func(flags: list[bool]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'flags': '[true, false, true]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['flags'] == [True, False, True]
+    assert all(isinstance(f, bool) for f in validated['flags'])
+
+
+def test_list_of_dates_valid():
+    def func(dates: list[date]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'dates': '["2024-01-01", "2024-12-31"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['dates'] == [date(2024, 1, 1), date(2024, 12, 31)]
+    assert all(isinstance(d, date) for d in validated['dates'])
+
+
+def test_list_of_times_valid():
+    def func(times: list[time]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'times': '["09:00", "17:00"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['times'] == [time(9, 0), time(17, 0)]
+    assert all(isinstance(t, time) for t in validated['times'])
+
+
+def test_list_of_colors_valid():
+    def func(colors: list[Color]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'colors': '["#ff0000", "#00ff00", "#0000ff"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['colors'] == ["#ff0000", "#00ff00", "#0000ff"]
+
+
+def test_list_of_emails_valid():
+    def func(emails: list[Email]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'emails': '["alice@example.com", "bob@example.com"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['emails'] == ["alice@example.com", "bob@example.com"]
+
+
+def test_list_empty():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == []
+
+
+def test_list_single_item():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[42]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [42]
+
+
+def test_list_with_constraints_valid():
+    def func(numbers: list[Annotated[int, Field(ge=0, le=100)]]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[10, 50, 90]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [10, 50, 90]
+
+
+def test_list_with_constraints_item_below_min_raises():
+    def func(numbers: list[Annotated[int, Field(ge=0)]]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[5, -1, 10]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_with_constraints_item_above_max_raises():
+    def func(numbers: list[Annotated[int, Field(le=100)]]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[50, 150, 75]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_str_with_min_length_constraint_valid():
+    def func(names: list[Annotated[str, Field(min_length=3)]]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'names': '["Alice", "Bob"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['names'] == ["Alice", "Bob"]
+
+
+def test_list_str_with_min_length_constraint_invalid_raises():
+    def func(names: list[Annotated[str, Field(min_length=3)]]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'names': '["Alice", "Bo"]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_with_min_length_constraint_valid():
+    def func(numbers: Annotated[list[int], Field(min_length=2)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+
+
+def test_list_with_min_length_constraint_violated_raises():
+    def func(numbers: Annotated[list[int], Field(min_length=3)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2]'}
+    
+    with pytest.raises(ValueError, match="must have at least 3 items"):
+        validate_params(form_data, params)
+
+
+def test_list_with_max_length_constraint_valid():
+    def func(numbers: Annotated[list[int], Field(max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+
+
+def test_list_with_max_length_constraint_violated_raises():
+    def func(numbers: Annotated[list[int], Field(max_length=2)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    with pytest.raises(ValueError, match="must have at most 2 items"):
+        validate_params(form_data, params)
+
+
+def test_list_with_both_min_max_length_valid():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+
+
+def test_list_with_both_min_max_length_too_few_raises():
+    def func(numbers: Annotated[list[int], Field(min_length=3, max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2]'}
+    
+    with pytest.raises(ValueError, match="must have at least 3 items"):
+        validate_params(form_data, params)
+
+
+def test_list_with_both_min_max_length_too_many_raises():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=3)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3, 4]'}
+    
+    with pytest.raises(ValueError, match="must have at most 3 items"):
+        validate_params(form_data, params)
+
+
+def test_list_at_exact_min_length():
+    def func(numbers: Annotated[list[int], Field(min_length=3)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert len(validated['numbers']) == 3
+
+
+def test_list_at_exact_max_length():
+    def func(numbers: Annotated[list[int], Field(max_length=3)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert len(validated['numbers']) == 3
+
+
+def test_list_with_both_item_and_list_constraints_valid():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0, le=100)]], Field(min_length=2, max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[10, 50, 90]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [10, 50, 90]
+
+
+def test_list_with_both_constraints_item_invalid_raises():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[10, -5, 20]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_with_both_constraints_list_too_short_raises():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=3)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[10, 20]'}
+    
+    with pytest.raises(ValueError, match="must have at least 3 items"):
+        validate_params(form_data, params)
+
+
+def test_list_colors_with_hex3_expansion():
+    def func(colors: list[Color]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'colors': '["#f00", "#0f0", "#00f"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['colors'] == ["#ff0000", "#00ff00", "#0000ff"]
+
+
+def test_list_colors_invalid_format_raises():
+    def func(colors: list[Color]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'colors': '["#ff0000", "red", "#00ff00"]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_emails_invalid_format_raises():
+    def func(emails: list[Email]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'emails': '["alice@example.com", "notanemail"]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_invalid_json_raises():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3'}  # Missing closing bracket
+    
+    with pytest.raises(ValueError, match="Invalid list format"):
+        validate_params(form_data, params)
+
+
+def test_list_not_array_raises():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '{"a": 1}'}  # Object instead of array
+    
+    with pytest.raises(TypeError, match="Expected list"):
+        validate_params(form_data, params)
+
+
+def test_list_mixed_types_raises():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, "two", 3]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_optional_list_disabled():
+    def func(numbers: list[int] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1, 2, 3]'}  # No toggle
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] is None
+
+
+def test_optional_list_enabled_with_values():
+    def func(numbers: list[int] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'numbers': '[1, 2, 3]',
+        'numbers_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+
+
+def test_optional_list_enabled_empty():
+    def func(numbers: list[int] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'numbers': '[]',
+        'numbers_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == []
+
+
+def test_optional_list_with_constraints_disabled():
+    def func(numbers: Annotated[list[int], Field(min_length=2)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[1]'}  # No toggle, would violate min_length if enabled
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] is None
+
+
+def test_optional_list_with_constraints_enabled_valid():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'numbers': '[1, 2, 3]',
+        'numbers_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [1, 2, 3]
+
+
+def test_optional_list_with_constraints_enabled_invalid_raises():
+    def func(numbers: Annotated[list[int], Field(min_length=3)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'numbers': '[1, 2]',
+        'numbers_optional_toggle': 'on'
+    }
+    
+    with pytest.raises(ValueError, match="must have at least 3 items"):
+        validate_params(form_data, params)
+
+
+def test_list_with_empty_string_value():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': ''}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == []
+
+
+def test_list_large_number_of_items():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    large_list = list(range(1000))
+    form_data = {'numbers': str(large_list).replace(' ', '')}
+    
+    validated = validate_params(form_data, params)
+    
+    assert len(validated['numbers']) == 1000
+    assert validated['numbers'] == large_list
+
+
+def test_list_negative_numbers():
+    def func(numbers: list[int]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[-10, -5, 0, 5, 10]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == [-10, -5, 0, 5, 10]
+
+
+def test_list_floats_from_ints():
+    def func(values: list[float]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'values': '[1, 2, 3]'}  # Integers in JSON
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['values'] == [1.0, 2.0, 3.0]
+    assert all(isinstance(v, float) for v in validated['values'])
+
+
+def test_list_empty_strings():
+    def func(names: list[str]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'names': '["", "Alice", ""]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['names'] == ["", "Alice", ""]
+
+
+def test_list_with_unicode():
+    def func(names: list[str]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'names': '["Héllo", "世界", "🌍"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['names'] == ["Héllo", "世界", "🌍"]
+
+
+def test_list_dates_invalid_format_raises():
+    def func(dates: list[date]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'dates': '["2024-01-01", "01/01/2024"]'}
+    
+    with pytest.raises(ValueError, match="List item at index 1"):
+        validate_params(form_data, params)
+
+
+def test_list_times_with_seconds():
+    def func(times: list[time]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'times': '["09:00:00", "17:30:45"]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['times'] == [time(9, 0, 0), time(17, 30, 45)]
+
+
+def test_list_zero_length_constraint():
+    def func(numbers: Annotated[list[int], Field(min_length=0)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'numbers': '[]'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['numbers'] == []

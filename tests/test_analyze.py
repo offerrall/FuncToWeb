@@ -1,7 +1,13 @@
 import pytest
 from datetime import date, time
+from pydantic import Field, ValidationError
+from typing import Union
+import math
+
 from func_to_web import *
 from func_to_web.types import *
+
+# --- BASIC TYPES ---
 
 def test_int_parameter():
     def func(x: int): 
@@ -16,7 +22,6 @@ def test_int_parameter():
     assert params['x'].dynamic_func is None
     assert params['x'].is_optional is False
 
-
 def test_float_parameter():
     def func(price: float): 
         pass
@@ -29,7 +34,6 @@ def test_float_parameter():
     assert params['price'].field_info is None
     assert params['price'].dynamic_func is None
     assert params['price'].is_optional is False
-
 
 def test_str_parameter():
     def func(name: str): 
@@ -44,7 +48,6 @@ def test_str_parameter():
     assert params['name'].dynamic_func is None
     assert params['name'].is_optional is False
 
-
 def test_bool_parameter():
     def func(active: bool): 
         pass
@@ -57,7 +60,6 @@ def test_bool_parameter():
     assert params['active'].field_info is None
     assert params['active'].dynamic_func is None
     assert params['active'].is_optional is False
-
 
 def test_date_parameter():
     def func(birthday: date): 
@@ -72,7 +74,6 @@ def test_date_parameter():
     assert params['birthday'].dynamic_func is None
     assert params['birthday'].is_optional is False
 
-
 def test_time_parameter():
     def func(meeting: time): 
         pass
@@ -86,20 +87,17 @@ def test_time_parameter():
     assert params['meeting'].dynamic_func is None
     assert params['meeting'].is_optional is False
 
-
 def test_dict_type_raises():
     with pytest.raises(TypeError, match="not supported"):
         def func(data: dict): 
             pass
         analyze(func)
 
-
 def test_list_type_raises():
-    with pytest.raises(TypeError, match="not supported"):
+    with pytest.raises(TypeError, match="list must have type parameter"):
         def func(items: list): 
             pass
         analyze(func)
-
 
 def test_set_type_raises():
     with pytest.raises(TypeError, match="not supported"):
@@ -107,13 +105,11 @@ def test_set_type_raises():
             pass
         analyze(func)
 
-
 def test_tuple_type_raises():
     with pytest.raises(TypeError, match="not supported"):
         def func(items: tuple): 
             pass
         analyze(func)
-
 
 def test_custom_class_raises():
     class CustomClass: 
@@ -124,7 +120,6 @@ def test_custom_class_raises():
             pass
         analyze(func)
 
-
 def test_any_type_raises():
     from typing import Any
     
@@ -133,13 +128,13 @@ def test_any_type_raises():
             pass
         analyze(func)
 
-
 def test_none_type_raises():
     with pytest.raises(TypeError, match="not supported"):
         def func(data: None): 
             pass
         analyze(func)
 
+# --- BASIC TYPES WITH DEFAULTS ---
 
 def test_int_with_default():
     def func(age: int = 25): 
@@ -154,7 +149,6 @@ def test_int_with_default():
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is False
 
-
 def test_str_with_default():
     def func(name: str = "John"): 
         pass
@@ -167,7 +161,6 @@ def test_str_with_default():
     assert params['name'].field_info is None
     assert params['name'].dynamic_func is None
     assert params['name'].is_optional is False
-
 
 def test_bool_with_default():
     def func(active: bool = True): 
@@ -182,7 +175,6 @@ def test_bool_with_default():
     assert params['active'].dynamic_func is None
     assert params['active'].is_optional is False
 
-
 def test_float_with_default():
     def func(price: float = 9.99): 
         pass
@@ -195,7 +187,6 @@ def test_float_with_default():
     assert params['price'].field_info is None
     assert params['price'].dynamic_func is None
     assert params['price'].is_optional is False
-
 
 def test_date_with_default():
     default_date = date(2000, 1, 1)
@@ -212,7 +203,6 @@ def test_date_with_default():
     assert params['birthday'].dynamic_func is None
     assert params['birthday'].is_optional is False
 
-
 def test_time_with_default():
     default_time = time(14, 30)
     
@@ -228,13 +218,11 @@ def test_time_with_default():
     assert params['meeting'].dynamic_func is None
     assert params['meeting'].is_optional is False
 
-
 def test_int_with_str_default_raises():
     with pytest.raises((TypeError, ValueError)):
         def func(age: int = "twenty"): 
             pass
         analyze(func)
-
 
 def test_float_with_str_default_raises():
     with pytest.raises((TypeError, ValueError)):
@@ -242,13 +230,11 @@ def test_float_with_str_default_raises():
             pass
         analyze(func)
 
-
 def test_bool_with_int_default_raises():
     with pytest.raises((TypeError, ValueError)):
         def func(active: bool = 1): 
             pass
         analyze(func)
-
 
 def test_date_with_str_default_raises():
     with pytest.raises((TypeError, ValueError)):
@@ -256,13 +242,11 @@ def test_date_with_str_default_raises():
             pass
         analyze(func)
 
-
 def test_time_with_str_default_raises():
     with pytest.raises((TypeError, ValueError)):
         def func(meeting: time = "14:30"): 
             pass
         analyze(func)
-
 
 def test_str_with_int_default_raises():
     with pytest.raises((TypeError, ValueError)):
@@ -270,6 +254,7 @@ def test_str_with_int_default_raises():
             pass
         analyze(func)
 
+# --- ANNOTATED TYPES WITH CONSTRAINTS ---
 
 def test_int_with_constraints():
     def func(age: Annotated[int, Field(ge=0, le=120)]): 
@@ -284,7 +269,6 @@ def test_int_with_constraints():
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is False
 
-
 def test_int_with_ge_only():
     def func(age: Annotated[int, Field(ge=18)]): 
         pass
@@ -297,7 +281,6 @@ def test_int_with_ge_only():
     assert params['age'].field_info is not None
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is False
-
 
 def test_int_with_le_only():
     def func(age: Annotated[int, Field(le=100)]): 
@@ -312,7 +295,6 @@ def test_int_with_le_only():
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is False
 
-
 def test_float_with_gt_lt():
     def func(rating: Annotated[float, Field(gt=0, lt=5)]): 
         pass
@@ -325,7 +307,6 @@ def test_float_with_gt_lt():
     assert params['rating'].field_info is not None
     assert params['rating'].dynamic_func is None
     assert params['rating'].is_optional is False
-
 
 def test_str_with_length_constraints():
     def func(username: Annotated[str, Field(min_length=3, max_length=20)]): 
@@ -340,7 +321,6 @@ def test_str_with_length_constraints():
     assert params['username'].dynamic_func is None
     assert params['username'].is_optional is False
 
-
 def test_str_with_min_length_only():
     def func(password: Annotated[str, Field(min_length=8)]): 
         pass
@@ -353,7 +333,6 @@ def test_str_with_min_length_only():
     assert params['password'].field_info is not None
     assert params['password'].dynamic_func is None
     assert params['password'].is_optional is False
-
 
 def test_str_with_max_length_only():
     def func(bio: Annotated[str, Field(max_length=500)]): 
@@ -368,6 +347,7 @@ def test_str_with_max_length_only():
     assert params['bio'].dynamic_func is None
     assert params['bio'].is_optional is False
 
+# --- ANNOTATED TYPES WITH DEFAULTS ---
 
 def test_annotated_with_default():
     def func(age: Annotated[int, Field(ge=0, le=120)] = 25): 
@@ -382,7 +362,6 @@ def test_annotated_with_default():
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is False
 
-
 def test_annotated_str_with_default():
     def func(username: Annotated[str, Field(min_length=3, max_length=20)] = "john"): 
         pass
@@ -396,13 +375,11 @@ def test_annotated_str_with_default():
     assert params['username'].dynamic_func is None
     assert params['username'].is_optional is False
 
-
 def test_annotated_int_default_below_minimum_raises():
     with pytest.raises(ValueError):
         def func(age: Annotated[int, Field(ge=18)] = 10): 
             pass
         analyze(func)
-
 
 def test_annotated_int_default_above_maximum_raises():
     with pytest.raises(ValueError):
@@ -410,13 +387,11 @@ def test_annotated_int_default_above_maximum_raises():
             pass
         analyze(func)
 
-
 def test_annotated_str_default_too_short_raises():
     with pytest.raises(ValueError):
         def func(username: Annotated[str, Field(min_length=5)] = "ab"): 
             pass
         analyze(func)
-
 
 def test_annotated_str_default_too_long_raises():
     with pytest.raises(ValueError):
@@ -424,13 +399,11 @@ def test_annotated_str_default_too_long_raises():
             pass
         analyze(func)
 
-
 def test_annotated_float_default_below_gt_raises():
     with pytest.raises(ValueError):
         def func(rating: Annotated[float, Field(gt=0)] = 0.0): 
             pass
         analyze(func)
-
 
 def test_annotated_float_default_above_lt_raises():
     with pytest.raises(ValueError):
@@ -438,6 +411,7 @@ def test_annotated_float_default_above_lt_raises():
             pass
         analyze(func)
 
+# --- SPECIAL TYPES ---
 
 def test_color_type():
     def func(color: Color): 
@@ -452,7 +426,6 @@ def test_color_type():
     assert params['color'].dynamic_func is None
     assert params['color'].is_optional is False
 
-
 def test_color_with_default():
     def func(color: Color = "#ff0000"): 
         pass
@@ -465,7 +438,6 @@ def test_color_with_default():
     assert params['color'].field_info is not None
     assert params['color'].dynamic_func is None
     assert params['color'].is_optional is False
-
 
 def test_email_type():
     def func(email: Email): 
@@ -480,7 +452,6 @@ def test_email_type():
     assert params['email'].dynamic_func is None
     assert params['email'].is_optional is False
 
-
 def test_email_with_default():
     def func(email: Email = "test@example.com"): 
         pass
@@ -493,7 +464,6 @@ def test_email_with_default():
     assert params['email'].field_info is not None
     assert params['email'].dynamic_func is None
     assert params['email'].is_optional is False
-
 
 def test_image_file_type():
     def func(photo: ImageFile): 
@@ -508,7 +478,6 @@ def test_image_file_type():
     assert params['photo'].dynamic_func is None
     assert params['photo'].is_optional is False
 
-
 def test_data_file_type():
     def func(data: DataFile): 
         pass
@@ -521,7 +490,6 @@ def test_data_file_type():
     assert params['data'].field_info is not None
     assert params['data'].dynamic_func is None
     assert params['data'].is_optional is False
-
 
 def test_text_file_type():
     def func(notes: TextFile): 
@@ -536,7 +504,6 @@ def test_text_file_type():
     assert params['notes'].dynamic_func is None
     assert params['notes'].is_optional is False
 
-
 def test_document_file_type():
     def func(report: DocumentFile): 
         pass
@@ -550,13 +517,11 @@ def test_document_file_type():
     assert params['report'].dynamic_func is None
     assert params['report'].is_optional is False
 
-
 def test_color_with_invalid_default_raises():
     with pytest.raises(ValueError):
         def func(color: Color = "red"): 
             pass
         analyze(func)
-
 
 def test_color_with_invalid_hex_default_raises():
     with pytest.raises(ValueError):
@@ -564,13 +529,11 @@ def test_color_with_invalid_hex_default_raises():
             pass
         analyze(func)
 
-
 def test_email_with_invalid_default_raises():
     with pytest.raises(ValueError):
         def func(email: Email = "notanemail"): 
             pass
         analyze(func)
-
 
 def test_email_with_invalid_format_raises():
     with pytest.raises(ValueError):
@@ -578,6 +541,7 @@ def test_email_with_invalid_format_raises():
             pass
         analyze(func)
 
+# --- LITERAL TYPES ---
 
 def test_literal_string():
     def func(theme: Literal['light', 'dark', 'auto']): 
@@ -592,7 +556,6 @@ def test_literal_string():
     assert params['theme'].dynamic_func is None
     assert params['theme'].is_optional is False
 
-
 def test_literal_int():
     def func(size: Literal[1, 2, 3]): 
         pass
@@ -605,7 +568,6 @@ def test_literal_int():
     assert params['size'].field_info is not None
     assert params['size'].dynamic_func is None
     assert params['size'].is_optional is False
-
 
 def test_literal_float():
     def func(multiplier: Literal[0.5, 1.0, 1.5, 2.0]):
@@ -620,7 +582,6 @@ def test_literal_float():
     assert params['multiplier'].dynamic_func is None
     assert params['multiplier'].is_optional is False
 
-
 def test_literal_bool():
     def func(enabled: Literal[True, False]): 
         pass
@@ -633,7 +594,6 @@ def test_literal_bool():
     assert params['enabled'].field_info is not None
     assert params['enabled'].dynamic_func is None
     assert params['enabled'].is_optional is False
-
 
 def test_literal_with_default():
     def func(theme: Literal['light', 'dark'] = 'light'): 
@@ -648,7 +608,6 @@ def test_literal_with_default():
     assert params['theme'].dynamic_func is None
     assert params['theme'].is_optional is False
 
-
 def test_literal_single_option():
     def func(mode: Literal['readonly']): 
         pass
@@ -662,13 +621,11 @@ def test_literal_single_option():
     assert params['mode'].dynamic_func is None
     assert params['mode'].is_optional is False
 
-
 def test_literal_invalid_default_raises():
     with pytest.raises(ValueError, match="not in options"):
         def func(theme: Literal['light', 'dark'] = 'neon'): 
             pass
         analyze(func)
-
 
 def test_literal_mixed_types_raises():
     with pytest.raises(TypeError, match="mixed types"):
@@ -676,13 +633,11 @@ def test_literal_mixed_types_raises():
             pass
         analyze(func)
 
-
 def test_literal_mixed_int_float_raises():
     with pytest.raises(TypeError, match="mixed types"):
         def func(x: Literal[1, 2.5, 3]):
             pass
         analyze(func)
-
 
 def test_dynamic_literal_function():
     def get_options():
@@ -700,7 +655,6 @@ def test_dynamic_literal_function():
     assert params['choice'].dynamic_func is get_options
     assert params['choice'].is_optional is False
 
-
 def test_dynamic_literal_single_string():
     def get_option():
         return "Hello"
@@ -716,7 +670,6 @@ def test_dynamic_literal_single_string():
     assert params['choice'].field_info is not None
     assert params['choice'].dynamic_func is get_option
     assert params['choice'].is_optional is False
-
 
 def test_dynamic_literal_returns_tuple():
     def get_options():
@@ -734,7 +687,6 @@ def test_dynamic_literal_returns_tuple():
     assert params['choice'].dynamic_func is get_options
     assert params['choice'].is_optional is False
 
-
 def test_dynamic_literal_with_ints():
     def get_numbers():
         return [1, 2, 3, 4, 5]
@@ -750,7 +702,6 @@ def test_dynamic_literal_with_ints():
     assert params['number'].field_info is not None
     assert params['number'].dynamic_func is get_numbers
     assert params['number'].is_optional is False
-
 
 def test_dynamic_literal_with_floats():
     def get_values():
@@ -768,6 +719,25 @@ def test_dynamic_literal_with_floats():
     assert params['value'].dynamic_func is get_values
     assert params['value'].is_optional is False
 
+def test_dynamic_literal_mixed_types_raises():
+    def get_mixed():
+        return [1, 'two', 3]
+    
+    with pytest.raises(TypeError, match="mixed types"):
+        def func(x: Literal[get_mixed]): # type: ignore
+            pass
+        analyze(func)
+
+def test_dynamic_literal_empty_raises():
+    def get_empty():
+        return []
+    
+    with pytest.raises(TypeError):
+        def func(x: Literal[get_empty]): # type: ignore
+            pass
+        analyze(func)
+
+# --- OPTIONAL TYPES ---
 
 def test_optional_int():
     def func(x: int | None): 
@@ -781,7 +751,7 @@ def test_optional_int():
     assert params['x'].field_info is None
     assert params['x'].dynamic_func is None
     assert params['x'].is_optional is True
-
+    assert params['x'].optional_enabled is False
 
 def test_optional_float():
     def func(price: float | None): 
@@ -795,7 +765,7 @@ def test_optional_float():
     assert params['price'].field_info is None
     assert params['price'].dynamic_func is None
     assert params['price'].is_optional is True
-
+    assert params['price'].optional_enabled is False
 
 def test_optional_str():
     def func(name: str | None): 
@@ -809,7 +779,7 @@ def test_optional_str():
     assert params['name'].field_info is None
     assert params['name'].dynamic_func is None
     assert params['name'].is_optional is True
-
+    assert params['name'].optional_enabled is False
 
 def test_optional_bool():
     def func(active: bool | None): 
@@ -823,7 +793,7 @@ def test_optional_bool():
     assert params['active'].field_info is None
     assert params['active'].dynamic_func is None
     assert params['active'].is_optional is True
-
+    assert params['active'].optional_enabled is False
 
 def test_optional_date():
     def func(birthday: date | None): 
@@ -837,7 +807,7 @@ def test_optional_date():
     assert params['birthday'].field_info is None
     assert params['birthday'].dynamic_func is None
     assert params['birthday'].is_optional is True
-
+    assert params['birthday'].optional_enabled is False
 
 def test_optional_time():
     def func(meeting: time | None): 
@@ -851,7 +821,7 @@ def test_optional_time():
     assert params['meeting'].field_info is None
     assert params['meeting'].dynamic_func is None
     assert params['meeting'].is_optional is True
-
+    assert params['meeting'].optional_enabled is False
 
 def test_optional_int_with_default():
     def func(age: int | None = 25): 
@@ -865,7 +835,7 @@ def test_optional_int_with_default():
     assert params['age'].field_info is None
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is True
-
+    assert params['age'].optional_enabled is True
 
 def test_optional_str_with_default():
     def func(name: str | None = "John"): 
@@ -879,7 +849,7 @@ def test_optional_str_with_default():
     assert params['name'].field_info is None
     assert params['name'].dynamic_func is None
     assert params['name'].is_optional is True
-
+    assert params['name'].optional_enabled is True
 
 def test_optional_without_default():
     def func(email: str | None = None): 
@@ -893,7 +863,7 @@ def test_optional_without_default():
     assert params['email'].field_info is None
     assert params['email'].dynamic_func is None
     assert params['email'].is_optional is True
-
+    assert params['email'].optional_enabled is False
 
 def test_optional_float_with_default():
     def func(price: float | None = 9.99): 
@@ -907,7 +877,7 @@ def test_optional_float_with_default():
     assert params['price'].field_info is None
     assert params['price'].dynamic_func is None
     assert params['price'].is_optional is True
-
+    assert params['price'].optional_enabled is True
 
 def test_optional_bool_with_default():
     def func(active: bool | None = True): 
@@ -921,7 +891,7 @@ def test_optional_bool_with_default():
     assert params['active'].field_info is None
     assert params['active'].dynamic_func is None
     assert params['active'].is_optional is True
-
+    assert params['active'].optional_enabled is True
 
 def test_optional_date_with_default():
     default_date = date(2000, 1, 1)
@@ -937,7 +907,7 @@ def test_optional_date_with_default():
     assert params['birthday'].field_info is None
     assert params['birthday'].dynamic_func is None
     assert params['birthday'].is_optional is True
-
+    assert params['birthday'].optional_enabled is True
 
 def test_optional_time_with_default():
     default_time = time(14, 30)
@@ -953,7 +923,7 @@ def test_optional_time_with_default():
     assert params['meeting'].field_info is None
     assert params['meeting'].dynamic_func is None
     assert params['meeting'].is_optional is True
-
+    assert params['meeting'].optional_enabled is True
 
 def test_optional_with_constraints():
     def func(age: Annotated[int, Field(ge=18)] | None = None): 
@@ -967,7 +937,7 @@ def test_optional_with_constraints():
     assert params['age'].field_info is not None
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is True
-
+    assert params['age'].optional_enabled is False
 
 def test_optional_with_constraints_and_default():
     def func(age: Annotated[int, Field(ge=18, le=100)] | None = 25): 
@@ -981,7 +951,7 @@ def test_optional_with_constraints_and_default():
     assert params['age'].field_info is not None
     assert params['age'].dynamic_func is None
     assert params['age'].is_optional is True
-
+    assert params['age'].optional_enabled is True
 
 def test_optional_str_with_length():
     def func(username: Annotated[str, Field(min_length=3)] | None = None): 
@@ -995,7 +965,7 @@ def test_optional_str_with_length():
     assert params['username'].field_info is not None
     assert params['username'].dynamic_func is None
     assert params['username'].is_optional is True
-
+    assert params['username'].optional_enabled is False
 
 def test_optional_color():
     def func(color: Color | None = None): 
@@ -1009,7 +979,7 @@ def test_optional_color():
     assert params['color'].field_info is not None
     assert params['color'].dynamic_func is None
     assert params['color'].is_optional is True
-
+    assert params['color'].optional_enabled is False
 
 def test_optional_email():
     def func(email: Email | None = None): 
@@ -1023,7 +993,7 @@ def test_optional_email():
     assert params['email'].field_info is not None
     assert params['email'].dynamic_func is None
     assert params['email'].is_optional is True
-
+    assert params['email'].optional_enabled is False
 
 def test_optional_image_file():
     def func(photo: ImageFile | None = None): 
@@ -1037,7 +1007,7 @@ def test_optional_image_file():
     assert params['photo'].field_info is not None
     assert params['photo'].dynamic_func is None
     assert params['photo'].is_optional is True
-
+    assert params['photo'].optional_enabled is False
 
 def test_optional_literal():
     def func(theme: Literal['light', 'dark'] | None = None): 
@@ -1051,7 +1021,7 @@ def test_optional_literal():
     assert params['theme'].field_info is not None
     assert params['theme'].dynamic_func is None
     assert params['theme'].is_optional is True
-
+    assert params['theme'].optional_enabled is False
 
 def test_optional_literal_with_default():
     def func(theme: Literal['light', 'dark'] | None = 'light'): 
@@ -1065,11 +1035,9 @@ def test_optional_literal_with_default():
     assert params['theme'].field_info is not None
     assert params['theme'].dynamic_func is None
     assert params['theme'].is_optional is True
-
+    assert params['theme'].optional_enabled is True
 
 def test_optional_only_none_raises():
-    from typing import Union
-    
     with pytest.raises(TypeError):
         def func(x: Union[None, None]): 
             pass
@@ -1081,202 +1049,8 @@ def test_optional_multiple_types_raises():
             pass
         analyze(func)
 
+# --- OPTIONAL ENABLED / DISABLED MARKERS ---
 
-def test_complex_function_all_features():
-    def get_modes():
-        return ['fast', 'slow']
-    
-    def func(
-        name: str,
-        age: int,
-        active: bool,
-        username: Annotated[str, Field(min_length=3, max_length=20)],
-        color: Color,
-        score: float = 9.5,
-        rating: Annotated[int, Field(ge=1, le=10)] = 5,
-        theme: Literal['light', 'dark'] = 'light',
-        email: Email | None = None,
-        mode: Literal[get_modes] | None = None, 
-        bio: str | None = None,
-        birthday: date | None = None,
-        password: Annotated[str, Field(min_length=8)] | None = None,
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 13
-    
-    assert params['name'].type == str
-    assert params['name'].is_optional is False
-    assert params['age'].type == int
-    assert params['age'].is_optional is False
-    assert params['active'].type == bool
-    assert params['active'].is_optional is False
-    
-    assert params['score'].type == float
-    assert params['score'].default == 9.5
-    assert params['score'].is_optional is False
-    
-    assert params['username'].type == str
-    assert params['username'].field_info is not None
-    assert params['username'].is_optional is False
-    assert params['rating'].type == int
-    assert params['rating'].default == 5
-    assert params['rating'].field_info is not None
-    
-    assert params['color'].type == str
-    assert params['color'].field_info is not None
-    assert params['color'].is_optional is False
-    assert params['email'].type == str
-    assert params['email'].is_optional is True
-    
-    assert params['theme'].type == str
-    assert params['theme'].default == 'light'
-    assert params['theme'].field_info is not None
-    assert params['theme'].dynamic_func is None
-    
-    assert params['mode'].type == str
-    assert params['mode'].dynamic_func is get_modes
-    
-    assert params['bio'].type == str
-    assert params['bio'].is_optional is True
-    assert params['birthday'].type == date
-    assert params['birthday'].is_optional is True
-    
-    assert params['password'].type == str
-    assert params['password'].field_info is not None
-    assert params['password'].is_optional is True
-
-
-def test_multiple_optionals_with_mixed_defaults():
-    def func(
-        opt1: int | None,
-        opt2: int | None = None,
-        opt3: int | None = 42,
-        opt4: str | None = "hello",
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 4
-    
-    assert params['opt1'].is_optional is True
-    assert params['opt1'].default is None
-    
-    assert params['opt2'].is_optional is True
-    assert params['opt2'].default is None
-    
-    assert params['opt3'].is_optional is True
-    assert params['opt3'].default == 42
-    
-    assert params['opt4'].is_optional is True
-    assert params['opt4'].default == "hello"
-
-
-def test_all_basic_types_together():
-    def func(
-        a: int,
-        b: float,
-        c: str,
-        d: bool,
-        e: date,
-        f: time,
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 6
-    assert params['a'].type == int
-    assert params['b'].type == float
-    assert params['c'].type == str
-    assert params['d'].type == bool
-    assert params['e'].type == date
-    assert params['f'].type == time
-
-
-def test_all_special_types_together():
-    def func(
-        color: Color,
-        email: Email,
-        img: ImageFile,
-        data: DataFile,
-        txt: TextFile,
-        doc: DocumentFile,
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 6
-    
-    for name in params:
-        assert params[name].type == str
-        assert params[name].field_info is not None
-
-
-def test_multiple_literals_different_types():
-    def func(
-        str_lit: Literal['a', 'b', 'c'],
-        int_lit: Literal[1, 2, 3],
-        float_lit: Literal[0.1, 0.5, 1.0], # type: ignore
-        bool_lit: Literal[True, False],
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 4
-    assert params['str_lit'].type == str
-    assert params['int_lit'].type == int
-    assert params['float_lit'].type == float
-    assert params['bool_lit'].type == bool
-
-
-def test_nested_annotated_optional_no_default():
-    def func(
-        field1: Annotated[int, Field(ge=0)] | None,
-        field2: Annotated[str, Field(min_length=5)] | None = "hello",
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert params['field1'].type == int
-    assert params['field1'].field_info is not None
-    assert params['field1'].is_optional is True
-    assert params['field1'].default is None
-    
-    assert params['field2'].type == str
-    assert params['field2'].field_info is not None
-    assert params['field2'].is_optional is True
-    assert params['field2'].default == "hello"
-
-
-def test_all_constraints_in_one():
-    def func(
-        age: Annotated[int, Field(ge=18, le=100)],
-        username: Annotated[str, Field(min_length=3, max_length=20)],
-        rating: Annotated[float, Field(gt=0, lt=5)],
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert len(params) == 3
-    assert params['age'].field_info is not None
-    assert params['username'].field_info is not None
-    assert params['rating'].field_info is not None
-
-import pytest
-from datetime import date, time
-from func_to_web import analyze
-from func_to_web.types import OptionalEnabled, OptionalDisabled, Color, Email
-
-
-# Basic OptionalEnabled tests
 def test_optional_enabled_int():
     def func(x: int | OptionalEnabled): 
         pass
@@ -1291,7 +1065,6 @@ def test_optional_enabled_int():
     assert params['x'].is_optional is True
     assert params['x'].optional_enabled is True
 
-
 def test_optional_enabled_str():
     def func(name: str | OptionalEnabled): 
         pass
@@ -1304,7 +1077,6 @@ def test_optional_enabled_str():
     assert params['name'].is_optional is True
     assert params['name'].optional_enabled is True
 
-
 def test_optional_enabled_float():
     def func(price: float | OptionalEnabled): 
         pass
@@ -1315,7 +1087,6 @@ def test_optional_enabled_float():
     assert params['price'].type == float
     assert params['price'].is_optional is True
     assert params['price'].optional_enabled is True
-
 
 def test_optional_enabled_bool():
     def func(active: bool | OptionalEnabled): 
@@ -1328,7 +1099,6 @@ def test_optional_enabled_bool():
     assert params['active'].is_optional is True
     assert params['active'].optional_enabled is True
 
-
 def test_optional_enabled_date():
     def func(birthday: date | OptionalEnabled): 
         pass
@@ -1339,7 +1109,6 @@ def test_optional_enabled_date():
     assert params['birthday'].type == date
     assert params['birthday'].is_optional is True
     assert params['birthday'].optional_enabled is True
-
 
 def test_optional_enabled_time():
     def func(meeting: time | OptionalEnabled): 
@@ -1352,8 +1121,6 @@ def test_optional_enabled_time():
     assert params['meeting'].is_optional is True
     assert params['meeting'].optional_enabled is True
 
-
-# Basic OptionalDisabled tests
 def test_optional_disabled_int():
     def func(x: int | OptionalDisabled): 
         pass
@@ -1368,7 +1135,6 @@ def test_optional_disabled_int():
     assert params['x'].is_optional is True
     assert params['x'].optional_enabled is False
 
-
 def test_optional_disabled_str():
     def func(name: str | OptionalDisabled): 
         pass
@@ -1381,7 +1147,6 @@ def test_optional_disabled_str():
     assert params['name'].is_optional is True
     assert params['name'].optional_enabled is False
 
-
 def test_optional_disabled_float():
     def func(price: float | OptionalDisabled): 
         pass
@@ -1392,7 +1157,6 @@ def test_optional_disabled_float():
     assert params['price'].type == float
     assert params['price'].is_optional is True
     assert params['price'].optional_enabled is False
-
 
 def test_optional_disabled_bool():
     def func(active: bool | OptionalDisabled): 
@@ -1405,7 +1169,6 @@ def test_optional_disabled_bool():
     assert params['active'].is_optional is True
     assert params['active'].optional_enabled is False
 
-
 def test_optional_disabled_date():
     def func(birthday: date | OptionalDisabled): 
         pass
@@ -1416,7 +1179,6 @@ def test_optional_disabled_date():
     assert params['birthday'].type == date
     assert params['birthday'].is_optional is True
     assert params['birthday'].optional_enabled is False
-
 
 def test_optional_disabled_time():
     def func(meeting: time | OptionalDisabled): 
@@ -1429,8 +1191,6 @@ def test_optional_disabled_time():
     assert params['meeting'].is_optional is True
     assert params['meeting'].optional_enabled is False
 
-
-# Tests with defaults - OptionalEnabled
 def test_optional_enabled_with_default_int():
     def func(age: int | OptionalEnabled = 25): 
         pass
@@ -1441,7 +1201,6 @@ def test_optional_enabled_with_default_int():
     assert params['age'].default == 25
     assert params['age'].is_optional is True
     assert params['age'].optional_enabled is True
-
 
 def test_optional_enabled_with_default_str():
     def func(name: str | OptionalEnabled = "John"): 
@@ -1454,7 +1213,6 @@ def test_optional_enabled_with_default_str():
     assert params['name'].is_optional is True
     assert params['name'].optional_enabled is True
 
-
 def test_optional_enabled_with_default_float():
     def func(price: float | OptionalEnabled = 9.99): 
         pass
@@ -1466,8 +1224,6 @@ def test_optional_enabled_with_default_float():
     assert params['price'].is_optional is True
     assert params['price'].optional_enabled is True
 
-
-# Tests with defaults - OptionalDisabled (marker overrides default)
 def test_optional_disabled_with_default_int():
     def func(age: int | OptionalDisabled = 25): 
         pass
@@ -1477,8 +1233,7 @@ def test_optional_disabled_with_default_int():
     assert params['age'].type == int
     assert params['age'].default == 25
     assert params['age'].is_optional is True
-    assert params['age'].optional_enabled is False  # Marker overrides default
-
+    assert params['age'].optional_enabled is False
 
 def test_optional_disabled_with_default_str():
     def func(name: str | OptionalDisabled = "John"): 
@@ -1489,8 +1244,7 @@ def test_optional_disabled_with_default_str():
     assert params['name'].type == str
     assert params['name'].default == "John"
     assert params['name'].is_optional is True
-    assert params['name'].optional_enabled is False  # Marker overrides default
-
+    assert params['name'].optional_enabled is False
 
 def test_optional_disabled_with_default_float():
     def func(price: float | OptionalDisabled = 9.99): 
@@ -1501,10 +1255,8 @@ def test_optional_disabled_with_default_float():
     assert params['price'].type == float
     assert params['price'].default == 9.99
     assert params['price'].is_optional is True
-    assert params['price'].optional_enabled is False  # Marker overrides default
+    assert params['price'].optional_enabled is False
 
-
-# Tests with special types
 def test_optional_enabled_color():
     def func(color: Color | OptionalEnabled): 
         pass
@@ -1515,7 +1267,6 @@ def test_optional_enabled_color():
     assert params['color'].field_info is not None
     assert params['color'].is_optional is True
     assert params['color'].optional_enabled is True
-
 
 def test_optional_disabled_color():
     def func(color: Color | OptionalDisabled): 
@@ -1528,7 +1279,6 @@ def test_optional_disabled_color():
     assert params['color'].is_optional is True
     assert params['color'].optional_enabled is False
 
-
 def test_optional_enabled_email():
     def func(email: Email | OptionalEnabled): 
         pass
@@ -1540,7 +1290,6 @@ def test_optional_enabled_email():
     assert params['email'].is_optional is True
     assert params['email'].optional_enabled is True
 
-
 def test_optional_disabled_email():
     def func(email: Email | OptionalDisabled): 
         pass
@@ -1551,7 +1300,6 @@ def test_optional_disabled_email():
     assert params['email'].field_info is not None
     assert params['email'].is_optional is True
     assert params['email'].optional_enabled is False
-
 
 def test_optional_enabled_color_with_default():
     def func(color: Color | OptionalEnabled = "#ff0000"): 
@@ -1565,7 +1313,6 @@ def test_optional_enabled_color_with_default():
     assert params['color'].is_optional is True
     assert params['color'].optional_enabled is True
 
-
 def test_optional_disabled_email_with_default():
     def func(email: Email | OptionalDisabled = "test@example.com"): 
         pass
@@ -1578,12 +1325,7 @@ def test_optional_disabled_email_with_default():
     assert params['email'].is_optional is True
     assert params['email'].optional_enabled is False
 
-
-# Tests with constraints
 def test_optional_enabled_with_constraints():
-    from pydantic import Field
-    from typing import Annotated
-    
     def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalEnabled): 
         pass
     
@@ -1594,11 +1336,7 @@ def test_optional_enabled_with_constraints():
     assert params['age'].is_optional is True
     assert params['age'].optional_enabled is True
 
-
 def test_optional_disabled_with_constraints():
-    from pydantic import Field
-    from typing import Annotated
-    
     def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalDisabled): 
         pass
     
@@ -1609,11 +1347,7 @@ def test_optional_disabled_with_constraints():
     assert params['age'].is_optional is True
     assert params['age'].optional_enabled is False
 
-
 def test_optional_enabled_with_constraints_and_default():
-    from pydantic import Field
-    from typing import Annotated
-    
     def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalEnabled = 25): 
         pass
     
@@ -1625,11 +1359,7 @@ def test_optional_enabled_with_constraints_and_default():
     assert params['age'].is_optional is True
     assert params['age'].optional_enabled is True
 
-
 def test_optional_disabled_with_constraints_and_default():
-    from pydantic import Field
-    from typing import Annotated
-    
     def func(age: Annotated[int, Field(ge=18, le=100)] | OptionalDisabled = 25): 
         pass
     
@@ -1639,76 +1369,45 @@ def test_optional_disabled_with_constraints_and_default():
     assert params['age'].default == 25
     assert params['age'].field_info is not None
     assert params['age'].is_optional is True
-    assert params['age'].optional_enabled is False  # Marker overrides default
+    assert params['age'].optional_enabled is False
 
-
-# Comparison tests: automatic vs explicit behavior
 def test_auto_optional_without_default():
-    """Standard: int | None without default → disabled"""
     def func(x: int | None): 
         pass
     
     params = analyze(func)
     
     assert params['x'].is_optional is True
-    assert params['x'].optional_enabled is False  # Auto: disabled (no default)
-
+    assert params['x'].optional_enabled is False
 
 def test_auto_optional_with_default():
-    """Standard: int | None with default → enabled"""
     def func(x: int | None = 42): 
         pass
     
     params = analyze(func)
     
     assert params['x'].is_optional is True
-    assert params['x'].optional_enabled is True  # Auto: enabled (has default)
-
+    assert params['x'].optional_enabled is True
 
 def test_explicit_enabled_overrides_no_default():
-    """Explicit: OptionalEnabled without default → enabled"""
     def func(x: int | OptionalEnabled): 
         pass
     
     params = analyze(func)
     
     assert params['x'].is_optional is True
-    assert params['x'].optional_enabled is True  # Explicit overrides
-
+    assert params['x'].optional_enabled is True
 
 def test_explicit_disabled_overrides_default():
-    """Explicit: OptionalDisabled with default → disabled"""
     def func(x: int | OptionalDisabled = 42): 
         pass
     
     params = analyze(func)
     
     assert params['x'].is_optional is True
-    assert params['x'].optional_enabled is False  # Explicit overrides
+    assert params['x'].optional_enabled is False
 
-
-# Mixed usage in one function
-def test_mixed_optional_styles():
-    """Test all three styles together"""
-    def func(
-        auto_disabled: int | None,  # Auto: no default → disabled
-        explicit_enabled: int | OptionalEnabled,  # Explicit → enabled
-        auto_enabled: int | None = 10,  # Auto: has default → enabled
-        explicit_disabled: int | OptionalDisabled = 20,  # Explicit → disabled (overrides default)
-    ): 
-        pass
-    
-    params = analyze(func)
-    
-    assert params['auto_disabled'].optional_enabled is False
-    assert params['auto_enabled'].optional_enabled is True
-    assert params['explicit_enabled'].optional_enabled is True
-    assert params['explicit_disabled'].optional_enabled is False
-
-
-# Edge cases
 def test_optional_enabled_with_none_default():
-    """OptionalEnabled with explicit None default → still enabled"""
     def func(x: int | OptionalEnabled = None): 
         pass
     
@@ -1716,11 +1415,9 @@ def test_optional_enabled_with_none_default():
     
     assert params['x'].is_optional is True
     assert params['x'].default is None
-    assert params['x'].optional_enabled is True  # Marker takes priority
-
+    assert params['x'].optional_enabled is True
 
 def test_optional_disabled_with_none_default():
-    """OptionalDisabled with explicit None default → disabled"""
     def func(x: int | OptionalDisabled = None): 
         pass
     
@@ -1729,3 +1426,1210 @@ def test_optional_disabled_with_none_default():
     assert params['x'].is_optional is True
     assert params['x'].default is None
     assert params['x'].optional_enabled is False
+
+# --- LIST TYPES ---
+
+def test_list_of_ints():
+    def func(numbers: list[int]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_of_str():
+    def func(names: list[str]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default is None
+    assert params['names'].field_info is None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is False
+    assert params['names'].is_list is True
+
+def test_list_of_floats():
+    def func(prices: list[float]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default is None
+    assert params['prices'].field_info is None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is False
+    assert params['prices'].is_list is True
+
+def test_list_of_bools():
+    def func(flags: list[bool]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'flags' in params
+    assert params['flags'].type == bool
+    assert params['flags'].default is None
+    assert params['flags'].field_info is None
+    assert params['flags'].dynamic_func is None
+    assert params['flags'].is_optional is False
+    assert params['flags'].is_list is True
+
+def test_list_of_dates():
+    def func(dates: list[date]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'dates' in params
+    assert params['dates'].type == date
+    assert params['dates'].default is None
+    assert params['dates'].field_info is None
+    assert params['dates'].dynamic_func is None
+    assert params['dates'].is_optional is False
+    assert params['dates'].is_list is True
+
+def test_list_of_times():
+    def func(times: list[time]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'times' in params
+    assert params['times'].type == time
+    assert params['times'].default is None
+    assert params['times'].field_info is None
+    assert params['times'].dynamic_func is None
+    assert params['times'].is_optional is False
+    assert params['times'].is_list is True
+
+def test_list_of_colors():
+    def func(colors: list[Color]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'colors' in params
+    assert params['colors'].type == str
+    assert params['colors'].default is None
+    assert params['colors'].field_info is not None
+    assert params['colors'].dynamic_func is None
+    assert params['colors'].is_optional is False
+    assert params['colors'].is_list is True
+
+def test_list_of_emails():
+    def func(emails: list[Email]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'emails' in params
+    assert params['emails'].type == str
+    assert params['emails'].default is None
+    assert params['emails'].field_info is not None
+    assert params['emails'].dynamic_func is None
+    assert params['emails'].is_optional is False
+    assert params['emails'].is_list is True
+
+def test_list_of_image_files():
+    def func(photos: list[ImageFile]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'photos' in params
+    assert params['photos'].type == str
+    assert params['photos'].default is None
+    assert params['photos'].field_info is not None
+    assert params['photos'].dynamic_func is None
+    assert params['photos'].is_optional is False
+    assert params['photos'].is_list is True
+
+def test_literal_default_raises():
+    with pytest.raises(ValueError):
+        def func(themes: Literal['light', 'dark'] = ["Aguacate"]):
+            pass
+        analyze(func)
+
+def test_list_of_literal():
+   with pytest.raises(TypeError, match="'themes': list of Literal not supported"):
+        def func(themes: list[Literal['light', 'dark']]): 
+            pass
+        analyze(func)
+
+def test_list_of_optional_raises():
+    with pytest.raises(TypeError, match="'numbers': int | None not supported"):
+        def func(numbers: list[int | None]): 
+            pass
+        analyze(func)
+
+def test_list_of_list_raises():
+    with pytest.raises(TypeError):
+        def func(matrix: list[list[int]]): 
+            pass
+        analyze(func)
+
+def test_list_of_list_raises():
+    with pytest.raises(TypeError):
+        def func(matrix: list[list]): 
+            pass
+        analyze(func)
+    
+# --- LIST WITH DEFAULT ---
+
+def test_list_of_ints_with_default():
+    def func(numbers: list[int] = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [1, 2, 3]
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_of_str_with_default():
+    def func(names: list[str] = ["Alice", "Bob"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default == ["Alice", "Bob"]
+    assert params['names'].field_info is None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is False
+    assert params['names'].is_list is True
+
+def test_list_of_floats_with_default():
+    def func(prices: list[float] = [9.99, 19.99]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default == [9.99, 19.99]
+    assert params['prices'].field_info is None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is False
+    assert params['prices'].is_list is True
+
+def test_list_of_bools_with_default():
+    def func(flags: list[bool] = [True, False]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'flags' in params
+    assert params['flags'].type == bool
+    assert params['flags'].default == [True, False]
+    assert params['flags'].field_info is None
+    assert params['flags'].dynamic_func is None
+    assert params['flags'].is_optional is False
+    assert params['flags'].is_list is True
+
+def test_list_of_dates_with_default():
+    def func(dates: list[date] = [date(2023, 1, 1), date(2023, 12, 31)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'dates' in params
+    assert params['dates'].type == date
+    assert params['dates'].default == [date(2023, 1, 1), date(2023, 12, 31)]
+    assert params['dates'].field_info is None
+    assert params['dates'].dynamic_func is None
+    assert params['dates'].is_optional is False
+    assert params['dates'].is_list is True
+
+def test_list_of_times_with_default():
+    def func(times: list[time] = [time(9, 0), time(17, 0)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'times' in params
+    assert params['times'].type == time
+    assert params['times'].default == [time(9, 0), time(17, 0)]
+    assert params['times'].field_info is None
+    assert params['times'].dynamic_func is None
+    assert params['times'].is_optional is False
+    assert params['times'].is_list is True
+
+def test_list_of_colors_with_default():
+    def func(colors: list[Color] = ["#ff0000", "#00ff00"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'colors' in params
+    assert params['colors'].type == str
+    assert params['colors'].default == ["#ff0000", "#00ff00"]
+    assert params['colors'].field_info is not None
+    assert params['colors'].dynamic_func is None
+    assert params['colors'].is_optional is False
+    assert params['colors'].is_list is True
+
+def test_list_of_emails_with_default():
+    def func(emails: list[Email] = ["aaa@gmail.com", "bbb@aaa.com"]):
+        pass
+
+    params = analyze(func)
+    
+    assert 'emails' in params
+    assert params['emails'].type == str
+    assert params['emails'].default == ["aaa@gmail.com", "bbb@aaa.com"]
+    assert params['emails'].field_info is not None
+    assert params['emails'].dynamic_func is None
+    assert params['emails'].is_optional is False
+    assert params['emails'].is_list is True
+    
+def test_list_of_image_files_with_default():
+    def func(photos: list[ImageFile] = ["img1.png", "img2.jpg"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'photos' in params
+    assert params['photos'].type == str
+    assert params['photos'].default == ["img1.png", "img2.jpg"]
+    assert params['photos'].field_info is not None
+    assert params['photos'].dynamic_func is None
+    assert params['photos'].is_optional is False
+    assert params['photos'].is_list is True
+
+def test_default_list_empty():
+    def func(numbers: list[int] = []): 
+        pass
+    params = analyze(func)
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_of_literal_with_default():
+    with pytest.raises(TypeError, match="'themes': list of Literal not supported"):
+        def func(themes: list[Literal['light', 'dark']] = ['light']): 
+            pass
+        analyze(func)
+
+def test_list_of_mixed_types_raises():
+    with pytest.raises(TypeError):
+        def func(items: list[Union[int, str]]): 
+            pass
+        analyze(func)
+
+def test_list_of_mixed_types_with_default_raises():
+    with pytest.raises(TypeError, match="'items': list item type mismatch in default"):
+        def func(items: list[int] = [1, 'two']): 
+            pass
+        analyze(func)
+
+def test_false_list():
+    with pytest.raises(TypeError):
+        def func(numbers: list[int] = "assf"): 
+            pass
+        analyze(func)
+
+def test_false_list2():
+    with pytest.raises(TypeError):
+        def func(numbers: list[int] = (1,2)): 
+            pass
+        analyze(func)
+
+def test_false_list3():
+    with pytest.raises(TypeError):
+        def func(numbers: list[int] = 3):
+            pass
+        analyze(func)
+
+# --- LIST WITH CONSTRAINTS ---
+
+def test_list_of_ints_with_constraints():
+    def func(numbers: list[Annotated[int, Field(ge=0)]]): 
+        pass
+    params = analyze(func)
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_of_str_with_constraints():
+    def func(names: list[Annotated[str, Field(min_length=2)]]): 
+        pass
+    params = analyze(func)
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default is None
+    assert params['names'].field_info is not None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is False
+    assert params['names'].is_list is True
+
+def test_list_of_floats_with_constraints():
+    def func(prices: list[Annotated[float, Field(gt=0.0)]]): 
+        pass
+    params = analyze(func)
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default is None
+    assert params['prices'].field_info is not None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is False
+    assert params['prices'].is_list is True
+
+def test_list_of_bools_with_constraints():
+    def func(flags: list[Annotated[bool, Field()]]): 
+        pass
+    params = analyze(func)
+    assert 'flags' in params
+    assert params['flags'].type == bool
+    assert params['flags'].default is None
+    assert params['flags'].field_info is not None
+    assert params['flags'].dynamic_func is None
+    assert params['flags'].is_optional is False
+    assert params['flags'].is_list is True
+
+def test_list_of_dates_with_constraints():
+    def func(dates: list[Annotated[date, Field()]]): 
+        pass
+    params = analyze(func)
+    assert 'dates' in params
+    assert params['dates'].type == date
+    assert params['dates'].default is None
+    assert params['dates'].field_info is not None
+    assert params['dates'].dynamic_func is None
+    assert params['dates'].is_optional is False
+    assert params['dates'].is_list is True
+
+def test_list_of_times_with_constraints():
+    def func(times: list[Annotated[time, Field()]]): 
+        pass
+    params = analyze(func)
+    assert 'times' in params
+    assert params['times'].type == time
+    assert params['times'].default is None
+    assert params['times'].field_info is not None
+    assert params['times'].dynamic_func is None
+    assert params['times'].is_optional is False
+    assert params['times'].is_list is True
+
+# --- LIST WITH DEFAULT AND CONSTRAINTS ---
+
+def test_list_of_ints_with_constraints_and_default():
+    def func(numbers: list[Annotated[int, Field(ge=0)]] = [0, 1, 2]): 
+        pass
+    params = analyze(func)
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [0, 1, 2]
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_of_str_with_constraints_and_default():
+    def func(names: list[Annotated[str, Field(min_length=2)]] = ["Al", "Bo"]): 
+        pass
+    params = analyze(func)
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default == ["Al", "Bo"]
+    assert params['names'].field_info is not None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is False
+    assert params['names'].is_list is True
+
+def test_list_of_floats_with_constraints_and_default():
+    def func(prices: list[Annotated[float, Field(gt=0.0)]] = [9.99, 19.99]): 
+        pass
+    params = analyze(func)
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default == [9.99, 19.99]
+    assert params['prices'].field_info is not None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is False
+    assert params['prices'].is_list is True
+
+def test_list_of_bools_with_constraints_and_default():
+    def func(flags: list[Annotated[bool, Field()]] = [True, False]): 
+        pass
+    params = analyze(func)
+    assert 'flags' in params
+    assert params['flags'].type == bool
+    assert params['flags'].default == [True, False]
+    assert params['flags'].field_info is not None
+    assert params['flags'].dynamic_func is None
+    assert params['flags'].is_optional is False
+    assert params['flags'].is_list is True
+
+def test_list_of_dates_with_constraints_and_default():
+    def func(dates: list[Annotated[date, Field()]] = [date(2023, 1, 1), date(2023, 12, 31)]): 
+        pass
+    params = analyze(func)
+    assert 'dates' in params
+    assert params['dates'].type == date
+    assert params['dates'].default == [date(2023, 1, 1), date(2023, 12, 31)]
+    assert params['dates'].field_info is not None
+    assert params['dates'].dynamic_func is None
+    assert params['dates'].is_optional is False
+    assert params['dates'].is_list is True
+
+def test_error_default_constraint_mismatch():
+    with pytest.raises(ValidationError):
+        def func(numbers: list[Annotated[int, Field(ge=0)]] = [1, -2, 3]): 
+            pass
+        analyze(func)
+
+def test_error_default_constraint_mismatch_str():
+    with pytest.raises(ValidationError):
+        def func(names: list[Annotated[str, Field(min_length=2)]] = ["A", "Bob"]): 
+            pass
+        analyze(func)
+
+def test_error_default_constraint_mismatch_float():
+    with pytest.raises(ValidationError):
+        def func(prices: list[Annotated[float, Field(gt=0.0)]] = [9.99, -19.99]): 
+            pass
+        analyze(func)
+
+def test_error_default_constraint_mismatch_email():
+    with pytest.raises(ValidationError):
+        def func(emails: list[Email] = ["aa"]): 
+            pass
+        analyze(func)
+
+def test_error_default_constraint_mismatch_color():
+    with pytest.raises(ValidationError):
+        def func(colors: list[Color] = ["not-a-color"]): 
+            pass
+        analyze(func)
+
+# --- LIST OPTIONAL ---
+
+def test_optional_list_of_ints():
+    def func(numbers: list[int] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_of_strs():
+    def func(names: list[str] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default is None
+    assert params['names'].field_info is None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is True
+    assert params['names'].optional_enabled is False
+    assert params['names'].is_list is True
+
+def test_optional_list_of_floats():
+    def func(prices: list[float] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default is None
+    assert params['prices'].field_info is None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is True
+    assert params['prices'].optional_enabled is False
+    assert params['prices'].is_list is True
+
+def test_optional_list_of_bools():
+    def func(flags: list[bool] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'flags' in params
+    assert params['flags'].type == bool
+    assert params['flags'].default is None
+    assert params['flags'].field_info is None
+    assert params['flags'].dynamic_func is None
+    assert params['flags'].is_optional is True
+    assert params['flags'].optional_enabled is False
+    assert params['flags'].is_list is True
+
+def test_optional_list_of_dates():
+    def func(dates: list[date] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'dates' in params
+    assert params['dates'].type == date
+    assert params['dates'].default is None
+    assert params['dates'].field_info is None
+    assert params['dates'].dynamic_func is None
+    assert params['dates'].is_optional is True
+    assert params['dates'].optional_enabled is False
+    assert params['dates'].is_list is True
+
+def test_optional_list_of_times():
+    def func(times: list[time] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'times' in params
+    assert params['times'].type == time
+    assert params['times'].default is None
+    assert params['times'].field_info is None
+    assert params['times'].dynamic_func is None
+    assert params['times'].is_optional is True
+    assert params['times'].optional_enabled is False
+    assert params['times'].is_list is True
+
+def test_optional_list_of_colors():
+    def func(colors: list[Color] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'colors' in params
+    assert params['colors'].type == str
+    assert params['colors'].default is None
+    assert params['colors'].field_info is not None
+    assert params['colors'].dynamic_func is None
+    assert params['colors'].is_optional is True
+    assert params['colors'].optional_enabled is False
+    assert params['colors'].is_list is True
+
+def test_optional_list_of_emails():
+    def func(emails: list[Email] | OptionalEnabled = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'emails' in params
+    assert params['emails'].type == str
+    assert params['emails'].default is None
+    assert params['emails'].field_info is not None
+    assert params['emails'].dynamic_func is None
+    assert params['emails'].is_optional is True
+    assert params['emails'].optional_enabled is True
+    assert params['emails'].is_list is True
+
+# --- OPTIONAL LIST WITH NON-NONE DEFAULT ---
+
+def test_optional_list_of_ints_with_default():
+    def func(numbers: list[int] | None = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [1, 2, 3]
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_of_strs_with_default():
+    def func(names: list[str] | None = ["Alice", "Bob"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].default == ["Alice", "Bob"]
+    assert params['names'].field_info is None
+    assert params['names'].dynamic_func is None
+    assert params['names'].is_optional is True
+    assert params['names'].optional_enabled is True
+    assert params['names'].is_list is True
+
+def test_optional_list_of_floats_with_default():
+    def func(prices: list[float] | None = [9.99, 19.99]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'prices' in params
+    assert params['prices'].type == float
+    assert params['prices'].default == [9.99, 19.99]
+    assert params['prices'].field_info is None
+    assert params['prices'].dynamic_func is None
+    assert params['prices'].is_optional is True
+    assert params['prices'].optional_enabled is True
+    assert params['prices'].is_list is True
+
+def test_optional_list_of_emails_disabled_with_default():
+    def func(emails: list[Email] | OptionalDisabled = ["test@example.com"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'emails' in params
+    assert params['emails'].type == str
+    assert params['emails'].default == ["test@example.com"]
+    assert params['emails'].field_info is not None
+    assert params['emails'].dynamic_func is None
+    assert params['emails'].is_optional is True
+    assert params['emails'].optional_enabled is False
+    assert params['emails'].is_list is True
+
+def test_optional_list_of_colors_enabled_with_default():
+    def func(colors: list[Color] | OptionalEnabled = ["#ff0000", "#00ff00"]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'colors' in params
+    assert params['colors'].type == str
+    assert params['colors'].default == ["#ff0000", "#00ff00"]
+    assert params['colors'].field_info is not None
+    assert params['colors'].dynamic_func is None
+    assert params['colors'].is_optional is True
+    assert params['colors'].optional_enabled is True
+    assert params['colors'].is_list is True
+
+def test_optional_list_with_constraints():
+    def func(numbers: list[Annotated[int, Field(ge=0)]] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_constraints_and_default():
+    def func(numbers: list[Annotated[int, Field(ge=0)]] | None = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [1, 2, 3]
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_constraints_enabled():
+    def func(numbers: list[Annotated[int, Field(ge=0)]] | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_constraints_disabled():
+    def func(numbers: list[Annotated[int, Field(ge=0)]] | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_list_with_empty_default():
+    def func(numbers: list[int] = []): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_empty_default():
+    def func(numbers: list[int] | None = []): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+
+# --- LIST WITH LIST-LEVEL CONSTRAINTS ---
+
+def test_list_with_list_level_constraints():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_with_min_items_only():
+    def func(numbers: Annotated[list[int], Field(min_length=2)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_list_with_max_items_only():
+    def func(numbers: Annotated[list[int], Field(max_length=10)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_list_with_both_item_and_list_constraints():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0, le=100)]], Field(min_length=2, max_length=5)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is not None  # Item constraints
+    assert params['numbers'].list_field_info is not None  # List constraints
+    assert params['numbers'].dynamic_func is None
+    assert params['numbers'].is_optional is False
+    assert params['numbers'].is_list is True
+
+def test_list_with_list_constraints_and_default():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)] = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [1, 2, 3]
+    assert params['numbers'].field_info is None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_list_with_both_constraints_and_default():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0, le=100)]], Field(min_length=2, max_length=5)] = [10, 20, 30]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default == [10, 20, 30]
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_list_str_with_list_constraints():
+    def func(names: Annotated[list[str], Field(min_length=1, max_length=3)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].field_info is None
+    assert params['names'].list_field_info is not None
+    assert params['names'].is_list is True
+
+def test_list_str_with_both_constraints():
+    def func(names: Annotated[list[Annotated[str, Field(min_length=2, max_length=10)]], Field(min_length=1, max_length=3)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'names' in params
+    assert params['names'].type == str
+    assert params['names'].field_info is not None
+    assert params['names'].list_field_info is not None
+    assert params['names'].is_list is True
+
+def test_list_email_with_list_constraints():
+    def func(emails: Annotated[list[Email], Field(min_length=1, max_length=5)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'emails' in params
+    assert params['emails'].type == str
+    assert params['emails'].field_info is not None  # Email constraint
+    assert params['emails'].list_field_info is not None  # List constraint
+    assert params['emails'].is_list is True
+
+def test_list_color_with_list_constraints():
+    def func(colors: Annotated[list[Color], Field(min_length=2, max_length=10)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'colors' in params
+    assert params['colors'].type == str
+    assert params['colors'].field_info is not None  # Color constraint
+    assert params['colors'].list_field_info is not None  # List constraint
+    assert params['colors'].is_list is True
+
+# --- LIST VALIDATION WITH LIST-LEVEL CONSTRAINTS ---
+
+def test_list_default_violates_min_items():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[int], Field(min_length=3)] = [1, 2]): 
+            pass
+        analyze(func)
+
+def test_list_default_violates_max_items():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[int], Field(max_length=2)] = [1, 2, 3]): 
+            pass
+        analyze(func)
+
+def test_list_default_satisfies_list_constraints():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)] = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].default == [1, 2, 3]
+
+def test_list_default_violates_both_item_and_list_constraints():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)] = [-1]): 
+            pass
+        analyze(func)
+
+def test_list_default_violates_only_item_constraint():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)] = [-1, 1, 2]): 
+            pass
+        analyze(func)
+
+def test_list_default_violates_only_list_constraint():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)] = [1]): 
+            pass
+        analyze(func)
+
+def test_list_default_satisfies_both_constraints():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0, le=100)]], Field(min_length=2, max_length=5)] = [10, 20, 30]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].default == [10, 20, 30]
+
+def test_list_email_default_violates_list_constraint():
+    with pytest.raises(ValidationError):
+        def func(emails: Annotated[list[Email], Field(max_length=2)] = ["a@a.com", "b@b.com", "c@c.com"]): 
+            pass
+        analyze(func)
+
+def test_list_color_default_violates_list_constraint():
+    with pytest.raises(ValidationError):
+        def func(colors: Annotated[list[Color], Field(min_length=2)] = ["#ff0000"]): 
+            pass
+        analyze(func)
+
+# --- OPTIONAL LIST WITH LIST-LEVEL CONSTRAINTS ---
+
+def test_optional_list_with_list_constraints():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].default is None
+    assert params['numbers'].field_info is None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_both_constraints():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2)] | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].type == int
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_list_constraints_and_default():
+    def func(numbers: Annotated[list[int], Field(min_length=2, max_length=5)] | None = [1, 2, 3]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].default == [1, 2, 3]
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_list_constraints_enabled():
+    def func(numbers: Annotated[list[int], Field(min_length=2)] | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_list_constraints_disabled():
+    def func(numbers: Annotated[list[int], Field(min_length=2)] | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_optional_list_with_both_constraints_and_enabled():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0, le=100)]], Field(min_length=2, max_length=5)] | OptionalEnabled = [10, 20]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].default == [10, 20]
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_list_empty_default_with_min_items_raises():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[int], Field(min_length=1)] = []): 
+            pass
+        analyze(func)
+
+def test_list_with_min_items_zero():
+    def func(numbers: Annotated[list[int], Field(min_length=0)] = []): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].default == None
+    assert params['numbers'].list_field_info is not None
+
+def test_list_with_min_length_only():
+    def func(numbers: Annotated[list[int], Field(min_length=2)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_list_with_max_length_only():
+    def func(numbers: Annotated[list[int], Field(max_length=10)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_list is True
+
+def test_optional_list_enabled_without_default():
+    def func(numbers: list[int] | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].default is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_disabled_without_default():
+    def func(numbers: list[int] | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'numbers' in params
+    assert params['numbers'].default is None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_list_with_min_length_zero():
+    def func(numbers: Annotated[list[int], Field(min_length=0)] = []): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].default is None
+    assert params['numbers'].list_field_info is not None
+
+def test_list_default_violates_max_length():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[int], Field(max_length=2)] = [1, 2, 3]): 
+            pass
+        analyze(func)
+
+def test_list_default_violates_min_length():
+    with pytest.raises(ValidationError):
+        def func(numbers: Annotated[list[int], Field(min_length=3)] = [1, 2]): 
+            pass
+        analyze(func)
+
+def test_optional_list_enabled_with_both_constraints():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2, max_length=5)] | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is True
+    assert params['numbers'].is_list is True
+
+def test_optional_list_disabled_with_both_constraints():
+    def func(numbers: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2, max_length=5)] | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['numbers'].field_info is not None
+    assert params['numbers'].list_field_info is not None
+    assert params['numbers'].is_optional is True
+    assert params['numbers'].optional_enabled is False
+    assert params['numbers'].is_list is True
+
+def test_list_image_files_with_list_constraints():
+    def func(photos: Annotated[list[ImageFile], Field(min_length=1, max_length=5)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['photos'].type == str
+    assert params['photos'].field_info is not None
+    assert params['photos'].list_field_info is not None
+    assert params['photos'].is_list is True
+
+def test_list_data_files_with_list_constraints():
+    def func(files: Annotated[list[DataFile], Field(min_length=1, max_length=3)]): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['files'].type == str
+    assert params['files'].field_info is not None
+    assert params['files'].list_field_info is not None
+    assert params['files'].is_list is True
+
+def test_list_str_default_violates_item_min_length():
+    with pytest.raises(ValidationError):
+        def func(names: list[Annotated[str, Field(min_length=3)]] = ["AB", "CD"]): 
+            pass
+        analyze(func)
+
+def test_list_str_default_violates_item_max_length():
+    with pytest.raises(ValidationError):
+        def func(names: list[Annotated[str, Field(max_length=5)]] = ["TOOLONG"]): 
+            pass
+        analyze(func)
+
+def test_list_of_literal_ints_not_supported():
+    with pytest.raises(TypeError):
+        def func(numbers: list[Literal[1, 2, 3]]): 
+            pass
+        analyze(func)
