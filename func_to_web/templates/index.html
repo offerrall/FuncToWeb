@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="index-page">
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+    </button>
+
     <div class="container">
         {% if tools %}
             <div class="tools-grid">
@@ -25,5 +29,7 @@
             </div>
         {% endif %}
     </div>
+
+    <script src="/static/form.js"></script>
 </body>
 </html>

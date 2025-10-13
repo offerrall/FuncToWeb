@@ -1,3 +1,22 @@
+
+(function() {
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = themeToggle?.querySelector('.theme-icon');
+    
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (themeIcon) themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    
+    themeToggle?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        if (themeIcon) themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    });
+})();
+
 let form, resultDiv, errorDiv, submitBtn, loadingOverlay, loadingTitle, progressBar, progressText;
 
 function initializeForm(submitUrl) {
@@ -715,11 +734,6 @@ function setupFormSubmit(submitUrl) {
 }
 
 function displayResult(data) {
-    console.log('DEBUG - Response:', data);
-    console.log('DEBUG - result_type:', data.result_type);
-    console.log('DEBUG - file_id:', data.file_id);
-    console.log('DEBUG - filename:', data.filename);
-    
     resultDiv.innerHTML = '';
     
     if (data.result_type === 'image') {

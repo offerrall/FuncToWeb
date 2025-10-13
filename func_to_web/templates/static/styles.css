@@ -13,6 +13,59 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* Dark mode variables */
+[data-theme="dark"] {
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --primary-light: #a5b4fc;
+    --success: #34d399;
+    --error: #f87171;
+    --text: #f3f4f6;
+    --text-light: #9ca3af;
+    --border: #374151;
+    --bg: #1f2937;
+    --white: #111827;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] body {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+[data-theme="dark"] .loading-content {
+    background: var(--white);
+    color: var(--text);
+}
+
+[data-theme="dark"] .spinner {
+    border-color: #374151;
+    border-top-color: #818cf8;
+}
+
+[data-theme="dark"] .progress-bar-container {
+    background: #374151;
+}
+
+[data-theme="dark"] .progress-text {
+    color: var(--text-light);
+}
+
+[data-theme="dark"] #result {
+    background: #064e3b;
+    border-color: #34d399;
+}
+
+[data-theme="dark"] #error {
+    background: #7f1d1d;
+    border-color: #f87171;
+    color: #fca5a5;
+}
+
+[data-theme="dark"] pre {
+    color: #6ee7b7;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -23,6 +76,41 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+}
+
+/* ==================== THEME TOGGLE ==================== */
+
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1) translateY(0);
+    box-shadow: var(--shadow-lg);
+}
+
+.theme-icon {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-icon {
+    transform: rotate(20deg);
 }
 
 /* ==================== LOADING OVERLAY STYLES ==================== */
@@ -715,135 +803,6 @@ body.index-page {
     border-color: var(--error);
 }
 
-/* ==================== RESPONSIVE DESIGN ==================== */
-
-@media (max-width: 640px) {
-    body.form-page {
-        padding: 0.5rem;
-    }
-    
-    .form-page .container {
-        padding: 1.5rem;
-    }
-    
-    .form-page h1 {
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .field {
-        margin-bottom: 1.25rem;
-    }
-    
-    input[type="text"],
-    input[type="number"],
-    input[type="email"],
-    input[type="url"],
-    input[type="tel"],
-    input[type="date"],
-    input[type="time"],
-    input[type="file"],
-    select {
-        font-size: 16px;
-    }
-    
-    button {
-        padding: 0.875rem;
-    }
-    
-    body.index-page {
-        padding: 1.5rem 0.75rem;
-    }
-    
-    .tools-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .tool-card {
-        padding: 1.5rem;
-    }
-    
-    /* List items stack better on mobile */
-    .list-item {
-        flex-wrap: wrap;
-    }
-    
-    .list-item input[type="date"],
-    .list-item input[type="time"] {
-        min-width: 120px;
-    }
-    
-    .list-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-    }
-}
-
-@media (max-height: 600px) and (orientation: landscape) {
-    body.form-page {
-        padding: 0.5rem 1rem;
-    }
-    
-    .form-page .container {
-        padding: 1rem;
-    }
-    
-    .form-page h1 {
-        font-size: 1.25rem;
-        margin-bottom: 1rem;
-    }
-    
-    .field {
-        margin-bottom: 1rem;
-    }
-}
-
-@media (min-width: 640px) and (max-width: 1024px) {
-    .form-page .container {
-        max-width: 600px;
-    }
-    
-    .tools-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* ==================== PRINT STYLES ==================== */
-
-@media print {
-    body {
-        background: white;
-    }
-    
-    .loading-overlay,
-    button,
-    .list-btn,
-    .toggle-switch {
-        display: none !important;
-    }
-    
-    .form-page .container {
-        box-shadow: none;
-        max-width: 100%;
-    }
-}
-
-/* ==================== DARK MODE SUPPORT (Optional) ==================== */
-
-@media (prefers-color-scheme: dark) {
-    /* Add dark mode styles here if needed */
-}
-
 /* ==================== FILE DOWNLOAD STYLES ==================== */
 
 .file-download,
@@ -899,7 +858,81 @@ body.index-page {
     box-shadow: none;
 }
 
+/* ==================== RESPONSIVE DESIGN ==================== */
+
 @media (max-width: 640px) {
+    .theme-toggle {
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .theme-icon {
+        font-size: 1.25rem;
+    }
+
+    body.form-page {
+        padding: 0.5rem;
+    }
+    
+    .form-page .container {
+        padding: 1.5rem;
+    }
+    
+    .form-page h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .field {
+        margin-bottom: 1.25rem;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="url"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    input[type="file"],
+    select {
+        font-size: 16px;
+    }
+    
+    button {
+        padding: 0.875rem;
+    }
+    
+    body.index-page {
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .tools-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .tool-card {
+        padding: 1.5rem;
+    }
+    
+    .list-item {
+        flex-wrap: wrap;
+    }
+    
+    .list-item input[type="date"],
+    .list-item input[type="time"] {
+        min-width: 120px;
+    }
+    
+    .list-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+    
     .file-download {
         flex-direction: column;
         align-items: stretch;
@@ -912,5 +945,63 @@ body.index-page {
     
     .file-download button {
         width: 100%;
+    }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+    body.form-page {
+        padding: 0.5rem 1rem;
+    }
+    
+    .form-page .container {
+        padding: 1rem;
+    }
+    
+    .form-page h1 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .field {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+    .form-page .container {
+        max-width: 600px;
+    }
+    
+    .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== PRINT STYLES ==================== */
+
+@media print {
+    body {
+        background: white;
+    }
+    
+    .loading-overlay,
+    button,
+    .list-btn,
+    .toggle-switch,
+    .theme-toggle {
+        display: none !important;
+    }
+    
+    .form-page .container {
+        box-shadow: none;
+        max-width: 100%;
     }
 }

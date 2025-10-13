@@ -1,4 +1,4 @@
-# Func To Web 0.6.0
+# Func To Web 0.7.0
 
 **Transform any Python function into a web interface automatically.**
 
@@ -450,6 +450,15 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 
 ![Multiple Tools](images/multiple.jpg)
 
+
+### Dark Mode (New in 0.7.0)
+
+Toggle between light and dark themes. Your preference is saved automatically.
+
+![Dark Mode](images/dark_mode.jpg)
+
+Click the 🌙/☀️ button in the top-right corner to switch themes. Works on all pages, zero configuration needed.
+
 ## Features
 
 ### Input Types
@@ -514,6 +523,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (optional)
 
+
 ## Why func-to-web?
 
 - **Minimalist** - Under 2000 lines total, backend + frontend + docs
@@ -529,6 +539,7 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Multi-function support** - Serve multiple tools from one server
 - **Download files** - Return single or multiple files easily
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
+- **Dark mode** - Light/dark themes with persistent preference
 
 ## How It Works
 
