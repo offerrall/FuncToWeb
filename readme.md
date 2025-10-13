@@ -1,4 +1,4 @@
-# Func To Web 0.5.0
+# Func To Web 0.6.0
 
 **Transform any Python function into a web interface automatically.**
 
@@ -32,7 +32,7 @@ pip install func-to-web
 
 ## Examples
 
-**Check the `examples/` folder** for 17+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
+**Check the `examples/` folder** for 19+ complete, runnable examples covering everything from basic forms to image processing and data visualization. Each example is a single Python file you can run immediately:
 
 ```bash
 python examples/01_basic_division.py
@@ -346,6 +346,83 @@ run(plot_sine)
 
 ![Plot Result](images/plot.jpg)
 
+### File Downloads (New in 0.6.0)
+
+Return files from your functions and users get automatic download buttons:
+
+```python
+from func_to_web import run
+from func_to_web.types import FileResponse
+
+def create_text_file(content: str):
+    data = content.encode('utf-8')
+    return FileResponse(data=data, filename="ttutut.txt")
+
+def create_multiple_files(name: str):
+    file1 = FileResponse(
+        data=f"Hello {name}!".encode('utf-8'),
+        filename="hello.txt"
+    )
+    file2 = FileResponse(
+        data=f"Goodbye {name}!".encode('utf-8'),
+        filename="goodbye.txt"
+    )
+    return [file1, file2]
+
+run([create_text_file, create_multiple_files])
+```
+
+![File Downloads](images/return_files.jpg)
+
+**Key features:**
+- **Single file**: Return `FileResponse(data=bytes, filename="file.ext")`
+- **Multiple files**: Return `[FileResponse(...), FileResponse(...)]`
+- **Any file type**: PDF, Excel, ZIP, images, JSON, CSV, binary data, etc.
+- **Large files**: Uses streaming like uploads - handles GB+ files efficiently
+- **Clean UI**: List of files with individual download buttons
+- **Automatic cleanup**: Temporary files removed after download
+
+**Works with any library:**
+```python
+# PDF generation
+from reportlab.pdfgen import canvas
+import io
+
+def create_pdf(title: str):
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer)
+    pdf.drawString(100, 750, title)
+    pdf.save()
+    return FileResponse(data=buffer.getvalue(), filename="document.pdf")
+
+# Excel generation
+import pandas as pd
+
+def create_excel(rows: int):
+    df = pd.DataFrame({'A': range(rows), 'B': range(rows)})
+    buffer = io.BytesIO()
+    df.to_excel(buffer, index=False)
+    return FileResponse(data=buffer.getvalue(), filename="data.xlsx")
+
+# ZIP files
+import zipfile
+
+def create_archive(file_count: int):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w') as zf:
+        for i in range(file_count):
+            zf.writestr(f'file{i}.txt', f'Content {i}')
+    return FileResponse(data=buffer.getvalue(), filename="archive.zip")
+```
+
+**Performance:**
+- No size limits - uses temporary files and streaming
+- Constant memory usage regardless of file size
+- Same efficiency as file uploads (8MB chunks)
+- Files cleaned up automatically after download
+
+> **Note:** Generated files are stored in the system's temporary directory and automatically deleted after download. Files not downloaded will be cleaned up by the operating system's temporary folder cleanup policies (typically on restart or after several days). For high-traffic production environments with many generated files, consider implementing custom cleanup logic.
+
 ## Run Multiple Functions 
 
 You can serve multiple functions simultaneously. When passing a list of functions, func-to-web automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 15.
@@ -396,6 +473,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 - **PIL Images** - Displayed as images
 - **Matplotlib Figures** - Rendered as PNG
 - **Any object** - Converted with `str()`
+- **FileResponse** - Single or multiple downloadable files
 
 ### Upload Features
 - **Progress tracking** - Real-time progress bar and percentage
@@ -447,8 +525,9 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - **Dynamic dropdowns** - Generate options at runtime
 - **Optional toggles** - Enable/disable optional fields easily
 - **Client + server validation** - Instant feedback and robust checks
-- **Batteries included** - 17+ examples in the `examples/` folder
+- **Batteries included** - 19+ examples in the `examples/` folder
 - **Multi-function support** - Serve multiple tools from one server
+- **Download files** - Return single or multiple files easily
 - **Optimized performance** - Streaming uploads, progress tracking, low memory usage
 
 ## How It Works

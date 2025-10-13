@@ -1,18 +1,15 @@
 import io
 import base64
+import tempfile
+from .types import FileResponse as UserFileResponse
 
 def process_result(result):
     """
     Convert function result to appropriate display format.
     
-    Detects PIL Images and matplotlib Figures and converts them to base64.
-    All other types are converted to strings.
-    
-    Args:
-        result: The function's return value
-        
-    Returns:
-        dict: {'type': 'image'|'text', 'data': str}
+    Handles images (PIL, Matplotlib), single/multiple files, and text.
+    Returns a dictionary with 'type' and relevant data.
+    Files are saved to temporary files and paths are returned.
     """
     # PIL Image detection
     try:
@@ -45,6 +42,31 @@ def process_result(result):
             }
     except ImportError:
         pass
+    
+    # Single file - save to temp
+    if isinstance(result, UserFileResponse):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{result.filename}") as tmp:
+            tmp.write(result.data)
+            return {
+                'type': 'download',
+                'path': tmp.name,
+                'filename': result.filename
+            }
+    
+    # Multiple files - save to temp
+    if isinstance(result, list) and len(result) > 0 and all(isinstance(f, UserFileResponse) for f in result):
+        files = []
+        for f in result:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{f.filename}") as tmp:
+                tmp.write(f.data)
+                files.append({
+                    'path': tmp.name,
+                    'filename': f.filename
+                })
+        return {
+            'type': 'downloads',
+            'files': files
+        }
     
     # Default: convert to string
     return {

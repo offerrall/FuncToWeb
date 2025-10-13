@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
@@ -26,6 +26,10 @@ class _OptionalDisabledMarker:
     """Internal marker for OptionalDisabled"""
     pass
 
+
+class FileResponse(BaseModel):
+    data: bytes
+    filename: str
 
 OptionalEnabled = Annotated[None, _OptionalEnabledMarker()]
 OptionalDisabled = Annotated[None, _OptionalDisabledMarker()]

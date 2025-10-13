@@ -843,3 +843,74 @@ body.index-page {
 @media (prefers-color-scheme: dark) {
     /* Add dark mode styles here if needed */
 }
+
+/* ==================== FILE DOWNLOAD STYLES ==================== */
+
+.file-download,
+.files-download {
+    margin-top: 1rem;
+}
+
+.files-download h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+
+.file-download {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.file-download:last-child {
+    margin-bottom: 0;
+}
+
+.file-download .file-name {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-download button {
+    width: auto;
+    padding: 0.5rem 1.5rem;
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: normal;
+    flex-shrink: 0;
+}
+
+.file-download button:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+@media (max-width: 640px) {
+    .file-download {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .file-download .file-name {
+        text-align: center;
+        white-space: normal;
+    }
+    
+    .file-download button {
+        width: 100%;
+    }
+}

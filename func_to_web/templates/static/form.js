@@ -17,6 +17,15 @@ function initializeForm(submitUrl) {
     setupFormSubmit(submitUrl);
 }
 
+function downloadFile(fileId, filename) {
+    const a = document.createElement('a');
+    a.href = `/download/${fileId}`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 function setLoading(show, title = 'Uploading...') {
     if (show) {
         loadingOverlay.classList.add('active');
@@ -665,10 +674,7 @@ function setupFormSubmit(submitUrl) {
                 try {
                     const data = JSON.parse(xhr.responseText);
                     if (data.success) {
-                        resultDiv.innerHTML = data.result_type === 'image' ? 
-                            `<img src="${data.result}" alt="Result">` : 
-                            `<pre>${JSON.stringify(data.result, null, 2)}</pre>`;
-                        resultDiv.style.display = 'block';
+                        displayResult(data);
                     } else {
                         errorDiv.textContent = 'Error: ' + data.error;
                         errorDiv.style.display = 'block';
@@ -706,4 +712,40 @@ function setupFormSubmit(submitUrl) {
             errorDiv.style.display = 'block';
         }
     });
+}
+
+function displayResult(data) {
+    console.log('DEBUG - Response:', data);
+    console.log('DEBUG - result_type:', data.result_type);
+    console.log('DEBUG - file_id:', data.file_id);
+    console.log('DEBUG - filename:', data.filename);
+    
+    resultDiv.innerHTML = '';
+    
+    if (data.result_type === 'image') {
+        resultDiv.innerHTML = `<img src="${data.result}" alt="Result">`;
+    } else if (data.result_type === 'download') {
+        resultDiv.innerHTML = `
+            <div class="file-download">
+                <span class="file-name">📄 ${data.filename}</span>
+                <button onclick="downloadFile('${data.file_id}', '${data.filename}')">Download</button>
+            </div>
+        `;
+    } else if (data.result_type === 'downloads') {
+        let html = '<div class="files-download"><h3>Files ready:</h3>';
+        data.files.forEach(file => {
+            html += `
+                <div class="file-download">
+                    <span class="file-name">📄 ${file.filename}</span>
+                    <button onclick="downloadFile('${file.file_id}', '${file.filename}')">Download</button>
+                </div>
+            `;
+        });
+        html += '</div>';
+        resultDiv.innerHTML = html;
+    } else {
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data.result, null, 2)}</pre>`;
+    }
+    
+    resultDiv.style.display = 'block';
 }

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0] - 2025-10-13
+
+### Added
+- **File Download Support**: Return files from functions with automatic download buttons
+  - Return single file: `FileResponse(data=bytes, filename="file.txt")`
+  - Return multiple files: `[FileResponse(...), FileResponse(...)]`
+  - **Streaming downloads**: Efficient handling of large files (GB+) without memory issues
+  - Works with any file type: PDF, Excel, ZIP, images, binary data, etc.
+  - No size limits: Uses temporary files and streaming like file uploads
+  - Clean UI: File list with individual download buttons
+  - Automatic cleanup: Temp files deleted after download
+  - Example:
+```python
+    def create_report(name: str):
+        pdf_bytes = generate_pdf(name)
+        return FileResponse(data=pdf_bytes, filename="report.pdf")
+```
+
 ## [0.5.0] - 2025-10-12
 
 ### Added
