@@ -575,7 +575,7 @@ pytest tests/test_build_form_fields.py -v
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.10+
 - FastAPI
 - Uvicorn
 - Pydantic

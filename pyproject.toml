@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Transform any Python function into a web interface automatically"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi",
     "uvicorn",
