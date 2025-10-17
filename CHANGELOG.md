@@ -7,7 +7,8 @@
 ### Fixed
 - **Optional List Fields**: Hide add (+) and remove (-) buttons when optional list fields are disabled
 - **Error Messages on Disabled Fields**: Clear error messages when fields are disabled
-- **Real-time Validation for New List Items**: Validate list items immediately upon creation
+- **Initial State Consistency**: Fixed inconsistent behavior between page load and toggle interactions
+- **Minimum List Items**: Lists with minimum item requirements now auto-create all required items
 
 ## [0.7.0] - 2025-10-13
 

@@ -1,4 +1,3 @@
-
 (function() {
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle?.querySelector('.theme-icon');
@@ -81,6 +80,7 @@ function setupListFields() {
         const fieldName = container.dataset.list;
         const fieldType = container.dataset.listType;
         const defaultValue = container.dataset.listDefault;
+        const minLength = parseInt(container.dataset.listContainerMin) || 0;
         
         const toggle = document.querySelector(`[data-optional-toggle="${fieldName}"]`);
         const isOptionalField = toggle !== null;
@@ -100,8 +100,18 @@ function setupListFields() {
             defaults.forEach(defaultVal => {
                 addListItem(container, fieldName, fieldType, !isEnabled, defaultVal);
             });
-        } else if (isEnabled) {
-            addListItem(container, fieldName, fieldType, false);
+            
+            if (minLength > defaults.length) {
+                const itemsToCreate = minLength - defaults.length;
+                for (let i = 0; i < itemsToCreate; i++) {
+                    addListItem(container, fieldName, fieldType, !isEnabled);
+                }
+            }
+        } else {
+            const itemsToCreate = minLength > 0 ? minLength : 1;
+            for (let i = 0; i < itemsToCreate; i++) {
+                addListItem(container, fieldName, fieldType, !isEnabled);
+            }
         }
         
         container.dataset.disabled = !isEnabled ? 'true' : 'false';
@@ -174,17 +184,7 @@ function addListItem(container, fieldName, fieldType, isDisabled = false, defaul
     addBtn.className = 'list-btn list-btn-add';
     addBtn.textContent = '+';
     addBtn.disabled = isDisabled;
-    addBtn.onclick = () => {
-        addListItem(container, fieldName, fieldType);
-        setTimeout(() => {
-            const newWrappers = container.querySelectorAll('.list-item-wrapper');
-            const newWrapper = newWrappers[newWrappers.length - 1];
-            const newInput = newWrapper.querySelector('input, select');
-            if (!newInput.disabled && newInput.hasAttribute('required')) {
-                validateField(newInput);
-            }
-        }, 50);
-    };
+    addBtn.onclick = () => addListItem(container, fieldName, fieldType);
     
     itemDiv.appendChild(input);
     itemDiv.appendChild(removeBtn);
@@ -196,10 +196,6 @@ function addListItem(container, fieldName, fieldType, isDisabled = false, defaul
     container.appendChild(itemWrapper);
     
     updateListButtons(container);
-    
-    if (!isDisabled && defaultValue === null && input.hasAttribute('required') && fieldType !== 'checkbox') {
-        setTimeout(() => validateField(input), 50);
-    }
 }
 
 function removeListItem(itemWrapper, container, fieldName) {
@@ -292,21 +288,16 @@ function setupOptionalToggles() {
                     field.required = true;
                     
                     if (field.dataset.colorInput !== undefined) {
-                        setTimeout(() => {
-                            const currentValue = field.value || '';
-                            const isValidColor = /^#[0-9a-fA-F]{6}$/.test(currentValue) || /^#[0-9a-fA-F]{3}$/.test(currentValue);
-                            
-                            if (!isValidColor) {
-                                field.value = '#000000';
-                                const preview = document.querySelector(`[data-color-preview="${field.name}"]`);
-                                const picker = document.querySelector(`[data-color-picker="${field.name}"]`);
-                                if (preview) preview.style.backgroundColor = '#000000';
-                                if (picker) picker.value = '#000000';
-                            }
-                            validateField(field);
-                        }, 50);
-                    } else {
-                        setTimeout(() => validateField(field), 50);
+                        const currentValue = field.value || '';
+                        const isValidColor = /^#[0-9a-fA-F]{6}$/.test(currentValue) || /^#[0-9a-fA-F]{3}$/.test(currentValue);
+                        
+                        if (!isValidColor) {
+                            field.value = '#000000';
+                            const preview = document.querySelector(`[data-color-preview="${field.name}"]`);
+                            const picker = document.querySelector(`[data-color-picker="${field.name}"]`);
+                            if (preview) preview.style.backgroundColor = '#000000';
+                            if (picker) picker.value = '#000000';
+                        }
                     }
                 }
             }
@@ -314,6 +305,7 @@ function setupOptionalToggles() {
             if (listContainer) {
                 const fieldType = listContainer.dataset.listType;
                 const defaultValue = listContainer.dataset.listDefault;
+                const minLength = parseInt(listContainer.dataset.listContainerMin) || 0;
                 
                 if (!isEnabled) {
                     listContainer.dataset.disabled = 'true';
@@ -329,6 +321,10 @@ function setupOptionalToggles() {
                     });
                     
                     listContainer.querySelectorAll('button').forEach(el => el.disabled = true);
+                    
+                    if (listContainer.children.length === 0) {
+                        addListItem(listContainer, fieldName, fieldType, true);
+                    }
                 } else {
                     listContainer.dataset.disabled = 'false';
                     
@@ -347,8 +343,16 @@ function setupOptionalToggles() {
                             defaults.forEach(defaultVal => {
                                 addListItem(listContainer, fieldName, fieldType, false, defaultVal);
                             });
+                            
+                            const itemsToCreate = minLength - defaults.length;
+                            for (let i = 0; i < itemsToCreate; i++) {
+                                addListItem(listContainer, fieldName, fieldType, false);
+                            }
                         } else {
-                            addListItem(listContainer, fieldName, fieldType, false);
+                            const itemsToCreate = Math.max(minLength, 1);
+                            for (let i = 0; i < itemsToCreate; i++) {
+                                addListItem(listContainer, fieldName, fieldType, false);
+                            }
                         }
                     } else {
                         listContainer.querySelectorAll('input, select').forEach(el => {
@@ -356,14 +360,6 @@ function setupOptionalToggles() {
                         });
                         listContainer.querySelectorAll('button').forEach(el => el.disabled = false);
                     }
-                    
-                    setTimeout(() => {
-                        listContainer.querySelectorAll('input, select').forEach(input => {
-                            if (!input.disabled && input.hasAttribute('required')) {
-                                validateField(input);
-                            }
-                        });
-                    }, 50);
                 }
                 
                 updateListButtons(listContainer);
@@ -383,7 +379,9 @@ function setupOptionalToggles() {
         }
         
         toggle.addEventListener('change', updateFieldState);
-        updateFieldState();
+        if (field || colorPicker || colorPreview) {
+            updateFieldState();
+        }
     });
 }
 

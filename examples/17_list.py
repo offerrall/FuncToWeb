@@ -23,6 +23,7 @@ def process_data(
     names: list[str] = ["Alice", "Bob"],                        # List with defaults
     # Optional lists
     tags: list[str] | None = None,                              # Can be None or have values
+    tags2: Annotated[list[str], Field(min_length=2)] | None = None, # Optional, min 2 items if provided
     emails: list[Email] | None = None,                          # Optional email list
 
     # Optional more min-max examples
@@ -40,6 +41,7 @@ def process_data(
         "ratings": ratings,
         "names": names,
         "tags": tags,
+        "tags2": tags2,
         "emails": emails,
         "all_features": all_features
     }
