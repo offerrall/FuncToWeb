@@ -1,5 +1,26 @@
 # Changelog
 
+# Changelog
+
+## [0.7.1] - 2025-10-17
+
+### Fixed
+- **Optional List Fields**: Hide add (+) and remove (-) buttons when optional list fields are disabled
+- **Error Messages on Disabled Fields**: Clear error messages when fields are disabled
+- **Real-time Validation for New List Items**: Validate list items immediately upon creation
+
+## [0.7.0] - 2025-10-13
+
+### Added
+- **Dark Mode**: Toggle between light and dark themes with persistent preference
+  - Floating theme toggle button (🌙/☀️) in top-right corner
+  - Theme preference saved in localStorage
+  - Smooth transitions between themes
+  - Optimized color scheme for dark mode with proper contrast
+  - Works on both form and index pages
+  - Animated toggle button with hover effects
+  - Mobile-responsive button sizing
+
 ## [0.7.0] - 2025-10-13
 
 ### Added

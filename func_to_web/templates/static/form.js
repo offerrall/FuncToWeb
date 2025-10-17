@@ -174,7 +174,17 @@ function addListItem(container, fieldName, fieldType, isDisabled = false, defaul
     addBtn.className = 'list-btn list-btn-add';
     addBtn.textContent = '+';
     addBtn.disabled = isDisabled;
-    addBtn.onclick = () => addListItem(container, fieldName, fieldType);
+    addBtn.onclick = () => {
+        addListItem(container, fieldName, fieldType);
+        setTimeout(() => {
+            const newWrappers = container.querySelectorAll('.list-item-wrapper');
+            const newWrapper = newWrappers[newWrappers.length - 1];
+            const newInput = newWrapper.querySelector('input, select');
+            if (!newInput.disabled && newInput.hasAttribute('required')) {
+                validateField(newInput);
+            }
+        }, 50);
+    };
     
     itemDiv.appendChild(input);
     itemDiv.appendChild(removeBtn);
@@ -186,6 +196,10 @@ function addListItem(container, fieldName, fieldType, isDisabled = false, defaul
     container.appendChild(itemWrapper);
     
     updateListButtons(container);
+    
+    if (!isDisabled && defaultValue === null && input.hasAttribute('required') && fieldType !== 'checkbox') {
+        setTimeout(() => validateField(input), 50);
+    }
 }
 
 function removeListItem(itemWrapper, container, fieldName) {
@@ -219,6 +233,12 @@ function updateListButtons(container) {
         const item = wrapper.querySelector('.list-item');
         const addBtn = item.querySelector('.list-btn-add');
         const removeBtn = item.querySelector('.list-btn-remove');
+        
+        if (isDisabled) {
+            addBtn.style.display = 'none';
+            removeBtn.style.display = 'none';
+            return;
+        }
         
         const canAddMore = !maxLength || wrappers.length < maxLength;
         addBtn.style.display = (index === wrappers.length - 1 && canAddMore) ? 'flex' : 'none';
@@ -297,7 +317,18 @@ function setupOptionalToggles() {
                 
                 if (!isEnabled) {
                     listContainer.dataset.disabled = 'true';
-                    listContainer.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+                    
+                    listContainer.querySelectorAll('.list-item-error').forEach(errorEl => {
+                        errorEl.style.display = 'none';
+                        errorEl.textContent = '';
+                    });
+                    
+                    listContainer.querySelectorAll('input, select').forEach(el => {
+                        el.disabled = true;
+                        el.classList.remove('was-validated');
+                    });
+                    
+                    listContainer.querySelectorAll('button').forEach(el => el.disabled = true);
                 } else {
                     listContainer.dataset.disabled = 'false';
                     
@@ -320,8 +351,19 @@ function setupOptionalToggles() {
                             addListItem(listContainer, fieldName, fieldType, false);
                         }
                     } else {
-                        listContainer.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+                        listContainer.querySelectorAll('input, select').forEach(el => {
+                            el.disabled = false;
+                        });
+                        listContainer.querySelectorAll('button').forEach(el => el.disabled = false);
                     }
+                    
+                    setTimeout(() => {
+                        listContainer.querySelectorAll('input, select').forEach(input => {
+                            if (!input.disabled && input.hasAttribute('required')) {
+                                validateField(input);
+                            }
+                        });
+                    }, 50);
                 }
                 
                 updateListButtons(listContainer);
