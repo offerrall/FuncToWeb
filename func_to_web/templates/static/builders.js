@@ -2,6 +2,8 @@
 // BUILDERS.JS - DOM Construction (Pure creation, no side effects)
 // ============================================================================
 
+// ===== INPUT BUILDERS =====
+
 function createListInput(fieldType, defaultValue) {
     let input;
     
@@ -143,9 +145,21 @@ function createMultipleFilesDownload(files) {
 }
 
 function createJsonResult(data) {
+    const container = document.createElement('div');
+    container.className = 'result-json-container';
+    
     const pre = document.createElement('pre');
     pre.textContent = JSON.stringify(data, null, 2);
-    return pre;
+    
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = () => copyToClipboard(JSON.stringify(data, null, 2));
+    
+    container.appendChild(copyBtn);
+    container.appendChild(pre);
+    
+    return container;
 }
 
 function createResultElement(data) {

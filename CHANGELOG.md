@@ -2,6 +2,17 @@
 
 ## [0.7.2] - 2025-10-18
 
+### Added
+- **Auto-focus First Field**: Cursor automatically focuses on the first input field when the page loads, improving keyboard navigation
+- **Keyboard Shortcuts**: 
+  - `Ctrl+Enter` (or `Cmd+Enter` on Mac) to submit the form from any input field
+  - Works only when submit button is not disabled
+- **Copy to Clipboard**: JSON results now include a "Copy" button to copy output to clipboard
+- **Toast Notifications**: Elegant toast messages for user feedback (e.g., "✓ Copied to clipboard!")
+  - Auto-dismisses after 2 seconds
+  - Adapts to light/dark themes using CSS variables
+  - Fallback for older browsers without Clipboard API
+
 ### Changed
 - **Frontend Refactoring**: Complete restructuring of JavaScript codebase for improved maintainability and code organization
   - Extracted pure utility functions to `utils.js`

@@ -2,6 +2,7 @@
 // UTILS.JS - Pure Functions
 // ============================================================================
 
+// ===== FORMAT & DISPLAY =====
 
 function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
@@ -23,6 +24,8 @@ function formatProgressPercent(loaded, total) {
     return Math.round((loaded / total) * 100);
 }
 
+// ===== PARSING =====
+
 function parseListDefaults(defaultValue) {
     if (!defaultValue || defaultValue === 'null' || defaultValue === '[]') {
         return [];
@@ -40,6 +43,8 @@ function parseIntOrDefault(value, defaultValue) {
     return isNaN(parsed) ? defaultValue : parsed;
 }
 
+// ===== VALIDATION CHECKS =====
+
 function isValidColor(value) {
     return /^#[0-9a-fA-F]{6}$/.test(value) || /^#[0-9a-fA-F]{3}$/.test(value);
 }
@@ -56,6 +61,8 @@ function isListItemName(name) {
     return name.includes('[') && name.includes(']');
 }
 
+// ===== COLOR CONVERSIONS =====
+
 function expandShortHex(color) {
     if (color.length === 4) {
         return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
@@ -68,6 +75,8 @@ function normalizeColorValue(value) {
     if (isValidColor(value)) return expandShortHex(value);
     return '#000000';
 }
+
+// ===== LIST CALCULATIONS =====
 
 function calculateItemsToCreate(defaults, minLength) {
     if (defaults.length > 0) {
@@ -98,6 +107,8 @@ function shouldShowRemoveButton(totalCount, minLength, isRequired, isDisabled) {
     const atRequiredMin = isRequired && !isDisabled && totalCount === 1;
     return !atMinLength && !atRequiredMin && totalCount > 0;
 }
+
+// ===== FIELD VALUE EXTRACTION =====
 
 function getFieldValue(input, fieldType) {
     if (fieldType === 'checkbox') {
@@ -139,6 +150,8 @@ function countValidListItems(wrappers, fieldType) {
     });
     return count;
 }
+
+// ===== VALIDATION MESSAGES =====
 
 function getValidationMessage(validity, input) {
     if (validity.valueMissing) {
@@ -186,10 +199,54 @@ function getListValidationMessage(fieldName, validCount, minLength, maxLength) {
     return `The field "${fieldName}" requires at least one valid value`;
 }
 
+// ===== FIELD NAME GENERATION =====
+
 function generateListItemName(fieldName, index) {
     return `${fieldName}[${index}]`;
 }
 
 function generateErrorId(inputName) {
     return `error-${inputName}`;
+}
+
+// ===== TOAST NOTIFICATIONS =====
+
+function showToast(message, duration = 2000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+function copyToClipboard(text) {
+    let cleanText = text;
+    if (cleanText.startsWith('"') && cleanText.endsWith('"')) {
+        cleanText = cleanText.slice(1, -1);
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cleanText)
+            .then(() => showToast('✓ Copied to clipboard!'))
+            .catch(() => showToast('⚠ Failed to copy', 1500));
+    } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = cleanText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showToast('✓ Copied to clipboard!');
+        } catch (err) {
+            showToast('⚠ Failed to copy', 1500);
+        }
+        document.body.removeChild(textarea);
+    }
 }

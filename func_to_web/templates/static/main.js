@@ -129,6 +129,25 @@ function initializeForm(submitUrl) {
     setupListFields();
     setupValidation();
     setupFormSubmit(submitUrl);
+    setupKeyboardShortcuts();
+    
+    // Auto-focus first field
+    const firstInput = form.querySelector('input:not([type="checkbox"]):not([type="hidden"]):not(.color-picker-hidden), select');
+    if (firstInput && !firstInput.disabled) {
+        firstInput.focus();
+    }
+}
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Enter or Cmd+Enter to submit
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            if (!submitBtn.disabled) {
+                form.requestSubmit();
+            }
+        }
+    });
 }
 
 function downloadFile(fileId, filename) {
@@ -519,8 +538,7 @@ function setupFormSubmit(submitUrl) {
             
         } catch (err) {
             setLoading(false);
-            errorDiv.textContent = 'Error: ' + err.message;
-            errorDiv.style.display = 'block';
+            showError('Error: ' + err.message);
         }
     });
 }
