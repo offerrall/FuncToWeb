@@ -451,7 +451,7 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 ![Multiple Tools](images/multiple.jpg)
 
 
-### Dark Mode (New in 0.7.0)
+## Dark Mode (New in 0.7.0)
 
 Toggle between light and dark themes. Your preference is saved automatically.
 
