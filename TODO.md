@@ -20,13 +20,6 @@
 - [ ] Reset to default values (not empty)
 - [ ] Add keyboard shortcut (Ctrl+K)
 
-### Copy Result to Clipboard
-- [ ] Add "Copy" button in `#result` div
-- [ ] Implement `copyResult()` using `navigator.clipboard`
-- [ ] Create toast notification "Copied!"
-- [ ] CSS for toast animation
-- [ ] Handle copy errors gracefully
-
 ---
 
 ## Medium Effort
@@ -61,7 +54,6 @@
 - [ ] Mobile-friendly gestures
 
 ### Keyboard Shortcuts
-- [ ] Ctrl+Enter → Submit form
 - [ ] Ctrl+K → Clear form
 - [ ] Esc → Close modals/fullscreen
 - [ ] Show shortcuts help (Ctrl+?)
