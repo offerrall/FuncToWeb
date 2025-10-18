@@ -1,6 +1,15 @@
 # Changelog
 
-# Changelog
+## [0.7.2] - 2025-10-18
+
+### Changed
+- **Frontend Refactoring**: Complete restructuring of JavaScript codebase for improved maintainability and code organization
+  - Extracted pure utility functions to `utils.js`
+  - Separated DOM construction logic to `builders.js`
+  - Isolated validation logic to `validators.js`
+  - Added DOM manipulation helpers in `main.js` for cleaner state management
+  - Reduced cognitive load with single-responsibility functions
+  - Improved code reusability and testability
 
 ## [0.7.1] - 2025-10-17
 

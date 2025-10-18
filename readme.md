@@ -1,4 +1,4 @@
-# Func To Web 0.7.1
+# Func To Web 0.7.2
 
 **Transform any Python function into a web interface automatically.**
 
@@ -474,7 +474,7 @@ Click the 🌙/☀️ button in the top-right corner to switch themes. Works on 
 ### Validation
 - **Numeric**: `ge`, `le`, `gt`, `lt` (min/max bounds)
 - **String**: `min_length`, `max_length`, `pattern` (regex)
-- **Lists**: Must have at least 1 valid element when enabled
+- **Lists**: Must have at least 1 valid element when enabled, you can also set `min_length` and `max_length` for lists
 - **Default values**: Set in function signature
 
 ### Output Types
@@ -483,14 +483,6 @@ Click the 🌙/☀️ button in the top-right corner to switch themes. Works on 
 - **Matplotlib Figures** - Rendered as PNG
 - **Any object** - Converted with `str()`
 - **FileResponse** - Single or multiple downloadable files
-
-### Upload Features
-- **Progress tracking** - Real-time progress bar and percentage
-- **File size display** - Human-readable format (KB, MB, GB)
-- **Status messages** - "Uploading...", "Processing...", etc.
-- **Optimized streaming** - 8MB chunks for efficient memory usage
-- **Large file support** - Handles multi-gigabyte files efficiently
-- **Error handling** - Network errors, timeouts, and cancellations
 
 ## Configuration
 
@@ -522,24 +514,6 @@ run([func1, func2], host="127.0.0.1", port=5000, template_dir="my_templates")
 - `host` - Server host (default: `"0.0.0.0"`)
 - `port` - Server port (default: `8000`)
 - `template_dir` - Custom template directory (optional)
-
-
-## Why func-to-web?
-
-- **Minimalist** - Under 2000 lines total, backend + frontend + docs
-- **Zero boilerplate** - Just type hints and you're done
-- **Powerful** - Supports all common input types including files and lists
-- **Smart output** - Automatically displays images, plots, and data
-- **Type-safe** - Full Pydantic validation
-- **Lists support** - Dynamic add/remove for lists of any type
-- **Dynamic dropdowns** - Generate options at runtime
-- **Optional toggles** - Enable/disable optional fields easily
-- **Client + server validation** - Instant feedback and robust checks
-- **Batteries included** - 20+ examples in the `examples/` folder
-- **Multi-function support** - Serve multiple tools from one server
-- **Download files** - Return single or multiple files easily
-- **Optimized performance** - Streaming uploads, progress tracking, low memory usage
-- **Dark mode** - Light/dark themes with persistent preference
 
 ## How It Works
 
