@@ -423,6 +423,16 @@ def create_archive(file_count: int):
 
 > **Note:** Generated files are stored in the system's temporary directory and automatically deleted after download. Files not downloaded will be cleaned up by the operating system's temporary folder cleanup policies (typically on restart or after several days). For high-traffic production environments with many generated files, consider implementing custom cleanup logic.
 
+
+### Dark Mode (New in 0.7.0)
+
+Toggle between light and dark themes. Your preference is saved automatically.
+
+![Dark Mode](images/dark_mode.jpg)
+
+Click the 🌙/☀️ button in the top-right corner to switch themes. Works on all pages, zero configuration needed.
+
+
 ## Run Multiple Functions 
 
 You can serve multiple functions simultaneously. When passing a list of functions, func-to-web automatically creates a responsive index page where users can select the tool they want to use. This is demonstrated in Example 15.
@@ -450,14 +460,6 @@ run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 
 ![Multiple Tools](images/multiple.jpg)
 
-
-## Dark Mode (New in 0.7.0)
-
-Toggle between light and dark themes. Your preference is saved automatically.
-
-![Dark Mode](images/dark_mode.jpg)
-
-Click the 🌙/☀️ button in the top-right corner to switch themes. Works on all pages, zero configuration needed.
 
 ## Features
 
