@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.3] - 2025-01-26
+## [0.7.3] - 2025-10-26
 
 ### Changed
 - **Complete Documentation Rewrite**: Restructured entire documentation using MkDocs Material for better navigation and user experience
