@@ -1,0 +1,87 @@
+site_name: FuncToWeb
+site_description: Transform any Python function into a complete web app automatically. Just type hints and run()
+site_author: Beltrán Offerrall
+repo_name: FuncToWeb
+repo_url: https://github.com/offerrall/FuncToWeb
+
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+    - content.code.annotate
+    - toc.integrate
+    - navigation.tabs.sticky
+    - navigation.top
+    - hide:
+        - toc.title
+  palette:
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: '__span'
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Input Types:
+      - Basic Types: types.md
+      - File Types: files.md
+      - Lists: lists.md
+      - Optional Parameters: optional.md
+      - Dropdowns: dropdowns.md
+  - Types Constraints: constraints.md
+  - Output Types:
+      - Images & Plots: images.md
+      - File Downloads: downloads.md
+  - Other Features:
+      - Multiple Functions: multiple.md
+      - Dark Mode: dark-mode.md
+      - Server Configuration: server-configuration.md
+
+plugins:
+  - minify:
+      minify_html: true
+plugins:
+  - minify:
+      minify_html: true
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/offerrall/FuncToWeb
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/offerrall

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.3] - 2025-01-26
+
+### Changed
+- **Complete Documentation Rewrite**: Restructured entire documentation using MkDocs Material for better navigation and user experience
+  - Organized into clear categories: Input Types, Types Constraints, Output Types, and Other Features
+  - Added dedicated pages for each feature with visual examples and code snippets
+  - Improved progressive learning flow with "Next Steps" navigation
+  - Enhanced README with direct links to all major documentation sections
+  - Better mobile responsiveness and dark mode support
+
 ## [0.7.2] - 2025-10-18
 
 ### Added
