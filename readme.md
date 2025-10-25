@@ -1,6 +1,6 @@
 # Func To Web 0.7.3
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/func-to-web?style=social)](https://github.com/offerrall/FuncToWeb/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/offerrall/FuncToWeb?style=social)](https://github.com/offerrall/FuncToWeb/stargazers)
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-454%20passing-brightgreen.svg)](tests/)
@@ -74,8 +74,6 @@ Complete documentation with examples and screenshots for each feature:
 </td>
 </tr>
 </table>
-
----
 
 **[Full Documentation](https://offerrall.github.io/FuncToWeb)** 
 
