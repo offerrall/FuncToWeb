@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import Annotated, Literal, get_args, get_origin
+from typing import Annotated, Literal, get_args, get_origin, Callable, Any
 import types
 
 from pydantic import TypeAdapter
@@ -12,48 +12,42 @@ VALID = {int, float, str, bool, date, time}
 
 @dataclass
 class ParamInfo:
-    """
-    Metadata about a function parameter extracted by analyze().
+    """Metadata about a function parameter extracted by analyze().
     
     This dataclass stores all the information needed to generate form fields,
     validate input, and call the function with the correct parameters.
     
     Attributes:
-        type (type): The base Python type of the parameter. Must be one of:
+        type: The base Python type of the parameter. Must be one of:
             int, float, str, bool, date, or time.
             Example: int, str, date
-            
-        default (Any, optional): The default value specified in the parameter.
+        default: The default value specified in the parameter.
             - None if the parameter has no default
             - The actual default value if specified (e.g., 42, "hello", True)
             - Independent of is_optional (a parameter can be optional with or without a default)
             Example: For `age: int = 25`, default is 25
             Example: For `name: str`, default is None
-            
-        field_info (Any, optional): Additional metadata from Pydantic Field or Literal.
+        field_info: Additional metadata from Pydantic Field or Literal.
             - For Annotated types: Contains the Field object with constraints
               (e.g., Field(ge=0, le=100) for numeric bounds, Field(min_length=3) for strings)
             - For Literal types: Contains the Literal type with valid options
             - None for basic types without constraints
             Example: Field(ge=18, le=100) for age constraints
             Example: Literal['light', 'dark'] for dropdown options
-            
-        dynamic_func (callable, optional): Function for dynamic Literal options.
+        dynamic_func: Function for dynamic Literal options.
             - Only set for Literal[callable] type hints
             - Called at runtime to generate dropdown options dynamically
             - Returns a list, tuple, or single value
             - None for static Literals or non-Literal types
             Example: A function that returns database options
-            
-        is_optional (bool): Whether the parameter type includes None.
+        is_optional: Whether the parameter type includes None.
             - True for Type | None or Union[Type, None] syntax
             - False for regular required parameters (even if they have a default)
             - Affects UI: optional fields get a toggle switch to enable/disable
             - Default: False
             Example: `name: str | None` has is_optional=True
             Example: `age: int = 25` has is_optional=False (even with default)
-            
-        optional_enabled (bool): Initial state of optional toggle.
+        optional_enabled: Initial state of optional toggle.
             - Only relevant when is_optional=True
             - True: toggle starts enabled (field active)
             - False: toggle starts disabled (field inactive, sends None)
@@ -63,49 +57,46 @@ class ParamInfo:
             Example: `name: str | OptionalDisabled` starts disabled
             Example: `name: str | None = "John"` starts enabled (has default)
             Example: `name: str | None` starts disabled (no default)
-            
-        is_list (bool): Whether the parameter is a list type.
+        is_list: Whether the parameter is a list type.
             - True for list[Type] syntax
             - False for regular parameters
             - When True, 'type' contains the item type, not list
             - Default: False
-            
-        list_field_info (Any, optional): Metadata for the list itself (min_items, max_items).
+        list_field_info: Metadata for the list itself (min_items, max_items).
             - Only relevant when is_list=True
             - Contains Field constraints for the list container
             - None if no list-level constraints
             Example: Field(min_items=2, max_items=5)
     """
     type: type
-    default: any = None
-    field_info: any = None
-    dynamic_func: any = None
+    default: Any = None
+    field_info: Any = None
+    dynamic_func: Any = None
     is_optional: bool = False
     optional_enabled: bool = False
     is_list: bool = False
-    list_field_info: any = None
+    list_field_info: Any = None
 
-def analyze(func):
-    """
-    Analyze a function's signature and extract parameter metadata.
+def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
+    """Analyze a function's signature and extract parameter metadata.
     
     Args:
-        func: The function to analyze
+        func: The function to analyze.
         
     Returns:
-        dict: Mapping of parameter names to ParamInfo objects
+        Mapping of parameter names to ParamInfo objects.
         
     Raises:
-        TypeError: If parameter type is not supported
-        TypeError: If list has no type parameter
-        TypeError: If list item type is not supported
-        TypeError: If list of Literal is used (conceptually confusing)
-        TypeError: If list default is not a list
-        TypeError: If list default items have wrong type
-        ValueError: If default value doesn't match Literal options
-        ValueError: If Literal options are invalid
-        ValueError: If Union has multiple non-None types
-        ValueError: If default value type doesn't match parameter type
+        TypeError: If parameter type is not supported.
+        TypeError: If list has no type parameter.
+        TypeError: If list item type is not supported.
+        TypeError: If list of Literal is used (conceptually confusing).
+        TypeError: If list default is not a list.
+        TypeError: If list default items have wrong type.
+        ValueError: If default value doesn't match Literal options.
+        ValueError: If Literal options are invalid.
+        ValueError: If Union has multiple non-None types.
+        ValueError: If default value type doesn't match parameter type.
     """
     from .types import _OptionalEnabledMarker, _OptionalDisabledMarker
     

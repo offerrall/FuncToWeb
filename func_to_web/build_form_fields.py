@@ -1,16 +1,21 @@
-# build_form_fields.py
 from datetime import date, time
-from typing import Literal, get_args, get_origin
+from typing import Literal, get_args, get_origin, Any
 
 from .types import COLOR_PATTERN, EMAIL_PATTERN
 
 PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
 
 
-def serialize_for_json(value):
-    """
-    Serialize a value to be JSON-safe for template rendering.
+def serialize_for_json(value: Any) -> Any:
+    """Serialize a value to be JSON-safe for template rendering.
+    
     Converts date/time objects to ISO format strings.
+    
+    Args:
+        value: The value to serialize (can be any type).
+        
+    Returns:
+        JSON-safe serialized value (str for dates/times, or original type).
     """
     if value is None:
         return None
@@ -30,9 +35,9 @@ def serialize_for_json(value):
     return value
 
 
-def build_form_fields(params_info):
-    """
-    Build form field specifications from parameter metadata.
+def build_form_fields(params_info: dict) -> list[dict[str, Any]]:
+    """Build form field specifications from parameter metadata.
+    
     Re-executes dynamic functions to get fresh options.
     
     This function takes the analyzed parameter information from analyze() and
@@ -48,28 +53,28 @@ def build_form_fields(params_info):
         6. Return list of field dictionaries ready for template rendering
     
     Args:
-        params_info (dict): Mapping of parameter names to ParamInfo objects.
-            Keys are parameter names (str)
-            Values are ParamInfo objects with type, default, field_info, etc.
+        params_info: Mapping of parameter names to ParamInfo objects.
+            Keys are parameter names (str), values are ParamInfo objects with 
+            type, default, field_info, etc.
             
     Returns:
-        list: List of field dictionaries for template rendering.
-            Each dictionary contains:
-            - name (str): Parameter name
-            - type (str): HTML input type ('text', 'number', 'select', etc.)
-            - default (Any): Default value for the field (JSON-serialized)
-            - required (bool): Whether field is required (lists are ALWAYS required)
-            - is_optional (bool): Whether field has optional toggle
-            - optional_enabled (bool): Whether optional field starts enabled
-            - is_list (bool): Whether this is a list field
-            - list_min_length (int): For list fields, minimum number of items
-            - list_max_length (int): For list fields, maximum number of items
-            - options (tuple): For select fields, the dropdown options
-            - min/max (int/float): For number fields, numeric constraints
-            - minlength/maxlength (int): For text fields, length constraints
-            - pattern (str): Regex pattern for validation
-            - accept (str): For file fields, accepted file extensions
-            - step (str): For number fields, '1' for int, 'any' for float
+        List of field dictionaries for template rendering. Each dictionary contains:
+        
+        - name (str): Parameter name
+        - type (str): HTML input type ('text', 'number', 'select', etc.)
+        - default (Any): Default value for the field (JSON-serialized)
+        - required (bool): Whether field is required (lists are ALWAYS required)
+        - is_optional (bool): Whether field has optional toggle
+        - optional_enabled (bool): Whether optional field starts enabled
+        - is_list (bool): Whether this is a list field
+        - list_min_length (int): For list fields, minimum number of items
+        - list_max_length (int): For list fields, maximum number of items
+        - options (tuple): For select fields, the dropdown options
+        - min/max (int/float): For number fields, numeric constraints
+        - minlength/maxlength (int): For text fields, length constraints
+        - pattern (str): Regex pattern for validation
+        - accept (str): For file fields, accepted file extensions
+        - step (str): For number fields, '1' for int, 'any' for float
     
     Field Type Detection:
         - Literal types → 'select' (dropdown)
@@ -81,7 +86,6 @@ def build_form_fields(params_info):
         - str with color pattern → 'color' (color picker)
         - str with email pattern → 'email' (email input)
         - str (default) → 'text' (text input)
-
     """
     fields = []
     

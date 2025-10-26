@@ -1,5 +1,5 @@
 from datetime import date, time
-from typing import Annotated, Literal, get_args, get_origin
+from typing import Annotated, Literal, get_args, get_origin, Any
 from pydantic import TypeAdapter
 import json
 
@@ -7,8 +7,7 @@ from .analyze_function import ParamInfo
 
 
 def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
-    """
-    Validate and convert form data to function parameters.
+    """Validate and convert form data to function parameters.
     
     This function takes raw form data (where everything is a string) and converts
     it to the proper Python types based on the parameter metadata from analyze().
@@ -24,25 +23,23 @@ def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
         6. Handle special cases (hex color expansion, empty values)
     
     Args:
-        form_data (dict): Raw form data from HTTP request.
+        form_data: Raw form data from HTTP request.
             - Keys are parameter names (str)
             - Values are form values (str, or None for checkboxes)
             - For lists: JSON string like "[1, 2, 3]"
             - Optional toggles have keys like "{param}_optional_toggle"
-            
-        params_info (dict): Parameter metadata from analyze().
+        params_info: Parameter metadata from analyze().
             - Keys are parameter names (str)
             - Values are ParamInfo objects with type and validation info
     
     Returns:
-        dict: Validated parameters ready for function call.
-            - Keys are parameter names (str)
-            - Values are properly typed Python objects
+        Validated parameters ready for function call.
+        Keys are parameter names (str), values are properly typed Python objects.
             
     Raises:
-        ValueError: If a value doesn't match Literal options or Field constraints
-        TypeError: If type conversion fails
-        json.JSONDecodeError: If list JSON is invalid
+        ValueError: If a value doesn't match Literal options or Field constraints.
+        TypeError: If type conversion fails.
+        json.JSONDecodeError: If list JSON is invalid.
     """
     validated = {}
     
@@ -116,22 +113,21 @@ def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
     return validated
 
 
-def validate_list_param(value: str, info: ParamInfo, param_name: str) -> list:
-    """
-    Validate and convert a JSON string to a typed list.
+def validate_list_param(value: str | None, info: ParamInfo, param_name: str) -> list:
+    """Validate and convert a JSON string to a typed list.
     
     Args:
-        value: JSON string like "[1, 2, 3]" or "[]"
-        info: ParamInfo with type and constraints for list items
-        param_name: Name of the parameter (for error messages)
+        value: JSON string like "[1, 2, 3]" or "[]".
+        info: ParamInfo with type and constraints for list items.
+        param_name: Name of the parameter (for error messages).
     
     Returns:
-        Validated list with proper types
+        Validated list with proper types.
         
     Raises:
-        TypeError: If value is not a valid list
-        ValueError: If items don't pass validation or list size constraints are violated
-        json.JSONDecodeError: If JSON is invalid
+        TypeError: If value is not a valid list.
+        ValueError: If items don't pass validation or list size constraints are violated.
+        json.JSONDecodeError: If JSON is invalid.
     """
     # Parse JSON
     if not value or value == "":
@@ -190,18 +186,17 @@ def validate_list_param(value: str, info: ParamInfo, param_name: str) -> list:
     return validated_list
 
 
-def validate_single_item(item, info: ParamInfo):
-    """
-    Validate a single list item.
+def validate_single_item(item: Any, info: ParamInfo) -> Any:
+    """Validate a single list item.
     
     Reuses the same validation logic as non-list parameters.
     
     Args:
-        item: The item value from the JSON array
-        info: ParamInfo with type and constraints
+        item: The item value from the JSON array.
+        info: ParamInfo with type and constraints.
     
     Returns:
-        Validated and converted item
+        Validated and converted item.
     """
     # Handle None/null values
     if item is None:

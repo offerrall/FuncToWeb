@@ -1,19 +1,17 @@
 import asyncio
-import base64
-import io
 import os
 import tempfile
 import uuid
 import json
 from pathlib import Path
-from typing import Annotated, Literal, get_args, get_origin
+from typing import Annotated, Literal, Callable, Any
 from datetime import date, time
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse as FastAPIFileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import Field, TypeAdapter
+from pydantic import Field
 
 from .analyze_function import analyze, ParamInfo
 from .validate_params import validate_params
@@ -25,14 +23,29 @@ FILE_BUFFER_SIZE = 8 * 1024 * 1024  # 8MB
 TEMP_FILES_REGISTRY = Path(tempfile.gettempdir()) / "func_to_web_files.json"
 
 
-async def save_uploaded_file(uploaded_file, suffix):
+async def save_uploaded_file(uploaded_file: Any, suffix: str) -> str:
+    """Save an uploaded file to a temporary location.
+    
+    Args:
+        uploaded_file: The uploaded file object from FastAPI.
+        suffix: File extension to use for the temp file.
+        
+    Returns:
+        Path to the saved temporary file.
+    """
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix, buffering=FILE_BUFFER_SIZE) as tmp:
         while chunk := await uploaded_file.read(CHUNK_SIZE):
             tmp.write(chunk)
         return tmp.name
 
-def register_temp_file(file_id: str, path: str, filename: str):
-    """Register a temp file for download"""
+def register_temp_file(file_id: str, path: str, filename: str) -> None:
+    """Register a temp file for download.
+    
+    Args:
+        file_id: Unique identifier for the file.
+        path: File system path to the temporary file.
+        filename: Original filename for download.
+    """
     try:
         if TEMP_FILES_REGISTRY.exists():
             with open(TEMP_FILES_REGISTRY, 'r') as f:
@@ -47,8 +60,15 @@ def register_temp_file(file_id: str, path: str, filename: str):
     except:
         pass
 
-def get_temp_file(file_id: str):
-    """Get temp file info from registry"""
+def get_temp_file(file_id: str) -> dict[str, str] | None:
+    """Get temp file info from registry.
+    
+    Args:
+        file_id: Unique identifier for the file.
+        
+    Returns:
+        Dictionary with 'path' and 'filename' keys, or None if not found.
+    """
     try:
         if not TEMP_FILES_REGISTRY.exists():
             return None
@@ -60,8 +80,12 @@ def get_temp_file(file_id: str):
     except:
         return None
 
-def cleanup_temp_file(file_id: str):
-    """Remove temp file and its registry entry"""
+def cleanup_temp_file(file_id: str) -> None:
+    """Remove temp file and its registry entry.
+    
+    Args:
+        file_id: Unique identifier for the file.
+    """
     try:
         if not TEMP_FILES_REGISTRY.exists():
             return
@@ -83,22 +107,26 @@ def cleanup_temp_file(file_id: str):
     except:
         pass
 
-def run(func_or_list, host: str="0.0.0.0", port: int=8000, template_dir: str | Path=None):
-    """
-    Generate and run a web UI for one or more Python functions.
+def run(
+    func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
+    host: str = "0.0.0.0", 
+    port: int = 8000, 
+    template_dir: str | Path | None = None
+) -> None:
+    """Generate and run a web UI for one or more Python functions.
     
     Single function mode: Creates a form at root (/) for the function.
     Multiple functions mode: Creates an index page with links to individual function forms.
     
     Args:
-        func_or_list: A single function or list of functions to wrap
-        host: Server host address (default: "0.0.0.0")
-        port: Server port (default: 8000)
-        template_dir: Optional custom template directory
+        func_or_list: A single function or list of functions to wrap.
+        host: Server host address (default: "0.0.0.0").
+        port: Server port (default: 8000).
+        template_dir: Optional custom template directory.
         
     Raises:
-        FileNotFoundError: If template directory doesn't exist
-        TypeError: If function parameters use unsupported types
+        FileNotFoundError: If template directory doesn't exist.
+        TypeError: If function parameters use unsupported types.
     """
     
     funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]

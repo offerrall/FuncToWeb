@@ -66,6 +66,7 @@ nav:
       - Multiple Functions: multiple.md
       - Dark Mode: dark-mode.md
       - Server Configuration: server-configuration.md
+  - API: api.md
 
 plugins:
   - minify:

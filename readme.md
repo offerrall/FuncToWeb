@@ -76,6 +76,7 @@ Complete documentation with examples and screenshots for each feature:
 </table>
 
 **[Full Documentation](https://offerrall.github.io/FuncToWeb)** 
+**[API Reference](https://offerrall.github.io/FuncToWeb/api/)**
 
 ---
 
@@ -110,5 +111,11 @@ Development dependencies:
 - pytest (for running tests)
 
 ---
+
+## Run Tests
+
+```bash
+pytest tests/ -v
+```
 
 [MIT License](LICENSE) • **Made by [Beltrán Offerrall](https://github.com/offerrall)** • Contributions welcome!
