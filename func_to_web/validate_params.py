@@ -149,12 +149,10 @@ def validate_list_param(value: str | None, info: ParamInfo, param_name: str) -> 
         for constraint in info.list_field_info.metadata:
             constraint_name = type(constraint).__name__
             
-            # Pydantic usa 'MinLen' y 'MaxLen' para constraints de longitud
             if constraint_name == 'MinLen':
                 min_length = constraint.min_length
             elif constraint_name == 'MaxLen':
                 max_length = constraint.max_length
-            # También buscar por el atributo directamente
             elif hasattr(constraint, 'min_length'):
                 min_length = constraint.min_length
             elif hasattr(constraint, 'max_length'):

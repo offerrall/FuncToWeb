@@ -28,6 +28,7 @@ class _OptionalDisabledMarker:
 
 
 class FileResponse(BaseModel):
+    """Model for file response."""
     data: bytes
     filename: str
 
