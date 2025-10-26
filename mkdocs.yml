@@ -63,6 +63,7 @@ nav:
       - Images & Plots: images.md
       - File Downloads: downloads.md
   - Other Features:
+      - Function Descriptions: function-descriptions.md
       - Multiple Functions: multiple.md
       - Dark Mode: dark-mode.md
       - Server Configuration: server-configuration.md

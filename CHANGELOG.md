@@ -1,6 +1,21 @@
 # Changelog
 
-## [0.7.3] - 2025-10-26
+## [0.7.4] - 2025-10-26
+
+### Added
+- **Function Descriptions**: Functions with docstrings now display their description below the title in the web UI
+  - Extracted using `inspect.getdoc()` for clean formatting
+  - Centered text with improved contrast in dark mode
+  - Styled with left border accent matching the theme
+
+### Changed
+- **Code Refactoring**: Reduced code duplication in `run.py`
+  - Created `create_response_with_files()` helper function for file download responses
+  - Created `handle_form_submission()` async function to consolidate form processing logic
+  - Eliminated duplicate code between single and multiple function modes
+  - Improved maintainability and consistency across endpoints
+
+## [0.7.3] - 2025-10-25
 
 ### Changed
 - **Complete Documentation Rewrite**: Restructured entire documentation using MkDocs Material for better navigation and user experience

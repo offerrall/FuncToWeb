@@ -25,6 +25,13 @@
     <div class="container"> 
         <div class="form-page"> 
             <h1>{{ title }}</h1>
+            
+            {% if description %}
+            <div class="function-description">
+                <p>{{ description }}</p>
+            </div>
+            {% endif %}
+            
             <form id="form" novalidate>
                 {% for field in fields %}
                     {% if field.is_list %}

@@ -185,6 +185,24 @@ button[type="submit"]:disabled {
 
 /* ==================== FORM PAGE STYLES ==================== */
 
+.function-description {
+    background: var(--bg-secondary);
+    margin-bottom: 2rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.function-description p {
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+[data-theme="dark"] .function-description p {
+    color: #ffffff;
+}
+
 body.form-page {
     padding: 1rem;
     display: flex;

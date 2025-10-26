@@ -3,6 +3,7 @@ import os
 import tempfile
 import uuid
 import json
+import inspect
 from pathlib import Path
 from typing import Annotated, Literal, Callable, Any
 from datetime import date, time
@@ -107,6 +108,71 @@ def cleanup_temp_file(file_id: str) -> None:
     except:
         pass
 
+
+def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
+    """Create JSON response with file downloads.
+    
+    Args:
+        processed: Processed result from process_result().
+        
+    Returns:
+        Response dictionary with file IDs and metadata.
+    """
+    response = {"success": True, "result_type": processed['type']}
+    
+    if processed['type'] == 'download':
+        file_id = str(uuid.uuid4())
+        register_temp_file(file_id, processed['path'], processed['filename'])
+        response['file_id'] = file_id
+        response['filename'] = processed['filename']
+    elif processed['type'] == 'downloads':
+        files = []
+        for f in processed['files']:
+            file_id = str(uuid.uuid4())
+            register_temp_file(file_id, f['path'], f['filename'])
+            files.append({
+                'file_id': file_id,
+                'filename': f['filename']
+            })
+        response['files'] = files
+    else:
+        response['result'] = processed['data']
+    
+    return response
+
+
+async def handle_form_submission(request: Request, func: Callable, params: dict[str, ParamInfo]) -> JSONResponse:
+    """Handle form submission for any function.
+    
+    Args:
+        request: FastAPI request object.
+        func: Function to call with validated parameters.
+        params: Parameter metadata from analyze().
+        
+    Returns:
+        JSON response with result or error.
+    """
+    try:
+        form_data = await request.form()
+        data = {}
+        
+        for name, value in form_data.items():
+            if hasattr(value, 'filename'):
+                suffix = os.path.splitext(value.filename)[1]
+                data[name] = await save_uploaded_file(value, suffix)
+            else:
+                data[name] = value
+        
+        validated = validate_params(data, params)
+        result = func(**validated)
+        processed = process_result(result)
+        response = create_response_with_files(processed)
+        
+        return JSONResponse(response)
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+
+
 def run(
     func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
     host: str = "0.0.0.0", 
@@ -180,55 +246,25 @@ def run(
         func = funcs[0]
         params = analyze(func)
         func_name = func.__name__.replace('_', ' ').title()
+        description = inspect.getdoc(func)
         
         @app.get("/")
         async def form(request: Request):
             fields = build_form_fields(params)
             return templates.TemplateResponse(
                 "form.html",
-                {"request": request, "title": func_name, "fields": fields, "submit_url": "/submit"}
+                {
+                    "request": request, 
+                    "title": func_name, 
+                    "description": description,
+                    "fields": fields, 
+                    "submit_url": "/submit"
+                }
             )
 
         @app.post("/submit")
         async def submit(request: Request):
-            try:
-                form_data = await request.form()
-                data = {}
-                
-                for name, value in form_data.items():
-                    if hasattr(value, 'filename'):
-                        suffix = os.path.splitext(value.filename)[1]
-                        data[name] = await save_uploaded_file(value, suffix)
-                    else:
-                        data[name] = value
-                
-                validated = validate_params(data, params)
-                result = func(**validated)
-                processed = process_result(result)
-                
-                response = {"success": True, "result_type": processed['type']}
-                
-                if processed['type'] == 'download':
-                    file_id = str(uuid.uuid4())
-                    register_temp_file(file_id, processed['path'], processed['filename'])
-                    response['file_id'] = file_id
-                    response['filename'] = processed['filename']
-                elif processed['type'] == 'downloads':
-                    files = []
-                    for f in processed['files']:
-                        file_id = str(uuid.uuid4())
-                        register_temp_file(file_id, f['path'], f['filename'])
-                        files.append({
-                            'file_id': file_id,
-                            'filename': f['filename']
-                        })
-                    response['files'] = files
-                else:
-                    response['result'] = processed['data']
-                
-                return JSONResponse(response)
-            except Exception as e:
-                return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+            return await handle_form_submission(request, func, params)
     
     # Multiple functions mode
     else:
@@ -246,61 +282,31 @@ def run(
         for func in funcs:
             params = analyze(func)
             func_name = func.__name__.replace('_', ' ').title()
+            description = inspect.getdoc(func)
             route = f"/{func.__name__}"
             submit_route = f"{route}/submit"
             
-            def make_form_handler(fn, title, prms, submit_path):
+            def make_form_handler(title: str, prms: dict[str, ParamInfo], desc: str | None, submit_path: str):
                 async def form_view(request: Request):
                     flds = build_form_fields(prms)
                     return templates.TemplateResponse(
                         "form.html",
-                        {"request": request, "title": title, "fields": flds, "submit_url": submit_path}
+                        {
+                            "request": request, 
+                            "title": title, 
+                            "description": desc,
+                            "fields": flds, 
+                            "submit_url": submit_path
+                        }
                     )
                 return form_view
             
-            def make_submit_handler(fn, prms):
+            def make_submit_handler(fn: Callable, prms: dict[str, ParamInfo]):
                 async def submit_view(request: Request):
-                    try:
-                        form_data = await request.form()
-                        data = {}
-                        
-                        for name, value in form_data.items():
-                            if hasattr(value, 'filename'):
-                                suffix = os.path.splitext(value.filename)[1]
-                                data[name] = await save_uploaded_file(value, suffix)
-                            else:
-                                data[name] = value
-                        
-                        validated = validate_params(data, prms)
-                        result = fn(**validated)
-                        processed = process_result(result)
-                        
-                        response = {"success": True, "result_type": processed['type']}
-                        
-                        if processed['type'] == 'download':
-                            file_id = str(uuid.uuid4())
-                            register_temp_file(file_id, processed['path'], processed['filename'])
-                            response['file_id'] = file_id
-                            response['filename'] = processed['filename']
-                        elif processed['type'] == 'downloads':
-                            files = []
-                            for f in processed['files']:
-                                file_id = str(uuid.uuid4())
-                                register_temp_file(file_id, f['path'], f['filename'])
-                                files.append({
-                                    'file_id': file_id,
-                                    'filename': f['filename']
-                                })
-                            response['files'] = files
-                        else:
-                            response['result'] = processed['data']
-                        
-                        return JSONResponse(response)
-                    except Exception as e:
-                        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+                    return await handle_form_submission(request, fn, prms)
                 return submit_view
             
-            app.get(route)(make_form_handler(func, func_name, params, submit_route))
+            app.get(route)(make_form_handler(func_name, params, description, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
     config = uvicorn.Config(
