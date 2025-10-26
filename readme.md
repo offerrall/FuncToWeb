@@ -66,6 +66,7 @@ Complete documentation with examples and screenshots for each feature:
 - **[Images & Plots](https://offerrall.github.io/FuncToWeb/images/)**: Return PIL Images and Matplotlib figures
 - **[File Downloads](https://offerrall.github.io/FuncToWeb/downloads/)**: Return `FileResponse` for any file type
 - **[Multiple Functions](https://offerrall.github.io/FuncToWeb/multiple/)**: Auto-generated index page
+- **[Function Descriptions](https://offerrall.github.io/FuncToWeb/function-descriptions/)**: Display docstrings in the UI
 - **[Dark Mode](https://offerrall.github.io/FuncToWeb/dark-mode/)**: Automatic theme switching
 - **Large Files**: Optimized streaming (GB+ files)
 - **Progress Bars**: Real-time upload/download tracking
