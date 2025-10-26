@@ -118,4 +118,10 @@ Development dependencies:
 pytest tests/ -v
 ```
 
+## Deploy Docs
+
+```bash
+mkdocs gh-deploy
+```
+
 [MIT License](LICENSE) • **Made by [Beltrán Offerrall](https://github.com/offerrall)** • Contributions welcome!
