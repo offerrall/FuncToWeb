@@ -1,4 +1,4 @@
-# Func To Web 0.7.3
+# Func To Web 0.7.4
 
 [![GitHub stars](https://img.shields.io/github/stars/offerrall/FuncToWeb?style=social)](https://github.com/offerrall/FuncToWeb/stargazers)
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
