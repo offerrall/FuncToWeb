@@ -98,7 +98,6 @@ def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
         ValueError: If Union has multiple non-None types.
         ValueError: If default value type doesn't match parameter type.
     """
-    from .types import _OptionalEnabledMarker, _OptionalDisabledMarker
     
     result = {}
     
