@@ -1,6 +1,5 @@
 # Func To Web 0.7.4
 
-[![GitHub stars](https://img.shields.io/github/stars/offerrall/FuncToWeb?style=social)](https://github.com/offerrall/FuncToWeb/stargazers)
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-454%20passing-brightgreen.svg)](tests/)
