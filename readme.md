@@ -87,30 +87,25 @@ Complete documentation with **examples and screenshots** for each feature:
 Check the [`examples/`](examples/) folder for 20+ complete examples:
 
 ```bash
-python examples/01_basic_division.py
-python examples/08_image_blur.py
-python examples/15_multiple_tools.py
-python examples/20_lists_limits.py
+python examples/01_basic_division.py       # Simple math
+python examples/08_image_blur.py           # Image processing
+python examples/15_multiple_tools.py       # Multiple functions
+python examples/20_lists_limits.py         # Advanced validation
 ```
 
 ---
 
 ## Requirements
 
+**Core:**
 - Python 3.10+
-- FastAPI
-- Uvicorn
-- Pydantic
-- Jinja2
-- python-multipart
+- FastAPI, Uvicorn, Pydantic, Jinja2, python-multipart
 
-Optional for examples:
-- Pillow (for image processing)
-- Matplotlib (for plots)
-- NumPy (for numerical computations)
+**Optional (for examples):**
+- Pillow, Matplotlib, Pandas, NumPy
 
-Development dependencies:
-- pytest (for running tests)
+**Development:**
+- pytest, mkdocs, mkdocs-material
 
 ---
 
