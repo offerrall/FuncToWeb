@@ -42,7 +42,7 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 
 ## Complete Feature Overview
 
-Complete documentation with examples and screenshots for each feature:
+Complete documentation with **examples and screenshots** for each feature:
 
 <table>
 <tr>
