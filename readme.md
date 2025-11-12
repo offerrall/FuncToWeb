@@ -40,14 +40,6 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 </tr>
 </table>
 
-
-## Perfect For
-
-- ✅ **Internal tools** - Give your team GUIs for scripts without building web apps  
-- ✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
-- ✅ **Testing** - Test function behavior with web forms instead of scripts
-- ✅ **Prototyping** - The fastest way to create a web UI for any function
-
 ## Complete Feature Overview
 
 Complete documentation with examples and screenshots for each feature:
@@ -85,7 +77,11 @@ Complete documentation with examples and screenshots for each feature:
 **[Full Documentation](https://offerrall.github.io/FuncToWeb)** 
 **[API Reference](https://offerrall.github.io/FuncToWeb/api/)**
 
----
+## Perfect For
+
+- ✅ **Internal tools** - Give your team GUIs from pure functions
+- ✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
+- ✅ **Testing and Prototyping** - The fastest way to create a web UI
 
 ## Quick Examples
 
