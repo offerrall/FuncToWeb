@@ -43,10 +43,10 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 
 ## Perfect For
 
-✅ **Internal tools** - Give your team GUIs for scripts without building web apps  
-✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
-✅ **Testing** - Test function behavior with web forms instead of scripts
-✅ **Prototyping** - The fastest way to create a web UI for any function
+- ✅ **Internal tools** - Give your team GUIs for scripts without building web apps  
+- ✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
+- ✅ **Testing** - Test function behavior with web forms instead of scripts
+- ✅ **Prototyping** - The fastest way to create a web UI for any function
 
 Not for: Multi-page applications, dashboards with state, ML deployment, or complex frontends. Use Streamlit, Gradio, or FastAPI instead.
 
