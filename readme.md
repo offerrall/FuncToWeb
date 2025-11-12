@@ -48,9 +48,6 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 - ✅ **Testing** - Test function behavior with web forms instead of scripts
 - ✅ **Prototyping** - The fastest way to create a web UI for any function
 
-Not for: Multi-page applications, dashboards with state, ML deployment, or complex frontends. Use Streamlit, Gradio, or FastAPI instead.
-
-
 ## Complete Feature Overview
 
 Complete documentation with examples and screenshots for each feature:
