@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/tests-454%20passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Transform any Python function into a complete web app automatically.** Just type hints and `run()`.
+> **Type hints → Web UI.** Minimal-boilerplate web apps from Python functions.
 
 ![func-to-web Demo](docs/images/functoweb.jpg)
 
@@ -40,7 +40,16 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 </tr>
 </table>
 
----
+
+## Perfect For
+
+✅ **Internal tools** - Give your team GUIs for scripts without building web apps  
+✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
+✅ **Testing** - Test function behavior with web forms instead of scripts
+✅ **Prototyping** - The fastest way to create a web UI for any function
+
+Not for: Multi-page applications, dashboards with state, ML deployment, or complex frontends. Use Streamlit, Gradio, or FastAPI instead.
+
 
 ## Complete Feature Overview
 
