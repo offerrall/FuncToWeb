@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.6] - 2025-11-14
+
+### Fixed
+- **PyPI README**: Fixed missing README.md display on PyPI package page
+  - Added `long_description` and `long_description_content_type` to package metadata
+
 ## [0.7.5] - 2025-11-14
 
 ### Fixed
