@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.5] - 2025-11-14
+
+### Fixed
+- **Long text output handling**: Fixed layout overflow when functions return long strings (e.g., 100+ character passwords)
+  - Added word-wrapping and proper text overflow handling in result containers
+  - Applied `word-break: break-all` and `overflow-wrap: break-word` to prevent layout breaking
+  - Improved responsive behavior for long outputs on mobile devices
+
 ## [0.7.4] - 2025-10-26
 
 ### Added

@@ -452,6 +452,9 @@ button:active {
     border-radius: 8px;
     display: none;
     animation: slideIn 0.3s ease-out;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 #result img {
