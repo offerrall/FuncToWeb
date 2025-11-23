@@ -2,7 +2,7 @@
 
 Return multiple outputs at once - combine text, images, plots, and files in a single response.
 
-## Basic Usage
+## Usage
 
 <div class="grid" markdown>
 
@@ -49,59 +49,6 @@ run(analyze_image)
 ```
 
 Each output is displayed in its own container, one after another.
-
-</div>
-
-<div markdown>
-
-![Multiple Outputs](images/multiple_outputs.jpg)
-
-</div>
-
-</div>
-
-## Combining Different Types
-
-<div class="grid" markdown>
-
-<div markdown>
-
-Mix any combination of supported output types:
-```python
-from func_to_web import run
-from func_to_web.types import FileResponse
-import matplotlib.pyplot as plt
-
-def generate_report(title: str, data_points: int = 100):
-    """Generate report with multiple outputs"""
-    
-    # Text summary
-    summary = f"Report: {title}\nGenerated {data_points} points"
-    
-    # Plot
-    fig, ax = plt.subplots()
-    ax.plot(range(data_points), [x**2 for x in range(data_points)])
-    ax.set_title(title)
-    
-    # CSV file
-    csv_data = "x,y\n" + "\n".join([f"{i},{i**2}" for i in range(data_points)])
-    csv_file = FileResponse(
-        data=csv_data.encode('utf-8'),
-        filename="data.csv"
-    )
-    
-    # JSON file
-    json_file = FileResponse(
-        data=f'{{"title": "{title}"}}'.encode('utf-8'),
-        filename="metadata.json"
-    )
-    
-    return [summary, fig, csv_file, json_file]
-
-run(generate_report)
-```
-
-Works with tuples `()` or lists `[]`.
 
 </div>
 
