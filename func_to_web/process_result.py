@@ -3,15 +3,54 @@ import base64
 import tempfile
 from .types import FileResponse as UserFileResponse
 
+
 def process_result(result):
     """
     Convert function result to appropriate display format.
     
-    Handles images (PIL, Matplotlib), single/multiple files, and text.
+    Handles images (PIL, Matplotlib), single/multiple files, tuples, lists, and text.
     Returns a dictionary with 'type' and relevant data.
     Files are saved to temporary files and paths are returned.
+    
+    Supports tuples and lists for multiple outputs (no nesting allowed).
     """
-    # PIL Image detection
+    
+    # ===== TUPLE/LIST HANDLING (with nesting validation) =====
+    if isinstance(result, (tuple, list)):
+        # Check for nested tuples/lists (not allowed)
+        if any(isinstance(item, (tuple, list)) for item in result):
+            raise ValueError("Nested tuples/lists are not supported. Please flatten your return structure.")
+        
+        # Empty tuple/list
+        if len(result) == 0:
+            return {'type': 'text', 'data': str(result)}
+        
+        # Special case: list of FileResponse (existing behavior)
+        if all(isinstance(f, UserFileResponse) for f in result):
+            files = []
+            for f in result:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{f.filename}") as tmp:
+                    tmp.write(f.data)
+                    files.append({
+                        'path': tmp.name,
+                        'filename': f.filename
+                    })
+            return {
+                'type': 'downloads',
+                'files': files
+            }
+        
+        # General case: process each item recursively
+        outputs = []
+        for item in result:
+            outputs.append(process_result(item))
+        
+        return {
+            'type': 'multiple',
+            'outputs': outputs
+        }
+    
+    # ===== PIL IMAGE =====
     try:
         from PIL import Image
         if isinstance(result, Image.Image):
@@ -26,7 +65,7 @@ def process_result(result):
     except ImportError:
         pass
     
-    # Matplotlib Figure detection
+    # ===== MATPLOTLIB FIGURE =====
     try:
         import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
@@ -43,7 +82,7 @@ def process_result(result):
     except ImportError:
         pass
     
-    # Single file - save to temp
+    # ===== SINGLE FILE =====
     if isinstance(result, UserFileResponse):
         with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{result.filename}") as tmp:
             tmp.write(result.data)
@@ -53,22 +92,7 @@ def process_result(result):
                 'filename': result.filename
             }
     
-    # Multiple files - save to temp
-    if isinstance(result, list) and len(result) > 0 and all(isinstance(f, UserFileResponse) for f in result):
-        files = []
-        for f in result:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{f.filename}") as tmp:
-                tmp.write(f.data)
-                files.append({
-                    'path': tmp.name,
-                    'filename': f.filename
-                })
-        return {
-            'type': 'downloads',
-            'files': files
-        }
-    
-    # Default: convert to string
+    # ===== DEFAULT: TEXT =====
     return {
         'type': 'text',
         'data': str(result)

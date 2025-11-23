@@ -175,6 +175,10 @@ function createResultElement(data) {
         return createMultipleFilesDownload(data.files);
     }
     
+    if (data.result_type === 'multiple') {
+        return createMultipleOutputs(data.outputs);
+    }
+    
     return createJsonResult(data.result);
 }
 
@@ -188,4 +192,20 @@ function extractListConfig(container) {
         pattern: container.dataset.listPattern || undefined,
         required: container.dataset.listRequired === 'true'
     };
+}
+
+function createMultipleOutputs(outputs) {
+    const container = document.createElement('div');
+    container.className = 'multiple-outputs';
+    
+    outputs.forEach(output => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'output-item';
+        
+        const element = createResultElement(output);
+        wrapper.appendChild(element);
+        container.appendChild(wrapper);
+    });
+    
+    return container;
 }

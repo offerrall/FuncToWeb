@@ -222,3 +222,4 @@ You've completed all **Input Types** and **Constraints**! Now learn about output
 
 - [Images & Plots](images.md) - Return images and plots from your functions
 - [File Downloads](downloads.md) - Return files for users to download
+- [Multiple Outputs](multiple-outputs.md) - Return multiple outputs from a single function

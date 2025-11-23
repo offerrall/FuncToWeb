@@ -1028,6 +1028,58 @@ body.index-page {
     }
 }
 
+/* ==================== MULTIPLE OUTPUTS ==================== */
+
+.multiple-outputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.output-item {
+    padding: 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+}
+
+.output-item:first-child {
+    margin-top: 0;
+}
+
+.output-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.output-item pre {
+    margin: 0;
+}
+
+.output-item .file-download,
+.output-item .files-download {
+    margin: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.output-item .files-download h3 {
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 640px) {
+    .multiple-outputs {
+        gap: 1rem;
+    }
+    
+    .output-item {
+        padding: 0.75rem;
+    }
+}
+
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 640px) {

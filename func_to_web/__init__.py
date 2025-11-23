@@ -108,7 +108,6 @@ def cleanup_temp_file(file_id: str) -> None:
     except:
         pass
 
-
 def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
     """Create JSON response with file downloads.
     
@@ -125,6 +124,7 @@ def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
         register_temp_file(file_id, processed['path'], processed['filename'])
         response['file_id'] = file_id
         response['filename'] = processed['filename']
+    
     elif processed['type'] == 'downloads':
         files = []
         for f in processed['files']:
@@ -135,6 +135,15 @@ def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
                 'filename': f['filename']
             })
         response['files'] = files
+    
+    elif processed['type'] == 'multiple':
+        outputs = []
+        for output in processed['outputs']:
+            output_response = create_response_with_files(output)
+            output_response.pop('success', None)
+            outputs.append(output_response)
+        response['outputs'] = outputs
+    
     else:
         response['result'] = processed['data']
     

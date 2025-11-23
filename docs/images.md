@@ -81,3 +81,4 @@ Works with any Matplotlib plot type: line, bar, scatter, histograms, etc.
 ## Next Steps
 
 - [File Downloads](downloads.md) - Return files for users to download
+- [Multiple Outputs](multiple-outputs.md) - Return multiple outputs from a single function

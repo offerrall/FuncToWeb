@@ -1,5 +1,25 @@
 # Changelog
 
+
+## [0.8.1] - 2025-11-24
+
+### Added
+- **Multiple Outputs**: Functions can now return tuples or lists to display multiple outputs simultaneously
+  - Combine text, images, plots, and file downloads in a single response
+  - Example: `return ("Analysis complete", processed_image, plot_figure, report_file)`
+  - Nested tuples/lists are not supported (validation with clear error message)
+  - Each output type rendered in its own container with proper spacing
+
+### Changed
+- **Output Processing**: Enhanced `process_result()` to handle tuple/list returns recursively
+- **Response Format**: Backend now supports `result_type: 'multiple'` with nested outputs array
+- **Frontend Rendering**: New `createMultipleOutputs()` function in builders.js for recursive rendering
+
+### Technical
+- Added `.multiple-outputs` and `.output-item` CSS classes for styling
+- Modified `create_response_with_files()` to recursively process multiple outputs
+- Enhanced `createResultElement()` in builders.js to handle `multiple` result type
+
 ## [0.8.0] - 2025-11-23
 
 ### Added
