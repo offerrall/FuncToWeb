@@ -8,8 +8,25 @@
 </head>
 <body class="form-page">
     <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-icon">🌙</span>
+        <!-- Luna (modo claro) -->
+        <svg class="moon-icon theme-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <!-- Sol (modo oscuro) -->
+        <svg class="sun-icon theme-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v4M12 18v4M22 12h-4M6 12H2"/>
+            <path d="M17.66 6.34l-2.83 2.83M9.17 14.83l-2.83 2.83M6.34 6.34l2.83 2.83M14.83 14.83l2.83 2.83"/>
+        </svg>
     </button>
+
+    {% if show_back_button %}
+    <a href="/" class="back-button" aria-label="Back to tools">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+    </a>
+    {% endif %}
 
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
@@ -23,7 +40,7 @@
     </div>
 
     <div class="container"> 
-        <div class="form-page"> 
+        <div class="form-page">
             <h1>{{ title }}</h1>
             
             {% if description %}
@@ -37,8 +54,7 @@
                     {% if field.is_list %}
                         <div class="field {% if field.is_optional %}optional-field{% endif %}">
                             <label for="{{ field.name }}">
-                                {{ field.name }}
-                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                                {{ field.name.replace('_', ' ') }}
                             </label>
                             {% if field.is_optional %}
                             <div class="optional-toggle-container">
@@ -49,7 +65,7 @@
                                         {% if field.optional_enabled %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label">Enable field</span>
+                                
                             </div>
                             {% endif %}
                             <div class="list-container" 
@@ -75,13 +91,13 @@
                                    name="{{ field.name }}" 
                                    id="{{ field.name }}"
                                    {% if field.default %}checked{% endif %}>
-                            <label for="{{ field.name }}">{{ field.name }}</label>
+                            <label for="{{ field.name }}">{{ field.name.replace('_', ' ') }}</label>
                         </div>
                     {% elif field.type == 'select' %}
                         <div class="field {% if field.is_optional %}optional-field{% endif %}">
                             <label for="{{ field.name }}">
-                                {{ field.name }}
-                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                                {{ field.name.replace('_', ' ') }}
+                                
                             </label>
                             {% if field.is_optional %}
                             <div class="optional-toggle-container">
@@ -92,7 +108,7 @@
                                            {% if field.optional_enabled %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label">Enable field</span>
+                                
                             </div>
                             {% endif %}
                             <select name="{{ field.name }}" 
@@ -111,8 +127,8 @@
                     {% elif field.type == 'color' %}
                         <div class="field {% if field.is_optional %}optional-field{% endif %}">
                             <label for="{{ field.name }}">
-                                {{ field.name }}
-                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                                {{ field.name.replace('_', ' ') }}
+                                
                             </label>
                             {% if field.is_optional %}
                             <div class="optional-toggle-container">
@@ -123,7 +139,7 @@
                                            {% if field.optional_enabled %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label">Enable field</span>
+                                
                             </div>
                             {% endif %}
                             <div class="color-input-wrapper">
@@ -151,8 +167,8 @@
                     {% elif field.type == 'file' %}
                         <div class="field {% if field.is_optional %}optional-field{% endif %}">
                             <label for="{{ field.name }}">
-                                {{ field.name }}
-                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                                {{ field.name.replace('_', ' ') }}
+                                
                             </label>
                             {% if field.is_optional %}
                             <div class="optional-toggle-container">
@@ -163,7 +179,7 @@
                                            {% if field.optional_enabled %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label">Enable field</span>
+                                
                             </div>
                             {% endif %}
                             <input type="file" 
@@ -178,8 +194,8 @@
                     {% else %}
                         <div class="field {% if field.is_optional %}optional-field{% endif %}">
                             <label for="{{ field.name }}">
-                                {{ field.name }}
-                                {% if not field.required %}<span class="optional-badge">optional</span>{% endif %}
+                                {{ field.name.replace('_', ' ') }}
+                                
                             </label>
                             {% if field.is_optional %}
                             <div class="optional-toggle-container">
@@ -190,7 +206,7 @@
                                            {% if field.optional_enabled %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label">Enable field</span>
+                                
                             </div>
                             {% endif %}
                             <input type="{{ field.type }}" 

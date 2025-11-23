@@ -170,7 +170,7 @@ function getValidationMessage(validity, input) {
         return `Maximum length is ${input.maxLength} characters`;
     }
     if (validity.stepMismatch) {
-        return 'Value must be a valid number';
+        return 'The number entered is not valid, no decimals allowed';
     }
     if (validity.typeMismatch) {
         if (input.type === 'email') return 'Please enter a valid email';

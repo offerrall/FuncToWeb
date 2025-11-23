@@ -46,8 +46,11 @@ run(my_function, host="0.0.0.0", port=8000)
 run(my_function, template_dir="my_custom_templates")
 ```
 
+For use custom templates, copy the default templates from the ./func_to_web/templates/ directory and modify as needed, then specify the path in `template_dir`.
+With custom templates, you can change the look and functionality of the web interface.
+
 ---
 
 ## That's It!
 
-You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 20+ complete, runnable examples.
+You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 15 complete, runnable examples.

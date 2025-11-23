@@ -4,6 +4,7 @@
 
 ```python
 from func_to_web import run
+from func_to_web.types import Color, Email
 from datetime import date, time
 
 def example(
@@ -12,7 +13,9 @@ def example(
     decimal: float,         # Decimal input
     checkbox: bool,         # Checkbox
     birthday: date,         # Date picker
-    meeting: time           # Time picker
+    meeting: time,          # Time picker
+    favorite_color: Color,  # Color picker
+    contact_email: Email    # Email input
 ):
     return f"All inputs received"
 
@@ -23,6 +26,7 @@ You can provide default values for any type:
 
 ```python
 from func_to_web import run
+from func_to_web.types import Color, Email
 from datetime import date, time
 
 def create_event(
@@ -31,7 +35,9 @@ def create_event(
     duration_hours: float = 1.5,
     all_day: bool = False,
     event_date: date = date.today(),
-    start_time: time = time(9, 0)
+    start_time: time = time(9, 0),
+    favorite_color: Color = "#FF5733",
+    contact_email: Email = "test@gmail.com"
 ):
     return f"Event '{title}' created with {attendees} attendees"
 

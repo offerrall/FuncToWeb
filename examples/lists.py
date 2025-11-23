@@ -3,7 +3,7 @@ from func_to_web.types import Color, Email, OptionalEnabled
 from typing import Annotated
 from pydantic import Field
 
-def process_data(
+def list_example(
     # Basic type lists
     numbers: list[int],                                         # Default: None
     colors: list[Color],                                        # List of color pickers
@@ -20,7 +20,9 @@ def process_data(
         list[Annotated[int, Field(ge=1, le=5)]], 
         Field(min_length=3, max_length=10)
     ],                                                          # 3-10 ratings, each 1-5
+    
     names: list[str] = ["Alice", "Bob"],                        # List with defaults
+
     # Optional lists
     tags: list[str] | None = None,                              # Can be None or have values
     tags2: Annotated[list[str], Field(min_length=2)] | None = None, # Optional, min 2 items if provided
@@ -30,7 +32,7 @@ def process_data(
     all_features: Annotated[
         list[Annotated[str, Field(min_length=2)]],
         Field(min_length=2)
-    ] | OptionalEnabled = ["aaa", "bbb"]                         # 1-4 items, each min 2 chars
+    ] | OptionalEnabled = ["aaa", "bbb"]                         # Min 2 items, each min 2 chars and 
 ):
     data = {
         "numbers": numbers,
@@ -47,4 +49,6 @@ def process_data(
     }
     return data
 
-run(process_data)
+# Note: You can use list[...] in any type
+
+run(list_example)

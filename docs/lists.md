@@ -20,12 +20,32 @@ def process_data(
 
 run(process_data)
 ```
+## List Constraints
+```python
+from func_to_web import run
+from typing import Annotated
+from pydantic import Field
+
+def rate_movies(
+    # Each rating 1-5, need 3-10 ratings total
+    ratings: Annotated[
+        list[Annotated[int, Field(ge=1, le=5)]],
+        Field(min_length=3, max_length=10)
+    ]
+):
+    avg = sum(ratings) / len(ratings)
+    return f"Average rating: {avg:.1f} ⭐"
+
+run(rate_movies)
+```
+
 ## Key Features
 - **Dynamic add/remove buttons** for each list
 - Works with **all types**: `int`, `float`, `str`, `bool`, `date`, `time`, `Color`, `Email`, Files Types
-- Not supported with `Literal`
 - Default values: `list[str] = ["hello", "world"]`
 - All non-optional lists require at least 1 item
+- Not supported with `Literal`
+- Lists cannot be nested (e.g., `list[list[int]]` is not supported)
 
 </div>
 

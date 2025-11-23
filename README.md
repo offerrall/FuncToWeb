@@ -1,4 +1,4 @@
-# Func To Web 0.7.6
+# Func To Web 0.8.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -22,7 +22,7 @@ pip install func-to-web
 ```python
 from func_to_web import run
 
-def divide(a: int, b: int):
+def divide(a: float, b: float):
     return a / b
 
 run(divide)
@@ -33,7 +33,7 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 </td>
 <td width="50%">
 
-![Demo](docs/images/quick.jpeg)
+![Demo](docs/images/quick.jpg)
 
 </td>
 </tr>
@@ -84,14 +84,7 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Quick Examples
 
-Check the [`examples/`](examples/) folder for 20+ complete examples:
-
-```bash
-python examples/01_basic_division.py       # Simple math
-python examples/08_image_blur.py           # Image processing
-python examples/15_multiple_tools.py       # Multiple functions
-python examples/20_lists_limits.py         # Advanced validation
-```
+Check the [`examples/`](examples/) folder for 14 complete examples (Covers all features)
 
 ---
 

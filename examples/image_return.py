@@ -4,10 +4,10 @@ from func_to_web import Literal, run
 from func_to_web.types import ImageFile
 
 
-def apply_effect(
+def image_effect(
     image: ImageFile,
     effect: Literal['blur', 'sharpen', 'contour', 'emboss', 'edge_enhance'] = 'blur',
-    intensity: float | None = None,
+    intensity: float | None = 5.0, # | None creates an optional value, defaults to 5.0 (All parameters allowed to be optional and defaults values)
 ):
     """Apply various effects to images"""
     img = Image.open(image)
@@ -24,4 +24,4 @@ def apply_effect(
     elif effect == 'edge_enhance':
         return img.filter(ImageFilter.EDGE_ENHANCE)
 
-run(apply_effect)
+run(image_effect)

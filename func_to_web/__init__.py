@@ -172,7 +172,6 @@ async def handle_form_submission(request: Request, func: Callable, params: dict[
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=400)
 
-
 def run(
     func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
     host: str = "0.0.0.0", 
@@ -258,7 +257,8 @@ def run(
                     "title": func_name, 
                     "description": description,
                     "fields": fields, 
-                    "submit_url": "/submit"
+                    "submit_url": "/submit",
+                    "show_back_button": False
                 }
             )
 
@@ -296,7 +296,8 @@ def run(
                             "title": title, 
                             "description": desc,
                             "fields": flds, 
-                            "submit_url": submit_path
+                            "submit_url": submit_path,
+                            "show_back_button": True
                         }
                     )
                 return form_view

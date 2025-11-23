@@ -2,6 +2,7 @@ from func_to_web import Annotated, Field, run
 
 
 def calculate_bmi(
+    age: Annotated[int, Field(ge=0, le=120)],
     weight_kg: Annotated[float, Field(ge=20, le=300)],
     height_m: Annotated[float, Field(ge=0.5, le=2.5)]
 ):
@@ -18,6 +19,7 @@ def calculate_bmi(
         category = "Obese"
     
     return {
+        "age": age,
         "bmi": round(bmi, 2),
         "category": category
     }

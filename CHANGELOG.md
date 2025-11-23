@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.8.0] - 2025-11-23
+
+### Added
+- **Back Button Navigation**: Added back button on form pages to return to tools index
+
+### Changed
+- **Dark/Light Theme Toggle**: Complete redesign with SVG icons
+  - Replaced emoji icons with SVG moon/sun icons for better alignment and aesthetics
+
+- **Field Label Formatting**: Labels now automatically replace underscores with spaces
+  - `user_name` displays as "User Name"
+  - `api_url` displays as "Api Url"
+
+- **Function Description Styling**: Improved appearance of function docstrings
+
+### Fixed
+- **Button Alignment**: Fixed vertical misalignment between theme toggle and back button
+  - Resolved CSS inheritance issue where global `button` selector was adding `margin-top: 0.5rem`
+
+- **Number Input Controls (Dark Mode)**: Fixed visibility of increment/decrement arrows in dark mode
+  - Applied `color-scheme: dark` for native dark mode styling
+  - Arrows now properly visible against dark backgrounds
+
+- **Simplified optional field interface**: 
+  - Removed `optional` badge labels from field names for cleaner design
+  - Removed "Enable field" text label next to toggle switches
+  - Toggle switches now self-explanatory without redundant text
+  - Cleaner, more minimal form appearance
+
+### Improved
+- **CSS Architecture**: Enhanced maintainability and reduced inheritance issues
+  - Removed redundant CSS properties
+  - Cleaner separation between component styles
+- **Example Code**: Better examples in /examples folder with improved comments
+- **Update examples images**: Regenerated example images
+
 ## [0.7.6] - 2025-11-14
 
 ### Fixed

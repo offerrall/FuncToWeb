@@ -4,12 +4,12 @@ from func_to_web import run
 
 
 def showcase_types(
-    name: str = "John",
-    age: int = 25,
-    height: float = 1.75,
-    active: bool = True,
-    birthday: date = date(2000, 1, 1),
-    alarm: time = time(7, 30)
+    name: str,
+    age: int,
+    height: float,
+    active: bool,
+    birthday: date,
+    alarm: time,
 ):
     """Demonstrates all basic types"""
     return {

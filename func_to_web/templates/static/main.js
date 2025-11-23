@@ -1,18 +1,20 @@
 (function() {
     const themeToggle = document.getElementById('themeToggle');
-    const themeIcon = themeToggle?.querySelector('.theme-icon');
+    if (!themeToggle) return;
     
+    const html = document.documentElement;
+    
+    // Cargar tema guardado o usar 'light' por defecto
     const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    if (themeIcon) themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    html.setAttribute('data-theme', savedTheme);
     
-    themeToggle?.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
+    // Toggle theme al hacer click
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
-        document.documentElement.setAttribute('data-theme', newTheme);
+        html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        if (themeIcon) themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
     });
 })();
 

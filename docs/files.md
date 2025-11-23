@@ -25,6 +25,8 @@ run(process_files)
 
 Each file type automatically validates the file extension and provides appropriate file picker filters in the UI.
 
+All file types are represented as strings (file paths) in your function.
+
 </div>
 
 <div markdown>

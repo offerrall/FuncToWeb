@@ -107,6 +107,7 @@ You've completed all **Output Types**! Explore additional features.
 
 **Next category:**
 
+- [Fuction Description](function-descriptions.md) - Represent function docstrings in the UI
 - [Multiple Functions](multiple.md) - Serve multiple functions at once
 - [Dark Mode](dark-mode.md) - Automatic theme switching
 - [Server Configuration](server-configuration.md) - Customize server settings and deployment options

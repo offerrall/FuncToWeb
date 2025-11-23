@@ -56,6 +56,8 @@ run(create_user)
 - Disabled fields automatically send `None` to your function
 - Works with all field types and constraints (including lists!)
 
+Note: OptionalEnabled/OptionalDisabled are None for type checking
+
 ## Next Steps
 
 - [Dropdowns](dropdowns.md) - Use dropdown menus for inputs

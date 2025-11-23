@@ -12,7 +12,7 @@ pip install func-to-web
 from func_to_web import run
 
 # Minimal example
-def divide(a: int, b: int):
+def divide(a: float, b: float):
     return a / b
 
 run(divide)
@@ -29,7 +29,7 @@ Open `http://127.0.0.1:8000` → **Done!**
 
 <div markdown>
 
-![func-to-web Demo](images/quick.jpeg)
+![func-to-web Demo](images/quick.jpg)
 
 </div>
 
