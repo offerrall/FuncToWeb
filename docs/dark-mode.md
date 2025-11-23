@@ -21,7 +21,7 @@ The theme preference is stored in your browser's local storage.
 
 <div markdown>
 
-![Dark Mode](images/quick.jpeg)
+![Dark Mode](images/quick.jpg)
 
 </div>
 
