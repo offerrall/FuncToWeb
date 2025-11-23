@@ -54,12 +54,11 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[Dynamic Lists](https://offerrall.github.io/FuncToWeb/lists/)**: `list[Type]` with add/remove buttons
 - **[Optional Fields](https://offerrall.github.io/FuncToWeb/optional/)**: `Type | None` with toggle switches
 - **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static `Literal['a', 'b']` or Dynamic `Literal[func]`
-
+- **[Validation](https://offerrall.github.io/FuncToWeb/constraints/)**: Pydantic constraints (min/max, regex, list validation)
 </td>
 <td width="50%">
 
 ### **Features**
-- **[Validation](https://offerrall.github.io/FuncToWeb/constraints/)**: Pydantic constraints (min/max, regex, list validation)
 - **[Images & Plots](https://offerrall.github.io/FuncToWeb/images/)**: Return PIL Images and Matplotlib figures
 - **[File Downloads](https://offerrall.github.io/FuncToWeb/downloads/)**: Return `FileResponse` for any file type
 - **[Multiple Functions](https://offerrall.github.io/FuncToWeb/multiple/)**: Auto-generated index page
