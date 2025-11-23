@@ -1,4 +1,4 @@
-# Func To Web 0.8.1
+# Func To Web 0.8.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -14,9 +14,11 @@
 <table>
 <tr>
 <td width="50%">
+
 ```bash
 pip install func-to-web
 ```
+
 ```python
 from func_to_web import run
 
@@ -53,7 +55,6 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[Optional Fields](https://offerrall.github.io/FuncToWeb/optional/)**: `Type | None` with toggle switches
 - **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static `Literal['a', 'b']` or Dynamic `Literal[func]`
 - **[Validation](https://offerrall.github.io/FuncToWeb/constraints/)**: Pydantic constraints (min/max, regex, list validation)
-
 </td>
 <td width="50%">
 
@@ -62,11 +63,9 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[File Downloads](https://offerrall.github.io/FuncToWeb/downloads/)**: Return `FileResponse` for any file type
 - **[Multiple Outputs](https://offerrall.github.io/FuncToWeb/multiple-outputs/)**: Return tuples/lists combining text, images, and files
 
-### **Additional Features**
-- **[Multiple Functions](https://offerrall.github.io/FuncToWeb/multiple/)**: Auto-generated index page
+### **Features**
 - **[Function Descriptions](https://offerrall.github.io/FuncToWeb/function-descriptions/)**: Display docstrings in the UI
 - **[Dark Mode](https://offerrall.github.io/FuncToWeb/dark-mode/)**: Automatic theme switching
-- **[Server Configuration](https://offerrall.github.io/FuncToWeb/server-configuration/)**: Customize host, port, and templates
 - **Large Files**: Optimized streaming (GB+ files)
 - **Progress Bars**: Real-time upload/download tracking
 - **Error Handling**: Beautiful error messages
@@ -75,7 +74,7 @@ Complete documentation with **examples and screenshots** for each feature:
 </tr>
 </table>
 
-**[Full Documentation](https://offerrall.github.io/FuncToWeb)** | 
+**[Full Documentation](https://offerrall.github.io/FuncToWeb)** 
 **[API Reference](https://offerrall.github.io/FuncToWeb/api/)**
 
 ## Perfect For
@@ -86,7 +85,7 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Quick Examples
 
-Check the [`examples/`](examples/) folder for 15 complete examples (Covers all features)
+Check the [`examples/`](examples/) folder for 14 complete examples (Covers all features)
 
 ---
 
@@ -105,11 +104,13 @@ Check the [`examples/`](examples/) folder for 15 complete examples (Covers all f
 ---
 
 ## Run Tests
+
 ```bash
 pytest tests/ -v
 ```
 
 ## Deploy Docs
+
 ```bash
 mkdocs gh-deploy
 ```
