@@ -817,37 +817,67 @@ pre {
 
 .result-json-container {
     position: relative;
+    background: var(--bg);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .result-json-container pre {
-    padding-bottom: 50px;
+    padding: 0.85rem 3rem 1rem 1rem;
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    color: var(--success);
+    line-height: 1.5;
 }
 
 .copy-btn {
     position: absolute;
-    bottom: 10px;
-    padding: 8px 16px;
-    background: var(--primary);
-    color: var(--white);
-    border: none;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    font-size: 0;
+    background: transparent;
+    color: var(--text-light);
+    border: 1px solid transparent;
     border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     z-index: 10;
-    box-shadow: var(--shadow);
+    box-shadow: none;
 }
 
 .copy-btn:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
+    border-color: var(--border);
+    transform: none;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary-light);
+    border-color: var(--border);
+}
+
+.copy-btn svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
 }
 
 .copy-btn:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow);
+    transform: scale(0.95);
 }
 
 /* ==================== FILE DOWNLOAD ==================== */

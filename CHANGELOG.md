@@ -19,6 +19,12 @@
   - Disabled on tablets and mobile devices
   - Maintains responsive behavior with proper padding
 
+- **Result Display**: Enhanced UI/UX for output presentation
+  - Replaced text-based "Copy" button with a subtle, floating SVG icon in the top-right
+  - Optimized vertical alignment to perfectly center text relative to the button
+  - Removed enclosing quotes from string results (both in display and clipboard)
+  - Improved button state logic to handle rapid clicks and timeouts robustly
+
 ## [0.8.1] - 2025-11-24
 
 ### Added
