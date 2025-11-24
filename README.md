@@ -90,6 +90,11 @@ Check the [`examples/`](examples/) folder for 19 complete examples (Covers all f
 
 ---
 
+## Roadmap to v1.0
+
+- **Built-in Authentication**: Secure your tools effortlessly. Simply pass a dictionary of users/passwords to `run()` to enable a login screen. No database required.
+- **Interactive Tables**: Supercharged table rendering. Support for client-side sorting (by column), live search/filtering, and pagination for large datasets.
+
 ## Requirements
 
 **Core:**
