@@ -238,6 +238,8 @@ All these formats automatically render as HTML tables:
 | NumPy 2D Array | `np.array([[1, 2]])` | Auto-generated |
 | Polars DataFrame | `pl.DataFrame(data)` | From column names |
 
+Note: If the table is too wide, you can resize the form from the bottom-left corner.
+
 ## Features
 
 - **Automatic detection**: Just return the data, no configuration needed
