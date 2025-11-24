@@ -144,6 +144,10 @@ def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
             outputs.append(output_response)
         response['outputs'] = outputs
     
+    elif processed['type'] == 'table':
+        response['headers'] = processed['headers']
+        response['rows'] = processed['rows']
+    
     else:
         response['result'] = processed['data']
     

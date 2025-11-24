@@ -26,11 +26,20 @@ def analyze_image(image: ImageFile, blur_radius: int = 5):
         filename="report.txt"
     )
     
-    # 4. Return EVERYTHING at once in a tuple
+    # 4. Generate data table
+    analysis_data = [
+        {"metric": "Width", "value": img.size[0]},
+        {"metric": "Height", "value": img.size[1]},
+        {"metric": "Blur Radius", "value": blur_radius},
+        {"metric": "Format", "value": img.format or "Unknown"}
+    ]
+    
+    # 5. Return EVERYTHING at once in a tuple
     return (
         "✓ Analysis complete!",  # Text shown first
         blurred,                  # Processed image
         fig,                      # Plot
+        analysis_data,            # Table with image metrics
         report                    # Download button
     )
 

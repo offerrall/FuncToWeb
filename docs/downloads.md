@@ -107,4 +107,5 @@ You've completed all **Output Types**! Explore additional features.
 
 **Next category:**
 
+- [Tables](tables.md) - Return tables from lists or DataFrames
 - [Multiple Outputs](multiple-outputs.md) - Return multiple outputs from a single function

@@ -69,7 +69,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0;
-    margin: 0; 
+    margin: 0;
 }
 
 .theme-toggle:hover {
@@ -265,9 +265,18 @@ body.form-page {
     padding: 2rem;
     border-radius: 16px;
     box-shadow: var(--shadow-lg);
-    width: 100%;
-    max-width: 500px;
+    width: 500px; /* ← Tamaño fijo por defecto en desktop */
     animation: fadeIn 0.3s ease-out;
+}
+
+/* Resize solo en desktop */
+@media (min-width: 1025px) {
+    .form-page .container {
+        resize: horizontal;
+        overflow: auto;
+        min-width: 400px;
+        max-width: min(1400px, 95vw);
+    }
 }
 
 .form-page h1 {
@@ -1070,17 +1079,95 @@ body.index-page {
     margin-bottom: 0.75rem;
 }
 
-@media (max-width: 640px) {
-    .multiple-outputs {
-        gap: 1rem;
-    }
-    
-    .output-item {
-        padding: 0.75rem;
-    }
+/* ==================== TABLE RESULTS ==================== */
+
+.result-table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--bg);
+}
+
+.result-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.result-table-container::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-radius: 4px;
+}
+
+.result-table-container::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+.result-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+.result-table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.result-table thead {
+    background: var(--primary);
+    color: white;
+}
+
+.result-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.result-table tbody tr {
+    border-bottom: 1px solid var(--border);
+}
+
+.result-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.result-table tbody tr:nth-child(odd) {
+    background: #f3f4f6;
+}
+
+.result-table td {
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .result-table thead {
+    background: var(--primary-dark);
+}
+
+[data-theme="dark"] .result-table tbody tr:nth-child(odd) {
+    background: rgba(129, 140, 248, 0.1);
 }
 
 /* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 1024px) {
+    body.form-page {
+        padding: 0.5rem;
+    }
+    
+    .form-page .container {
+        padding: 1.5rem;
+        max-width: 100%;
+    }
+}
 
 @media (max-width: 640px) {
     .theme-toggle,
@@ -1178,6 +1265,23 @@ body.index-page {
     .file-download button {
         width: 100%;
     }
+    
+    .multiple-outputs {
+        gap: 1rem;
+    }
+    
+    .output-item {
+        padding: 0.75rem;
+    }
+    
+    .result-table {
+        font-size: 0.75rem;
+    }
+    
+    .result-table th,
+    .result-table td {
+        padding: 0.5rem 0.75rem;
+    }
 }
 
 @media (max-height: 600px) and (orientation: landscape) {
@@ -1201,7 +1305,7 @@ body.index-page {
 
 @media (min-width: 640px) and (max-width: 1024px) {
     .form-page .container {
-        max-width: 600px;
+        max-width: 100%;
     }
     
     .tools-grid {

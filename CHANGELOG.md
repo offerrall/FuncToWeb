@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0] - 2025-01-24
+
+### Added
+- **Table Rendering**: Automatic HTML table generation from multiple data formats
+  - `list[dict]` - Headers extracted from dictionary keys
+  - `list[tuple]` - Auto-generated headers (Column 1, Column 2, etc.)
+  - **Pandas DataFrame** - Direct support with column names as headers
+  - **NumPy 2D Arrays** - Renders with auto-generated headers
+  - **Polars DataFrame** - Native support with column names
+  - Tables can be combined with other outputs in tuples/lists
+  - Zebra striping for better readability
+
+### Changed
+- **Form Container**: Added horizontal resize capability on desktop (≥1025px)
+  - Default width: 500px
+  - Resizable from 400px to 1400px by dragging the edge
+  - Disabled on tablets and mobile devices
+  - Maintains responsive behavior with proper padding
 
 ## [0.8.1] - 2025-11-24
 
@@ -14,11 +32,6 @@
 - **Output Processing**: Enhanced `process_result()` to handle tuple/list returns recursively
 - **Response Format**: Backend now supports `result_type: 'multiple'` with nested outputs array
 - **Frontend Rendering**: New `createMultipleOutputs()` function in builders.js for recursive rendering
-
-### Technical
-- Added `.multiple-outputs` and `.output-item` CSS classes for styling
-- Modified `create_response_with_files()` to recursively process multiple outputs
-- Enhanced `createResultElement()` in builders.js to handle `multiple` result type
 
 ## [0.8.0] - 2025-11-23
 
@@ -124,18 +137,6 @@
 - **Error Messages on Disabled Fields**: Clear error messages when fields are disabled
 - **Initial State Consistency**: Fixed inconsistent behavior between page load and toggle interactions
 - **Minimum List Items**: Lists with minimum item requirements now auto-create all required items
-
-## [0.7.0] - 2025-10-13
-
-### Added
-- **Dark Mode**: Toggle between light and dark themes with persistent preference
-  - Floating theme toggle button (🌙/☀️) in top-right corner
-  - Theme preference saved in localStorage
-  - Smooth transitions between themes
-  - Optimized color scheme for dark mode with proper contrast
-  - Works on both form and index pages
-  - Animated toggle button with hover effects
-  - Mobile-responsive button sizing
 
 ## [0.7.0] - 2025-10-13
 

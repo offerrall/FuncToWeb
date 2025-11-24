@@ -53,4 +53,4 @@ With custom templates, you can change the look and functionality of the web inte
 
 ## That's It!
 
-You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 15 complete, runnable examples.
+You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 19 complete, runnable examples.

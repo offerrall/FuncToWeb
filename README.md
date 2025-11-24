@@ -1,4 +1,4 @@
-# Func To Web 0.8.1
+# Func To Web 0.9.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -61,7 +61,8 @@ Complete documentation with **examples and screenshots** for each feature:
 ### **Output Types**
 - **[Images & Plots](https://offerrall.github.io/FuncToWeb/images/)**: Return PIL Images and Matplotlib figures
 - **[File Downloads](https://offerrall.github.io/FuncToWeb/downloads/)**: Return `FileResponse` for any file type
-- **[Multiple Outputs](https://offerrall.github.io/FuncToWeb/multiple-outputs/)**: Return tuples/lists combining text, images, and files
+- **[Tables](https://offerrall.github.io/FuncToWeb/tables/)**: Return `list[dict]`, `list[tuple]`, Pandas, NumPy, or Polars DataFrames
+- **[Multiple Outputs](https://offerrall.github.io/FuncToWeb/multiple-outputs/)**: Return tuples/lists combining text, images, tables, and files
 
 ### **Features**
 - **[Function Descriptions](https://offerrall.github.io/FuncToWeb/function-descriptions/)**: Display docstrings in the UI
@@ -85,7 +86,7 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Quick Examples
 
-Check the [`examples/`](examples/) folder for 14 complete examples (Covers all features)
+Check the [`examples/`](examples/) folder for 19 complete examples (Covers all features)
 
 ---
 
@@ -95,8 +96,8 @@ Check the [`examples/`](examples/) folder for 14 complete examples (Covers all f
 - Python 3.10+
 - FastAPI, Uvicorn, Pydantic, Jinja2, python-multipart
 
-**Optional (for examples):**
-- Pillow, Matplotlib, Pandas, NumPy
+**Optional (for extended functionality):**
+- Pillow, Matplotlib, Pandas, NumPy, Polars
 
 **Development:**
 - pytest, mkdocs, mkdocs-material

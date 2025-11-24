@@ -62,6 +62,7 @@ nav:
   - Output Types:
       - Images & Plots: images.md
       - File Downloads: downloads.md
+      - Tables: tables.md
       - Multiple Outputs: multiple-outputs.md
   - Other Features:
       - Function Descriptions: function-descriptions.md
