@@ -1,6 +1,15 @@
 # Changelog
 
-## [0.9.0] - 2025-01-24
+## [0.9.1] - 2025-11-24
+
+### Added
+- **Reverse Proxy Support**: New `root_path` argument in `run()` to properly handle deployments behind Nginx, Traefik, or Docker containers with path prefixes.
+- **Advanced Server Configuration**: Any extra keyword arguments passed to `run()` (`**kwargs`) are now forwarded directly to **Uvicorn**.
+  - Enables SSL/HTTPS support (`ssl_keyfile`, `ssl_certfile`).
+  - Allows performance tuning (`workers`, `limit_max_requests`, `timeout_keep_alive`).
+- **Custom API Metadata**: New `fastapi_config` dictionary argument to customize the underlying FastAPI application (e.g., changing the API title, version, or disabling swagger docs).
+
+## [0.9.0] - 2025-11-24
 
 ### Added
 - **Table Rendering**: Automatic HTML table generation from multiple data formats

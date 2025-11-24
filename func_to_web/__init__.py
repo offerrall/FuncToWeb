@@ -189,7 +189,10 @@ def run(
     func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
     host: str = "0.0.0.0", 
     port: int = 8000, 
-    template_dir: str | Path | None = None
+    template_dir: str | Path | None = None,
+    root_path: str = "",
+    fastapi_config: dict[str, Any] | None = None,
+    **kwargs
 ) -> None:
     """Generate and run a web UI for one or more Python functions.
     
@@ -201,6 +204,11 @@ def run(
         host: Server host address (default: "0.0.0.0").
         port: Server port (default: 8000).
         template_dir: Optional custom template directory.
+        root_path: Prefix for the API path (useful for reverse proxies).
+        fastapi_config: Optional dictionary with extra arguments for FastAPI app 
+                        (e.g. {'title': 'My App', 'version': '1.0.0'}).
+        **kwargs: Extra options passed directly to `uvicorn.Config`.
+                  Examples: `ssl_keyfile`, `ssl_certfile`, `workers`, `log_level`.
         
     Raises:
         FileNotFoundError: If template directory doesn't exist.
@@ -209,7 +217,15 @@ def run(
     
     funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
     
-    app = FastAPI()
+    app_kwargs = {"root_path": root_path}
+    
+    if fastapi_config:
+        if "root_path" in fastapi_config:
+            print("[Warning] 'root_path' argument takes precedence over 'fastapi_config' entry and will be used.")
+            fastapi_config.pop("root_path") 
+        app_kwargs.update(fastapi_config)
+    
+    app = FastAPI(**app_kwargs)
     
     if template_dir is None:
         template_dir = Path(__file__).parent / "templates"
@@ -323,15 +339,24 @@ def run(
             app.get(route)(make_form_handler(func_name, params, description, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
-    config = uvicorn.Config(
-        app, 
-        host=host, 
-        port=port, 
-        reload=False,
-        limit_concurrency=100,
-        limit_max_requests=1000,
-        timeout_keep_alive=30,
-        h11_max_incomplete_event_size=16 * 1024 * 1024
-    )
+    uvicorn_params = {
+        "host": host,
+        "port": port,
+        "reload": False,
+        "limit_concurrency": 100,
+        "limit_max_requests": 1000,
+        "timeout_keep_alive": 30,
+        "h11_max_incomplete_event_size": 16 * 1024 * 1024
+    }
+    
+    # Filter out root_path if passed in kwargs to avoid Uvicorn conflict
+    if "root_path" in kwargs:
+        print("[Warning] 'root_path' argument is for FastAPI app configuration and will be ignored for Uvicorn.")
+        kwargs.pop("root_path")
+
+    # Update defaults with any user-provided kwargs
+    uvicorn_params.update(kwargs)
+    
+    config = uvicorn.Config(app, **uvicorn_params)
     server = uvicorn.Server(config)
     asyncio.run(server.serve())
