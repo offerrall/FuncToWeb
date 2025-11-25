@@ -22,6 +22,8 @@ run([func1, func2], root_path="/my-tool")
 - `func_or_list` - Single function or list of functions to serve.
 - `host` - Server host (default: `"0.0.0.0"`).
 - `port` - Server port (default: `8000`).
+- `auth` - Dictionary of users/passwords for authentication (see [Authentication](authentication.md)).
+- `secret_key` - Key for signing session cookies (see [Authentication](authentication.md)).
 - `template_dir` - Custom template directory (optional).
 - `root_path` - URL prefix for running behind a reverse proxy (default: `""`).
 - `fastapi_config` - Dictionary with extra options for the FastAPI app (e.g., title, version).
@@ -109,4 +111,4 @@ To use custom templates, copy the default templates from the `./func_to_web/temp
 
 ## That's It!
 
-You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 19 complete, runnable examples.
+You've completed the func-to-web documentation. Check out the [examples folder](https://github.com/offerrall/FuncToWeb/tree/main/examples) for 20 complete, runnable examples.

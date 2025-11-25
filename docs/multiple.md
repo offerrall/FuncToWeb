@@ -50,5 +50,6 @@ Users can select which tool they want to use from the index.
 
 ## Next Steps
 
+- [Authentication](authentication.md) - Password-protect your web apps
 - [Dark Mode](dark-mode.md) - Automatic theme switching
 - [Server Configuration](server-configuration.md) - Customize host, port, and templates

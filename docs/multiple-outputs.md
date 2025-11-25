@@ -161,5 +161,6 @@ You've completed all **Output Types**! Explore additional features.
 
 - [Function Descriptions](function-descriptions.md) - Display docstrings in the UI
 - [Multiple Functions](multiple.md) - Serve multiple functions at once
+- [Authentication](authentication.md) - Password-protect your web apps
 - [Dark Mode](dark-mode.md) - Automatic theme switching
 - [Server Configuration](server-configuration.md) - Customize server settings

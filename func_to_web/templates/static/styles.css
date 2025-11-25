@@ -13,6 +13,12 @@
     --border: #e5e7eb;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --bg-primary: #f3f4f6;
+    --bg-secondary: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #e5e7eb;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
 }
 
 [data-theme="dark"] {
@@ -28,6 +34,12 @@
     --white: #111827;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --input-bg: #374151;
+    --input-border: #4b5563;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
 }
 
 /* ==================== GLOBAL RESET ==================== */
@@ -265,7 +277,7 @@ body.form-page {
     padding: 2rem;
     border-radius: 16px;
     box-shadow: var(--shadow-lg);
-    width: 500px; /* ← Tamaño fijo por defecto en desktop */
+    width: 500px;
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -323,6 +335,7 @@ label {
 input[type="text"],
 input[type="number"],
 input[type="email"],
+input[type="password"],
 input[type="url"],
 input[type="tel"],
 input[type="date"],
@@ -361,6 +374,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="email"]:focus,
+input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="tel"]:focus,
 input[type="date"]:focus,
@@ -1184,6 +1198,192 @@ body.index-page {
 
 [data-theme="dark"] .result-table tbody tr:nth-child(odd) {
     background: rgba(129, 140, 248, 0.1);
+}
+
+/* ==================== HEADER ACTIONS (Logout + Theme) ==================== */
+
+.header-actions {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    z-index: 1000;
+}
+
+/* El theme toggle ahora vive dentro del flex container, 
+   así que le quitamos el posicionamiento absoluto/fijo si es necesario,
+   o simplemente dejamos que el contenedor lo posicione */
+.header-actions .theme-toggle {
+    position: static; 
+    margin: 0; /* Reset de márgenes */
+}
+
+.logout-button {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--text-light);
+    padding: 0;
+}
+
+.logout-button:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--error);
+    color: var(--error);
+    background: #fef2f2;
+}
+
+[data-theme="dark"] .logout-button:hover {
+    background: #450a0a;
+    border-color: #f87171;
+}
+
+.logout-button svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+/* Ajuste Responsive para móviles */
+@media (max-width: 640px) {
+    .header-actions {
+        top: 0.75rem;
+        right: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .logout-button {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .logout-button svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* ==================== LOGIN PAGE ==================== */
+
+body.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.login-card {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 0.4s ease-out;
+    border: 1px solid transparent;
+}
+
+[data-theme="dark"] .login-card {
+    border-color: var(--border);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.login-header p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+/* Form Elements specific for Login to override generic styles if needed */
+.login-card .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-card label {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.login-card input {
+    width: 100%;
+    padding: 0.875rem 1rem; /* Slightly larger touch target */
+    background: var(--bg);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--text);
+    transition: all 0.2s ease;
+}
+
+.login-card input:focus {
+    background: var(--white);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 0.875rem;
+    margin-top: 1rem;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s;
+}
+
+.btn-login:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-login:active {
+    transform: translateY(1px);
+}
+
+.error-banner {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
 }
 
 /* ==================== RESPONSIVE ==================== */

@@ -46,5 +46,6 @@ If your function doesn't have a docstring, the description simply won't be shown
 ## Next Steps
 
 - [Multiple Functions](multiple.md) - Serve multiple functions with an index page
+- [Authentication](authentication.md) - Password-protect your web apps
 - [Dark Mode](dark-mode.md) - Automatic theme switching
 - [Server Configuration](server-configuration.md) - Customize host, port, and templates

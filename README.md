@@ -1,4 +1,4 @@
-# Func To Web 0.9.1
+# Func To Web 0.9.2
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -65,6 +65,7 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[Multiple Outputs](https://offerrall.github.io/FuncToWeb/multiple-outputs/)**: Return tuples/lists combining text, images, tables, and files
 
 ### **Features**
+- **[Authentication](https://offerrall.github.io/FuncToWeb/authentication/)**: Username/password protection
 - **[Function Descriptions](https://offerrall.github.io/FuncToWeb/function-descriptions/)**: Display docstrings in the UI
 - **[Dark Mode](https://offerrall.github.io/FuncToWeb/dark-mode/)**: Automatic theme switching
 - **[Server Options](https://offerrall.github.io/FuncToWeb/server-configuration/)**: Custom host, port, path and more
@@ -87,28 +88,19 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Quick Examples
 
-Check the [`examples/`](examples/) folder for 19 complete examples (Covers all features)
-
----
-
-## Roadmap to v1.0
-
-- **Built-in Authentication**: Secure your tools effortlessly. Simply pass a dictionary of users/passwords to `run()` to enable a login screen. No database required.
-- **Interactive Tables**: Supercharged table rendering. Support for client-side sorting (by column), live search/filtering, and pagination for large datasets.
+Check the [`examples/`](examples/) folder for 20 complete examples (Covers all features)
 
 ## Requirements
 
 **Core:**
 - Python 3.10+
-- FastAPI, Uvicorn, Pydantic, Jinja2, python-multipart
+- FastAPI, Uvicorn, Pydantic, Jinja2, python-multipart, itsdangerous
 
 **Optional (for extended functionality):**
 - Pillow, Matplotlib, Pandas, NumPy, Polars
 
 **Development:**
 - pytest, mkdocs, mkdocs-material
-
----
 
 ## Run Tests
 

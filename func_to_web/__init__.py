@@ -4,14 +4,16 @@ import tempfile
 import uuid
 import json
 import inspect
+import secrets
 from pathlib import Path
 from typing import Annotated, Literal, Callable, Any
 from datetime import date, time
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, FileResponse as FastAPIFileResponse
+from fastapi.responses import JSONResponse, RedirectResponse, FileResponse as FastAPIFileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from pydantic import Field
 
 from .analyze_function import analyze, ParamInfo
@@ -189,6 +191,8 @@ def run(
     func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
     host: str = "0.0.0.0", 
     port: int = 8000, 
+    auth: dict[str, str] | None = None,
+    secret_key: str | None = None,
     template_dir: str | Path | None = None,
     root_path: str = "",
     fastapi_config: dict[str, Any] | None = None,
@@ -203,6 +207,9 @@ def run(
         func_or_list: A single function or list of functions to wrap.
         host: Server host address (default: "0.0.0.0").
         port: Server port (default: 8000).
+        auth: Optional dictionary of {username: password} for authentication.
+        secret_key: Secret key for session signing (required if auth is used). 
+                    If None, a random one is generated on startup.
         template_dir: Optional custom template directory.
         root_path: Prefix for the API path (useful for reverse proxies).
         fastapi_config: Optional dictionary with extra arguments for FastAPI app 
@@ -217,14 +224,16 @@ def run(
     
     funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
     
+    # 1. Prepare FastAPI configuration
     app_kwargs = {"root_path": root_path}
     
     if fastapi_config:
-        if "root_path" in fastapi_config:
-            print("[Warning] 'root_path' argument takes precedence over 'fastapi_config' entry and will be used.")
-            fastapi_config.pop("root_path") 
-        app_kwargs.update(fastapi_config)
+        conf = fastapi_config.copy()
+        if "root_path" in conf:
+            conf.pop("root_path") 
+        app_kwargs.update(conf)
     
+    # Instantiate FastAPI with combined config
     app = FastAPI(**app_kwargs)
     
     if template_dir is None:
@@ -287,7 +296,8 @@ def run(
                     "description": description,
                     "fields": fields, 
                     "submit_url": "/submit",
-                    "show_back_button": False
+                    "show_back_button": False,
+                    "has_auth": bool(auth)
                 }
             )
 
@@ -305,7 +315,7 @@ def run(
             } for f in funcs]
             return templates.TemplateResponse(
                 "index.html",
-                {"request": request, "tools": tools}
+                {"request": request, "tools": tools, "has_auth": bool(auth)}
             )
         
         for func in funcs:
@@ -326,7 +336,8 @@ def run(
                             "description": desc,
                             "fields": flds, 
                             "submit_url": submit_path,
-                            "show_back_button": True
+                            "show_back_button": True,
+                            "has_auth": bool(auth)
                         }
                     )
                 return form_view
@@ -339,6 +350,68 @@ def run(
             app.get(route)(make_form_handler(func_name, params, description, submit_route))
             app.post(submit_route)(make_submit_handler(func, params))
     
+    if auth:
+        key = secret_key or secrets.token_hex(32)
+        
+        # 1. Define Auth Middleware (INNER)
+        @app.middleware("http")
+        async def auth_middleware(request: Request, call_next):
+            path = request.url.path
+            
+            # Allow public paths: login page, auth endpoint, and static assets
+            if path in ["/login", "/auth"] or path.startswith("/static"):
+                return await call_next(request)
+            
+            # Check for valid session
+            if not request.session.get("user"):
+                # If API call (AJAX), return 401
+                if "application/json" in request.headers.get("accept", ""):
+                     return JSONResponse({"error": "Unauthorized"}, status_code=401)
+                # If browser navigation, redirect to login
+                return RedirectResponse(url="/login")
+            
+            return await call_next(request)
+
+        # 2. Add SessionMiddleware (OUTER - runs first)
+        # https_only=False is safer for local dev/proxies. 
+        app.add_middleware(SessionMiddleware, secret_key=key, https_only=False)
+
+        @app.get("/login")
+        async def login_page(request: Request):
+            # If already logged in, go home
+            if request.session.get("user"):
+                return RedirectResponse(url="/")
+            return templates.TemplateResponse("login.html", {"request": request})
+
+        @app.post("/auth")
+        async def authenticate(request: Request):
+            try:
+                form = await request.form()
+                username = form.get("username")
+                password = form.get("password")
+                
+                if username in auth:
+                    # Safe comparison against Timing Attacks
+                    if secrets.compare_digest(auth[username], password):
+                        request.session["user"] = username
+                        return RedirectResponse(url="/", status_code=303)
+                
+                return templates.TemplateResponse(
+                    "login.html", 
+                    {"request": request, "error": "Invalid credentials"}
+                )
+            except Exception:
+                return templates.TemplateResponse(
+                    "login.html", 
+                    {"request": request, "error": "Login failed"}
+                )
+
+        @app.get("/logout")
+        async def logout(request: Request):
+            request.session.clear()
+            return RedirectResponse(url="/login")
+
+    # 2. Prepare Uvicorn configuration
     uvicorn_params = {
         "host": host,
         "port": port,
@@ -349,12 +422,9 @@ def run(
         "h11_max_incomplete_event_size": 16 * 1024 * 1024
     }
     
-    # Filter out root_path if passed in kwargs to avoid Uvicorn conflict
     if "root_path" in kwargs:
-        print("[Warning] 'root_path' argument is for FastAPI app configuration and will be ignored for Uvicorn.")
         kwargs.pop("root_path")
 
-    # Update defaults with any user-provided kwargs
     uvicorn_params.update(kwargs)
     
     config = uvicorn.Config(app, **uvicorn_params)

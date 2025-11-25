@@ -67,6 +67,7 @@ nav:
   - Other Features:
       - Function Descriptions: function-descriptions.md
       - Multiple Functions: multiple.md
+      - Authentication: authentication.md
       - Dark Mode: dark-mode.md
       - Server Configuration: server-configuration.md
   - API: api.md

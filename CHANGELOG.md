@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.2] - 2025-11-25
+
+### Added
+- **Built-in Authentication**: Robust, stateless authentication system.
+  - Enable simply by passing a dictionary `auth={"username": "password"}` to the `run()` function.
+  - Architecture based on **Signed Cookies** (no database required).
+  - Includes protection against **Timing Attacks** (`secrets.compare_digest`) and **CSRF** (`SameSite='Lax'`).
+- **Session Management**: New `secret_key` argument in `run()` to control session persistence across server restarts.
+- **Login UI**:
+  - Dedicated, modern login page that automatically inherits the application's theme (Light/Dark).
+  - Responsive design matching the core library aesthetics.
+- **Logout Functionality**: New logout button in the header navigation (automatically appears when auth is enabled).
+
+### Changed
+- **Dependencies**: Added `itsdangerous` to required packages (essential for session signing).
+- **Templates**: Updated `base` templates to handle conditional rendering based on authentication state (`has_auth` flag).
+
 ## [0.9.1] - 2025-11-24
 
 ### Added
