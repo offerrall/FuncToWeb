@@ -82,9 +82,11 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Perfect For
 
-- ✅ **Internal tools** - Give your team GUIs from pure functions
-- ✅ **Quick utilities** - Image resize, file convert, data transform, file upload/download...
-- ✅ **Testing and Prototyping** - The fastest way to create a web UI
+- ✅ **Rapid Prototyping** - From pure Python function to usable web interface in seconds.
+- ✅ **Image Processing** - Upload, process, and download images with PIL/Pillow.
+- ✅ **Data Science & Reporting** - Instantly publish Pandas/Polars DataFrames and matplotlib plots without frontend code.
+- ✅ **Secure Internal Apps** - Admin panels, dashboards, and team tools protected by built-in authentication.
+- ✅ **Production Deployments** - Docker-friendly, supports Nginx/Traefik reverse proxies, SSL, and high-performance streaming.
 
 ## Quick Examples
 
