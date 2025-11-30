@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3] - 2025-11-30
+
+### Fixed
+- **Async Function Support**: Fixed an issue where passing an `async def` function displayed a `<coroutine object>` instead of the result.
+  - The library now automatically detects `async` functions and `awaits` them properly.
+  - Enables seamless integration with async libraries (e.g., `httpx`, `tortoise-orm`, `motor`).
+
 ## [0.9.2] - 2025-11-25
 
 ### Added

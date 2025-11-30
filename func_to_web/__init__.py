@@ -21,6 +21,8 @@ from .validate_params import validate_params
 from .build_form_fields import build_form_fields
 from .process_result import process_result
 
+__version__ = "0.9.3"
+
 CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 FILE_BUFFER_SIZE = 8 * 1024 * 1024  # 8MB
 TEMP_FILES_REGISTRY = Path(tempfile.gettempdir()) / "func_to_web_files.json"
@@ -179,7 +181,10 @@ async def handle_form_submission(request: Request, func: Callable, params: dict[
                 data[name] = value
         
         validated = validate_params(data, params)
-        result = func(**validated)
+        if inspect.iscoroutinefunction(func):
+            result = await func(**validated)
+        else:
+            result = func(**validated)
         processed = process_result(result)
         response = create_response_with_files(processed)
         
