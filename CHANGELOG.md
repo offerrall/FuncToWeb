@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.4] - 2025-12-08
+
+### Added
+- **Python Enum Support**: Full support for Python `Enum` types as dropdown menus.
+  - Use standard Python enums as type hints: `def func(theme: Theme)`
+  - Supports `str`, `int`, and `float` enum values
+  - Automatic conversion from form values back to Enum members
+  - Your function receives the actual Enum member (e.g., `Theme.LIGHT`), not just the string value
+  - Access both `.name` and `.value` properties in your function
+  - Optional enums with `Theme | None` syntax
+  - Compatible with all enum features (methods, properties, iteration)
+  - Add tests covering enum handling, conversion, and edge cases
+  
+### Benefits
+- **Type Safety**: Full IDE autocomplete and type checking
+- **Reusability**: Define enum once, use across multiple functions
+- **Rich Semantics**: Access both enum name and value, add custom methods
+- **Clean Code**: No repetition of `Literal['option1', 'option2']` in every function signature
+
 ## [0.9.3] - 2025-11-30
 
 ### Fixed

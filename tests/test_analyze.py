@@ -2633,3 +2633,377 @@ def test_list_of_literal_ints_not_supported():
         def func(numbers: list[Literal[1, 2, 3]]): 
             pass
         analyze(func)
+
+# --- ENUM TYPES ---
+
+def test_enum_string():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+        AUTO = 'auto'
+    
+    def func(theme: Theme): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default is None
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is None
+    assert params['theme'].is_optional is False
+    assert params['theme'].enum_type is Theme
+
+def test_enum_int():
+    from enum import Enum
+    
+    class Size(Enum):
+        SMALL = 1
+        MEDIUM = 2
+        LARGE = 3
+    
+    def func(size: Size): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'size' in params
+    assert params['size'].type == int
+    assert params['size'].default is None
+    assert params['size'].field_info is not None
+    assert params['size'].dynamic_func is None
+    assert params['size'].is_optional is False
+    assert params['size'].enum_type is Size
+
+def test_enum_float():
+    from enum import Enum
+    
+    class Multiplier(Enum):
+        HALF = 0.5
+        NORMAL = 1.0
+        DOUBLE = 2.0
+    
+    def func(multiplier: Multiplier):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'multiplier' in params
+    assert params['multiplier'].type == float
+    assert params['multiplier'].default is None
+    assert params['multiplier'].field_info is not None
+    assert params['multiplier'].dynamic_func is None
+    assert params['multiplier'].is_optional is False
+    assert params['multiplier'].enum_type is Multiplier
+
+def test_enum_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme = Theme.LIGHT): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default == 'light'  # Converted to value
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is None
+    assert params['theme'].is_optional is False
+    assert params['theme'].enum_type is Theme
+
+def test_enum_single_option():
+    from enum import Enum
+    
+    class Mode(Enum):
+        READONLY = 'readonly'
+    
+    def func(mode: Mode): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'mode' in params
+    assert params['mode'].type == str
+    assert params['mode'].default is None
+    assert params['mode'].field_info is not None
+    assert params['mode'].dynamic_func is None
+    assert params['mode'].is_optional is False
+    assert params['mode'].enum_type is Mode
+
+def test_enum_invalid_default_raises():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    with pytest.raises(TypeError, match="default must be Theme instance"):
+        def func(theme: Theme = 'neon'): 
+            pass
+        analyze(func)
+
+def test_enum_mixed_types_raises():
+    from enum import Enum
+    
+    class Mixed(Enum):
+        ONE = 1
+        TWO = 'two'
+        THREE = 3
+    
+    with pytest.raises(TypeError, match="Enum values must be same type"):
+        def func(x: Mixed): 
+            pass
+        analyze(func)
+
+def test_enum_mixed_int_float_raises():
+    from enum import Enum
+    
+    class Mixed(Enum):
+        INT = 1
+        FLOAT = 2.5
+        ANOTHER = 3
+    
+    with pytest.raises(TypeError, match="Enum values must be same type"):
+        def func(x: Mixed):
+            pass
+        analyze(func)
+
+def test_enum_empty_raises():
+    from enum import Enum
+    
+    class Empty(Enum):
+        pass
+    
+    with pytest.raises(ValueError, match="Enum must have at least one value"):
+        def func(x: Empty): 
+            pass
+        analyze(func)
+
+# --- OPTIONAL ENUM TYPES ---
+
+def test_optional_enum():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default is None
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is None
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is False
+    assert params['theme'].enum_type is Theme
+
+def test_optional_enum_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None = Theme.LIGHT): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default == 'light'
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is None
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].enum_type is Theme
+
+def test_optional_enum_enabled():
+    from enum import Enum
+    
+    class Color(Enum):
+        RED = 'red'
+        BLUE = 'blue'
+    
+    def func(color: Color | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'color' in params
+    assert params['color'].type == str
+    assert params['color'].default is None
+    assert params['color'].is_optional is True
+    assert params['color'].optional_enabled is True
+    assert params['color'].enum_type is Color
+
+def test_optional_enum_disabled():
+    from enum import Enum
+    
+    class Color(Enum):
+        RED = 'red'
+        BLUE = 'blue'
+    
+    def func(color: Color | OptionalDisabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert 'color' in params
+    assert params['color'].type == str
+    assert params['color'].default is None
+    assert params['color'].is_optional is True
+    assert params['color'].optional_enabled is False
+    assert params['color'].enum_type is Color
+
+def test_optional_enum_enabled_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | OptionalEnabled = Theme.DARK): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].enum_type is Theme
+
+def test_optional_enum_disabled_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | OptionalDisabled = Theme.DARK): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is False
+    assert params['theme'].enum_type is Theme
+
+def test_enum_int_with_default():
+    from enum import Enum
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(priority: Priority = Priority.MEDIUM): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['priority'].type == int
+    assert params['priority'].default == 2
+    assert params['priority'].enum_type is Priority
+
+def test_enum_float_with_default():
+    from enum import Enum
+    
+    class Speed(Enum):
+        SLOW = 0.5
+        NORMAL = 1.0
+        FAST = 2.0
+    
+    def func(speed: Speed = Speed.NORMAL): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['speed'].type == float
+    assert params['speed'].default == 1.0
+    assert params['speed'].enum_type is Speed
+
+def test_explicit_enabled_overrides_no_default_enum():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | OptionalEnabled): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].enum_type is Theme
+
+def test_explicit_disabled_overrides_default_enum():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | OptionalDisabled = Theme.LIGHT): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].is_optional is True
+    assert params['theme'].default == 'light'
+    assert params['theme'].optional_enabled is False
+    assert params['theme'].enum_type is Theme
+
+def test_optional_enum_with_none_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | OptionalEnabled = None): 
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].is_optional is True
+    assert params['theme'].default is None
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].enum_type is Theme
+
+# --- ENUM WITH STRING VALUES (STRENUM) ---
+
+def test_string_enum():
+    from enum import Enum
+    
+    class Status(Enum):
+        PENDING = "pending"
+        APPROVED = "approved"
+        REJECTED = "rejected"
+    
+    def func(status: Status):
+        pass
+    
+    params = analyze(func)
+    
+    assert params['status'].type == str
+    assert params['status'].enum_type is Status
+    assert params['status'].field_info is not None

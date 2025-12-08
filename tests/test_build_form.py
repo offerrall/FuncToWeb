@@ -1283,3 +1283,430 @@ def test_field_order_matches_function_signature():
     assert fields[1]['name'] == 'y'
     assert fields[2]['name'] == 'x'
 
+# --- ENUM BUILD FORM TESTS ---
+
+def test_enum_string_field():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+        AUTO = 'auto'
+    
+    def func(theme: Theme):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 1
+    assert fields[0]['name'] == 'theme'
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark', 'auto')
+    assert fields[0]['required'] is True
+    assert fields[0]['is_optional'] is False
+
+
+def test_enum_int_field():
+    from enum import Enum
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(priority: Priority):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 1
+    assert fields[0]['name'] == 'priority'
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (1, 2, 3)
+    assert fields[0]['required'] is True
+
+
+def test_enum_float_field():
+    from enum import Enum
+    
+    class Speed(Enum):
+        SLOW = 0.5
+        NORMAL = 1.0
+        FAST = 2.0
+    
+    def func(speed: Speed):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 1
+    assert fields[0]['name'] == 'speed'
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (0.5, 1.0, 2.0)
+    assert fields[0]['required'] is True
+
+
+def test_enum_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme = Theme.LIGHT):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[0]['default'] == 'light'  # Default is the VALUE, not the member
+
+
+def test_enum_single_option():
+    from enum import Enum
+    
+    class Mode(Enum):
+        READONLY = 'readonly'
+    
+    def func(mode: Mode):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('readonly',)
+
+
+def test_optional_enum():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False  # No default
+
+
+def test_optional_enum_with_default():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None = Theme.DARK):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is True  # Has default
+    assert fields[0]['default'] == 'dark'
+
+
+def test_optional_enum_with_none_default():
+    from enum import Enum
+    
+    class Color(Enum):
+        RED = 'red'
+        BLUE = 'blue'
+    
+    def func(color: Color | None = None):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False  # None default = disabled
+    assert fields[0]['default'] is None
+
+
+def test_optional_enum_enabled():
+    from enum import Enum
+    
+    class Status(Enum):
+        ACTIVE = 'active'
+        INACTIVE = 'inactive'
+    
+    def func(status: Status | OptionalEnabled):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is True
+
+
+def test_optional_enum_disabled():
+    from enum import Enum
+    
+    class Status(Enum):
+        ACTIVE = 'active'
+        INACTIVE = 'inactive'
+    
+    def func(status: Status | OptionalDisabled):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False
+
+
+def test_multiple_enums():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    class Language(Enum):
+        EN = 'en'
+        ES = 'es'
+        FR = 'fr'
+    
+    def func(theme: Theme, lang: Language):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 2
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('en', 'es', 'fr')
+
+
+def test_enum_mixed_with_other_types():
+    from enum import Enum
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(
+        name: str,
+        priority: Priority,
+        age: int,
+        active: bool
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 4
+    assert fields[0]['type'] == 'text'
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == (1, 2, 3)
+    assert fields[2]['type'] == 'number'
+    assert fields[3]['type'] == 'checkbox'
+
+
+def test_enum_preserves_order():
+    from enum import Enum
+    
+    class Size(Enum):
+        SMALL = 1
+        MEDIUM = 2
+        LARGE = 3
+        XLARGE = 4
+    
+    def func(size: Size):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    # Enum values should be in definition order
+    assert fields[0]['options'] == (1, 2, 3, 4)
+
+
+def test_enum_with_string_numbers():
+    from enum import Enum
+    
+    class Code(Enum):
+        SUCCESS = '200'
+        NOT_FOUND = '404'
+        ERROR = '500'
+    
+    def func(code: Code):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('200', '404', '500')
+
+
+def test_enum_with_special_characters():
+    from enum import Enum
+    
+    class Symbol(Enum):
+        PLUS = '+'
+        MINUS = '-'
+        MULTIPLY = '*'
+        DIVIDE = '/'
+    
+    def func(symbol: Symbol):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('+', '-', '*', '/')
+
+
+def test_enum_with_negative_values():
+    from enum import Enum
+    
+    class Temperature(Enum):
+        FREEZING = -10
+        COLD = 0
+        WARM = 10
+        HOT = 20
+    
+    def func(temp: Temperature):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (-10, 0, 10, 20)
+
+
+def test_enum_with_decimal_values():
+    from enum import Enum
+    
+    class Multiplier(Enum):
+        QUARTER = 0.25
+        HALF = 0.5
+        THREE_QUARTERS = 0.75
+        FULL = 1.0
+    
+    def func(mult: Multiplier):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (0.25, 0.5, 0.75, 1.0)
+
+
+def test_enum_with_unicode_values():
+    from enum import Enum
+    
+    class Emoji(Enum):
+        SMILE = '😀'
+        SUNGLASSES = '😎'
+        ROCKET = '🚀'
+    
+    def func(emoji: Emoji):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('😀', '😎', '🚀')
+
+
+def test_enum_int_with_default():
+    from enum import Enum
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(priority: Priority = Priority.MEDIUM):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['default'] == 2
+
+
+def test_enum_float_with_default():
+    from enum import Enum
+    
+    class Speed(Enum):
+        SLOW = 0.5
+        NORMAL = 1.0
+        FAST = 2.0
+    
+    def func(speed: Speed = Speed.NORMAL):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['default'] == 1.0
+
+
+def test_complex_function_with_enums():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(
+        name: str,
+        theme: Theme,
+        priority: Priority,
+        opt_theme: Theme | None,
+        email: Email,
+        active: bool
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 6
+    assert fields[0]['type'] == 'text'
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('light', 'dark')
+    assert fields[2]['type'] == 'select'
+    assert fields[2]['options'] == (1, 2, 3)
+    assert fields[3]['type'] == 'select'
+    assert fields[3]['is_optional'] is True
+    assert fields[4]['type'] == 'email'
+    assert fields[5]['type'] == 'checkbox'

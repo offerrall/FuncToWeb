@@ -1,6 +1,7 @@
 import inspect
 from dataclasses import dataclass
 from typing import Annotated, Literal, get_args, get_origin, Callable, Any
+from enum import Enum
 import types
 
 from pydantic import TypeAdapter
@@ -67,6 +68,10 @@ class ParamInfo:
             - Contains Field constraints for the list container
             - None if no list-level constraints
             Example: Field(min_items=2, max_items=5)
+        enum_type: The original Enum type if parameter was an Enum.
+            - None for non-Enum parameters
+            - Stored to convert string back to Enum in validation
+            - Example: For `color: Color`, stores the Color Enum class
     """
     type: type
     default: Any = None
@@ -76,6 +81,7 @@ class ParamInfo:
     optional_enabled: bool = False
     is_list: bool = False
     list_field_info: Any = None
+    enum_type: None = None
 
 def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
     """Analyze a function's signature and extract parameter metadata.
@@ -110,6 +116,7 @@ def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
         is_optional = False
         optional_default_enabled = None  # None = auto, True = enabled, False = disabled
         is_list = False
+        enum_type = None
         
         # 1. Extract base type from Annotated (OUTER level)
         # This could be constraints for the list itself
@@ -239,6 +246,27 @@ def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
             else:
                 t = type(None)
         
+        # 5b. Handle Enum types
+        elif isinstance(t, type) and issubclass(t, Enum):
+            opts = tuple(e.value for e in t)
+
+            if not opts:
+                raise ValueError(f"'{name}': Enum must have at least one value")
+
+            types_set = {type(v) for v in opts}
+            if len(types_set) > 1:
+                raise TypeError(f"'{name}': Enum values must be same type")
+
+            if default is not None:
+                if not isinstance(default, t):
+                    raise TypeError(f"'{name}': default must be {t.__name__} instance")
+                default = default.value
+            
+            enum_type = t
+            
+            f = Literal[opts]
+            t = types_set.pop()
+        
         # 6. Validate base type
         if t not in VALID:
             raise TypeError(f"'{name}': {t} not supported")
@@ -289,6 +317,6 @@ def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
             # No default, start disabled
             final_optional_enabled = False
         
-        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional, final_optional_enabled, is_list, list_f)
+        result[name] = ParamInfo(t, default, f, dynamic_func, is_optional, final_optional_enabled, is_list, list_f, enum_type)
     
     return result

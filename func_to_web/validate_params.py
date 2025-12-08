@@ -88,17 +88,25 @@ def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
                 value = float(value)
             
             # Only validate against options if Literal is NOT dynamic
-            # Dynamic literals can change between form render and submit
             if info.dynamic_func is None:
-                # Static literal - validate against fixed options
                 opts = get_args(info.field_info)
                 if value not in opts:
                     raise ValueError(f"'{name}': value '{value}' not in {opts}")
-            # else: Dynamic literal - skip validation, trust the value from the form
+            
+            # Convert string → Enum if needed
+            if info.enum_type is not None:
+                # Find the Enum member with this value
+                for member in info.enum_type:
+                    if member.value == value:
+                        value = member
+                        break
+                else:
+                    # This shouldn't happen if validation passed
+                    raise ValueError(f"'{name}': invalid value for {info.enum_type.__name__}")
             
             validated[name] = value
             continue
-        
+                
         # Expand shorthand hex colors (#RGB -> #RRGGBB)
         if value and isinstance(value, str) and value.startswith('#') and len(value) == 4:
             value = '#' + ''.join(c*2 for c in value[1:])

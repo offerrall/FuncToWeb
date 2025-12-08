@@ -1887,3 +1887,387 @@ def test_list_zero_length_constraint():
     validated = validate_params(form_data, params)
     
     assert validated['numbers'] == []
+
+# --- ENUM VALIDATION TESTS ---
+
+def test_enum_string_valid():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'light'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == Theme.LIGHT
+    assert isinstance(validated['theme'], Theme)
+
+
+def test_enum_int_valid():
+    from enum import Enum
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    def func(priority: Priority):
+        pass
+    
+    params = analyze(func)
+    form_data = {'priority': '2'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['priority'] == Priority.MEDIUM
+    assert isinstance(validated['priority'], Priority)
+    assert validated['priority'].value == 2
+
+
+def test_enum_float_valid():
+    from enum import Enum
+    
+    class Speed(Enum):
+        SLOW = 0.5
+        NORMAL = 1.0
+        FAST = 2.0
+    
+    def func(speed: Speed):
+        pass
+    
+    params = analyze(func)
+    form_data = {'speed': '1.0'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['speed'] == Speed.NORMAL
+    assert isinstance(validated['speed'], Speed)
+    assert validated['speed'].value == 1.0
+
+
+def test_enum_string_invalid_raises():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'neon'}
+    
+    with pytest.raises(ValueError, match="not in"):
+        validate_params(form_data, params)
+
+
+def test_enum_int_invalid_raises():
+    from enum import Enum
+    
+    class Size(Enum):
+        SMALL = 1
+        MEDIUM = 2
+        LARGE = 3
+    
+    def func(size: Size):
+        pass
+    
+    params = analyze(func)
+    form_data = {'size': '5'}
+    
+    with pytest.raises(ValueError, match="not in"):
+        validate_params(form_data, params)
+
+
+def test_optional_enum_disabled():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'light'}  # No toggle
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] is None
+
+
+def test_optional_enum_enabled():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    def func(theme: Theme | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': 'dark',
+        'theme_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == Theme.DARK
+    assert isinstance(validated['theme'], Theme)
+
+
+def test_optional_enum_enabled_with_optional_enabled_marker():
+    from enum import Enum
+    
+    class Color(Enum):
+        RED = 'red'
+        BLUE = 'blue'
+    
+    def func(color: Color | OptionalEnabled):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'color': 'blue',
+        'color_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['color'] == Color.BLUE
+    assert isinstance(validated['color'], Color)
+
+
+def test_optional_enum_disabled_with_optional_disabled_marker():
+    from enum import Enum
+    
+    class Color(Enum):
+        RED = 'red'
+        BLUE = 'blue'
+    
+    def func(color: Color | OptionalDisabled):
+        pass
+    
+    params = analyze(func)
+    form_data = {'color': 'red'}  # No toggle
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['color'] is None
+
+
+def test_enum_all_types_in_one_function():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    class Priority(Enum):
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    
+    class Speed(Enum):
+        SLOW = 0.5
+        NORMAL = 1.0
+        FAST = 2.0
+    
+    def func(
+        theme: Theme,
+        priority: Priority,
+        speed: Speed,
+        opt_theme: Theme | None
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': 'light',
+        'priority': '2',
+        'speed': '1.0',
+        'opt_theme': 'dark',
+        'opt_theme_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == Theme.LIGHT
+    assert isinstance(validated['theme'], Theme)
+    assert validated['priority'] == Priority.MEDIUM
+    assert isinstance(validated['priority'], Priority)
+    assert validated['speed'] == Speed.NORMAL
+    assert isinstance(validated['speed'], Speed)
+    assert validated['opt_theme'] == Theme.DARK
+    assert isinstance(validated['opt_theme'], Theme)
+
+
+def test_enum_with_single_option():
+    from enum import Enum
+    
+    class Mode(Enum):
+        READONLY = 'readonly'
+    
+    def func(mode: Mode):
+        pass
+    
+    params = analyze(func)
+    form_data = {'mode': 'readonly'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['mode'] == Mode.READONLY
+    assert isinstance(validated['mode'], Mode)
+
+
+def test_enum_preserves_case_sensitivity():
+    from enum import Enum
+    
+    class Status(Enum):
+        PENDING = 'Pending'
+        APPROVED = 'Approved'
+    
+    def func(status: Status):
+        pass
+    
+    params = analyze(func)
+    form_data = {'status': 'Pending'}  # Must match exact case
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['status'] == Status.PENDING
+    assert validated['status'].value == 'Pending'
+
+
+def test_enum_case_mismatch_raises():
+    from enum import Enum
+    
+    class Status(Enum):
+        PENDING = 'Pending'
+        APPROVED = 'Approved'
+    
+    def func(status: Status):
+        pass
+    
+    params = analyze(func)
+    form_data = {'status': 'pending'}  # Wrong case
+    
+    with pytest.raises(ValueError, match="not in"):
+        validate_params(form_data, params)
+
+
+def test_enum_with_numeric_strings():
+    from enum import Enum
+    
+    class Code(Enum):
+        SUCCESS = '200'
+        NOT_FOUND = '404'
+        ERROR = '500'
+    
+    def func(code: Code):
+        pass
+    
+    params = analyze(func)
+    form_data = {'code': '404'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['code'] == Code.NOT_FOUND
+    assert isinstance(validated['code'], Code)
+
+
+def test_enum_with_special_characters():
+    from enum import Enum
+    
+    class Symbol(Enum):
+        PLUS = '+'
+        MINUS = '-'
+        MULTIPLY = '*'
+    
+    def func(symbol: Symbol):
+        pass
+    
+    params = analyze(func)
+    form_data = {'symbol': '+'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['symbol'] == Symbol.PLUS
+    assert validated['symbol'].value == '+'
+
+
+def test_multiple_enum_parameters():
+    from enum import Enum
+    
+    class Theme(Enum):
+        LIGHT = 'light'
+        DARK = 'dark'
+    
+    class Language(Enum):
+        EN = 'en'
+        ES = 'es'
+        FR = 'fr'
+    
+    def func(theme: Theme, lang: Language):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': 'dark',
+        'lang': 'es'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == Theme.DARK
+    assert validated['lang'] == Language.ES
+
+
+def test_enum_int_with_negative_values():
+    from enum import Enum
+    
+    class Temperature(Enum):
+        COLD = -10
+        NORMAL = 0
+        HOT = 10
+    
+    def func(temp: Temperature):
+        pass
+    
+    params = analyze(func)
+    form_data = {'temp': '-10'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['temp'] == Temperature.COLD
+    assert validated['temp'].value == -10
+
+
+def test_enum_float_with_decimal_precision():
+    from enum import Enum
+    
+    class Multiplier(Enum):
+        QUARTER = 0.25
+        HALF = 0.5
+        DOUBLE = 2.0
+    
+    def func(mult: Multiplier):
+        pass
+    
+    params = analyze(func)
+    form_data = {'mult': '0.25'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['mult'] == Multiplier.QUARTER
+    assert validated['mult'].value == 0.25

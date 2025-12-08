@@ -9,7 +9,6 @@ Use dropdown menus for fixed or dynamic selection options.
 <div markdown>
 
 Use `Literal` for fixed dropdown options:
-
 ```python
 from typing import Literal
 from func_to_web import run
@@ -35,6 +34,41 @@ All options must be literals (strings, numbers, booleans) and all options must b
 
 </div>
 
+## Enum Dropdowns
+
+<div class="grid" markdown>
+
+<div markdown>
+
+Use Python `Enum` for reusable dropdowns with named constants:
+```python
+from enum import Enum
+from func_to_web import run
+
+class Theme(Enum):
+    LIGHT = 'light'
+    DARK = 'dark'
+    AUTO = 'auto'
+
+def preferences(theme: Theme):
+    # Receives Theme.LIGHT, not just 'light'
+    return f"Selected: {theme.name} = {theme.value}"
+
+run(preferences)
+```
+
+Your function receives the Enum member with access to both `.name` and `.value`. Useful when the same options are used in multiple functions.
+
+</div>
+
+<div markdown>
+
+![Dropdowns](images/enum_drop.jpg)
+
+</div>
+
+</div>
+
 ## Dynamic Dropdowns
 
 <div class="grid" markdown>
@@ -42,7 +76,6 @@ All options must be literals (strings, numbers, booleans) and all options must b
 <div markdown>
 
 Use functions inside `Literal` to generate options dynamically at runtime:
-
 ```python
 from typing import Literal
 from random import sample
