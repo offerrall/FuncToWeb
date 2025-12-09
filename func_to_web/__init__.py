@@ -21,7 +21,7 @@ from .validate_params import validate_params
 from .build_form_fields import build_form_fields
 from .process_result import process_result
 
-__version__ = "0.9.3"
+__version__ = "0.9.5"
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 FILE_BUFFER_SIZE = 8 * 1024 * 1024  # 8MB

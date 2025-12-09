@@ -1,7 +1,7 @@
 from datetime import date, time
 from typing import Literal, get_args, get_origin, Any
 
-from .types import COLOR_PATTERN, EMAIL_PATTERN
+from .types import COLOR_PATTERN, EMAIL_PATTERN, ANY_FILE_PATTERN
 
 PATTERN_TO_HTML_TYPE = {COLOR_PATTERN: 'color', EMAIL_PATTERN: 'email'}
 
@@ -96,16 +96,12 @@ def build_form_fields(params_info: dict) -> list[dict[str, Any]]:
         field = {
             'name': name, 
             'default': serialized_default,
-            # REGLA SIMPLE: Las listas SIEMPRE son required=True
-            # Si el campo está habilitado (no opcional O toggle ON), debe tener valor
-            # Las listas nunca pueden estar vacías, si se quiere vacío usar None
             'required': True if info.is_list else not info.is_optional,
             'is_optional': info.is_optional,
             'optional_enabled': info.optional_enabled,
             'is_list': info.is_list
         }
         
-        # Si es una lista, extraer los constraints de lista (min_length, max_length)
         if info.is_list and info.list_field_info and hasattr(info.list_field_info, 'metadata'):
             for c in info.list_field_info.metadata:
                 cn = type(c).__name__
@@ -174,8 +170,11 @@ def build_form_fields(params_info: dict) -> list[dict[str, Any]]:
                     if hasattr(c, 'pattern') and c.pattern:
                         pattern = c.pattern
                         
+                        # Generic File input (accepts everything)
+                        if pattern == ANY_FILE_PATTERN:
+                            field['type'] = 'file'
                         # File input detection
-                        if pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
+                        elif pattern.startswith(r'^.+\.(') and pattern.endswith(r')$'):
                             field['type'] = 'file'
                             exts = pattern[6:-2].split('|')
                             field['accept'] = '.' + ',.'.join(exts)

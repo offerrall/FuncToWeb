@@ -1,4 +1,4 @@
-# Func To Web 0.9.4
+# Func To Web 0.9.5
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -50,7 +50,7 @@ Complete documentation with **examples and screenshots** for each feature:
 ### **Input Types**
 - **[Basic Types](https://offerrall.github.io/FuncToWeb/types/)**: `int`, `float`, `str`, `bool`, `date`, `time`
 - **[Special Types](https://offerrall.github.io/FuncToWeb/types/)**: `Color`, `Email`
-- **[File Uploads](https://offerrall.github.io/FuncToWeb/files/)**: `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`
+- **[File Uploads](https://offerrall.github.io/FuncToWeb/files/)**: `File`, `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`
 - **[Dynamic Lists](https://offerrall.github.io/FuncToWeb/lists/)**: `list[Type]` with add/remove buttons
 - **[Optional Fields](https://offerrall.github.io/FuncToWeb/optional/)**: `Type | None` with toggle switches
 - **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static (`Literal`, `Enum`) or Dynamic (`Literal[func]`)

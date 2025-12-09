@@ -3,6 +3,7 @@ from pydantic import Field, BaseModel
 
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'
+ANY_FILE_PATTERN = r'^.+$'
 
 def _file_pattern(*extensions):
     """Generate regex pattern for file extensions."""
@@ -12,11 +13,11 @@ def _file_pattern(*extensions):
 
 Color = Annotated[str, Field(pattern=COLOR_PATTERN)]
 Email = Annotated[str, Field(pattern=EMAIL_PATTERN)]
-ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp'))]
-DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json'))]
-TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log'))]
-DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx'))]
-
+ImageFile = Annotated[str, Field(pattern=_file_pattern('png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico', 'heic', 'avif'))]
+DataFile = Annotated[str, Field(pattern=_file_pattern('csv', 'xlsx', 'xls', 'json', 'xml', 'yaml', 'yml'))]
+TextFile = Annotated[str, Field(pattern=_file_pattern('txt', 'md', 'log', 'rtf'))]
+DocumentFile = Annotated[str, Field(pattern=_file_pattern('pdf', 'doc', 'docx', 'odt', 'ppt', 'pptx', 'odp', 'xls', 'xlsx', 'ods'))]
+File = Annotated[str, Field(pattern=ANY_FILE_PATTERN)]
 
 class _OptionalEnabledMarker:
     """Internal marker for OptionalEnabled"""

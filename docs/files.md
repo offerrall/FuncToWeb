@@ -10,13 +10,14 @@ func-to-web provides specialized file types for different use cases:
 
 ```python
 from func_to_web import run
-from func_to_web.types import ImageFile, DataFile, TextFile, DocumentFile
+from func_to_web.types import ImageFile, DataFile, TextFile, DocumentFile, File
 
 def process_files(
-    photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp
-    data: DataFile,         # .csv, .xlsx, .xls, .json
-    notes: TextFile,        # .txt, .md, .log
-    report: DocumentFile    # .pdf, .doc, .docx
+    any_file: File,         # any file type
+    photo: ImageFile,       # .png, .jpg, .jpeg, .gif, .webp...
+    data: DataFile,         # .csv, .xlsx, .xls, .json...
+    notes: TextFile,        # .txt, .md, .log...
+    report: DocumentFile    # .pdf, .doc, .docx...
 ):
     return "Files uploaded successfully!"
 

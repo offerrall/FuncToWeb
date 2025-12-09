@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.5] - 2025-12-09
+
+### Added
+- **New Generic `File` Type**: Added support for a generic `File` type hint.
+  - Use `from func_to_web.types import File` to accept uploaded files of **any** extension.
+- **Expanded File Extensions**: Significantly broadened the list of supported formats for specific file types.
+
 ## [0.9.4] - 2025-12-08
 
 ### Added
