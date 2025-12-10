@@ -3,6 +3,13 @@
 ## [0.9.6] - 2025-12-10
 
 ### Added
+- **Automatic Periodic Cleanup**: Files are now automatically cleaned up every hour while the server runs.
+  - No need to restart the server for cleanup to occur
+  - Cleanup task runs in background every 3600 seconds (1 hour)
+  - Files older than `cleanup_hours` are removed from both disk and database
+  - Configurable via `cleanup_hours` parameter (default: 24 hours)
+  - Set `cleanup_hours=0` to disable periodic cleanup
+
 - **Thread-Safe File Cleanup**: Implemented threading locks to prevent race conditions during concurrent file cleanup operations.
   - Per-file locks ensure only one thread can clean up a specific file at a time
   - Lock registry automatically cleaned up after operations complete
