@@ -158,6 +158,7 @@ For scaling:
 ### Single Worker Performance
 
 A single worker can handle:
+
 - ✅ **500-1,000 requests/second** for I/O-bound operations
 - ✅ **50-100 concurrent users** with async operations
 - ✅ **GB+ file uploads/downloads** via streaming
