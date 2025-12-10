@@ -9,7 +9,6 @@ Return files from your functions and users get automatic download buttons.
 <div markdown>
 
 Return `FileResponse` for single or multiple files:
-
 ```python
 from func_to_web import run
 from func_to_web.types import FileResponse
@@ -45,12 +44,13 @@ run(create_multiple_files)
 - **Any file type**: PDF, Excel, ZIP, images, JSON, CSV, binary data, etc.
 - **Large files**: Uses streaming - handles GB+ files efficiently
 - **Clean UI**: List of files with individual download buttons
-- **Automatic cleanup**: Temporary files removed after download
+- **Persistent registry**: Files tracked in SQLite database (thread-safe)
+- **1-hour grace period**: Files remain available for 1 hour after download
+- **Automatic cleanup**: Old files removed after 24 hours (configurable)
 
 ## Working with Libraries
 
 Works with any library that generates files:
-
 ```python
 from func_to_web import run
 from func_to_web.types import FileResponse
@@ -93,13 +93,44 @@ run([create_pdf, create_excel, create_archive])
 - **No size limits**: Uses temporary files and streaming
 - **Constant memory usage**: Regardless of file size
 - **Same efficiency as file uploads**: 8MB chunks
-- **Automatic cleanup**: Files deleted after download
+- **SQLite registry**: Thread-safe file tracking with persistent database
+- **Background cleanup**: Non-blocking startup cleanup process
 
-## File Cleanup
+## File Cleanup & Retention
 
-Generated files are stored in the system's temporary directory and automatically deleted after download. Files not downloaded will be cleaned up by the OS eventually (typically on restart or after several days). 
+Generated files have a **smart cleanup lifecycle**:
 
-For high-traffic production environments with many generated files, consider implementing custom cleanup logic or custom file saving strategies.
+1. **Immediate availability**: Files ready for download right after generation
+2. **1-hour grace period**: After first download, files remain available for re-download for 1 hour
+3. **24-hour retention**: Files older than 24 hours are automatically cleaned up on server startup
+4. **Configurable**: Adjust retention period with `cleanup_hours` parameter
+```python
+# Default: 24-hour cleanup
+run(my_function)
+
+# Custom: 6-hour cleanup
+run(my_function, cleanup_hours=6)
+
+# Disable auto-cleanup
+run(my_function, cleanup_hours=0)
+```
+
+**Database location** is also configurable:
+```python
+# Default: func_to_web.db in current directory
+run(my_function)
+
+# Custom location
+run(my_function, db_location="/path/to/data")
+
+# Temporary (uses system temp dir)
+import tempfile
+run(my_function, db_location=tempfile.gettempdir())
+```
+
+## Auto-Healing
+
+If a file is manually deleted from disk but still exists in the database, the system automatically detects this and cleans up the broken reference when someone tries to download it.
 
 ## What's Next?
 

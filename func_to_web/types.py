@@ -1,5 +1,6 @@
 from typing import Annotated
 from pydantic import Field, BaseModel
+from datetime import date, time
 
 COLOR_PATTERN = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
 EMAIL_PATTERN = r'^[^@]+@[^@]+\.[^@]+$'

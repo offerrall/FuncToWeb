@@ -7,7 +7,6 @@ Handle file uploads easily with specialized file types.
 <div markdown>
 
 func-to-web provides specialized file types for different use cases:
-
 ```python
 from func_to_web import run
 from func_to_web.types import ImageFile, DataFile, TextFile, DocumentFile, File
@@ -68,7 +67,6 @@ When uploading files, you'll see real-time feedback:
 ## Working with Uploaded Files
 
 Uploaded files are saved to temporary locations. You can access them as file paths:
-
 ```python
 from func_to_web import run
 from func_to_web.types import ImageFile
@@ -83,7 +81,62 @@ def process_image(image: ImageFile):
 run(process_image)
 ```
 
-Uploaded files are saved to the system's temporary directory (`/tmp` on Linux/Mac, `%TEMP%` on Windows) and remain there after processing. Delete them manually if needed, or they'll be cleaned up by the OS eventually (typically on restart).
+## File Cleanup for Uploaded Files
+
+**Important:** func-to-web does **not** automatically clean up uploaded files. They are saved to the system's temporary directory:
+
+- **Linux/Mac**: `/tmp`
+- **Windows**: `%TEMP%` (typically `C:\Users\Username\AppData\Local\Temp`)
+
+### OS Cleanup Behavior
+
+| OS | Automatic Cleanup | When |
+|----|-------------------|------|
+| **Linux** | ✅ Yes | On restart (and often after 10 days) |
+| **macOS** | ✅ Yes | On restart (and after 3 days unused) |
+| **Windows** | ⚠️ Maybe | Only if Storage Sense is enabled (disabled by default) |
+
+**Warning for Windows users:** Files in `%TEMP%` can accumulate indefinitely unless you manually run Disk Cleanup or enable Storage Sense.
+
+### Cleanup Options
+
+**Option 1: Let the OS handle it** (simple, but unreliable on Windows)
+```python
+def process_image(image: ImageFile):
+    img = Image.open(image)
+    return img.filter(ImageFilter.BLUR)
+    # File remains in temp directory
+```
+
+**Option 2: Manual cleanup** (recommended for production)
+```python
+import os
+
+def process_image(image: ImageFile):
+    try:
+        img = Image.open(image)
+        result = img.filter(ImageFilter.BLUR)
+        return result
+    finally:
+        os.unlink(image)  # Delete file immediately
+```
+
+**Option 3: Process in-memory** (for small files)
+```python
+import os
+
+def process_image(image: ImageFile):
+    with open(image, 'rb') as f:
+        data = f.read()
+    os.unlink(image)  # Delete immediately after reading
+    # Process data in memory...
+```
+
+**Recommendation:** For production applications, especially on Windows, implement manual cleanup (Option 2) to avoid disk space issues.
+
+### Returned Files (Different Behavior)
+
+Files you **return** using `FileResponse` are handled differently and **are** automatically cleaned up by func-to-web after 24 hours (configurable). See [File Downloads](downloads.md) for details.
 
 ## Next Steps
 

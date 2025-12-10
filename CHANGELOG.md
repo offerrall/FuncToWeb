@@ -1,5 +1,90 @@
 # Changelog
 
+## [0.9.6] - 2025-12-10
+
+### Added
+- **Thread-Safe File Cleanup**: Implemented threading locks to prevent race conditions during concurrent file cleanup operations.
+  - Per-file locks ensure only one thread can clean up a specific file at a time
+  - Lock registry automatically cleaned up after operations complete
+  - Prevents "file not found" errors when multiple threads/requests attempt cleanup simultaneously
+  - Safe for high-concurrency environments with async I/O
+
+- **Database Health Monitoring**: Added automatic monitoring for file registry size.
+  - Displays warning if database contains >10,000 file references on startup
+  - Helps identify when manual cleanup or configuration changes are needed
+  - New `get_file_count()` function in `db_manager` module
+
+- **Enhanced Security**: Added UUID validation for file download endpoints.
+  - Validates file IDs match UUID v4 format before database queries
+  - Returns 400 Bad Request for malformed file IDs
+  - Additional layer of protection against injection attempts
+
+### Changed
+- **Workers Limitation**: Multiple workers (`workers > 1`) are now explicitly blocked and will raise a clear error.
+  - Prevents SQLite database corruption from concurrent writes across processes
+  - Displays educational error message with scaling alternatives
+  - Recommends running multiple instances with Nginx instead
+  - Single worker can handle 500-1,000 req/s with async I/O (sufficient for most teams)
+
+- **Database Location Validation**: Improved validation and path handling for `db_location` parameter.
+  - Automatically creates directories if path is a directory
+  - Validates parent directory exists for file paths
+  - Raises clear error messages with actionable guidance
+  - Better support for custom database locations
+
+- **Database Connection Timeouts**: Added 5-second timeout to SQLite connections to prevent deadlocks.
+
+### Fixed
+- **FileNotFoundError Handling**: Improved error handling when uploaded or returned files are manually deleted from disk.
+  - Auto-healing: broken database references are cleaned up automatically
+  - Returns "File expired" instead of internal server error
+  - Graceful degradation when files are missing
+
+- **Lock Cleanup**: Threading locks are now properly cleaned up in `finally` blocks.
+  - Prevents lock registry from growing indefinitely
+  - Eliminates potential memory leaks in long-running processes
+
+### Documentation
+- **File Upload Cleanup Clarification**: Updated `files.md` to clearly explain OS cleanup behavior.
+  - Added comparison table for Linux/macOS/Windows automatic cleanup
+  - Warning for Windows users about potential file accumulation
+  - Three cleanup strategies with code examples (OS, manual, in-memory)
+  - Clear distinction between uploaded files (not auto-cleaned) and returned files (auto-cleaned)
+
+- **Scaling Guidelines**: Added comprehensive scaling section to `server-configuration.md`.
+  - Explains why multiple workers aren't supported (SQLite limitations)
+  - Documents single worker performance capabilities (500-1,000 req/s)
+  - Provides step-by-step guide for horizontal scaling with multiple instances
+  - Nginx sticky sessions configuration for load balancing
+  - Enterprise alternatives for >1,000 concurrent users
+
+- **Updated API Documentation**: All docstrings revised for consistency.
+  - No inline comments (per style guide)
+  - Comprehensive function/class documentation
+  - Clear parameter descriptions with examples
+
+### Refactored
+- **Modular Architecture**: Complete code reorganization into specialized modules for better maintainability.
+  - `server.py`: Main server configuration and entry point
+  - `routes.py`: Routing setup and request handling
+  - `file_handler.py`: File upload/download operations with thread-safe cleanup
+  - `db_manager.py`: SQLite database operations for file tracking
+  - `auth.py`: Authentication middleware and session management
+  - `analyze_function.py`: Function signature analysis and metadata extraction
+  - `validate_params.py`: Form data validation and type conversion
+  - `build_form_fields.py`: HTML form field generation from type hints
+  - `process_result.py`: Result processing for different output types
+  - `check_return_is_table.py`: Table format detection and conversion
+  - `types.py`: Type definitions and custom types (Color, Email, File types)
+  - `__init__.py`: Clean public API with minimal exports (`run`, type helpers)
+  
+- **Benefits**:
+  - Separation of concerns: Each module has a single, clear responsibility
+  - Easier testing: Modules can be tested independently
+  - Better code navigation: Find functionality quickly by module name
+  - Reduced coupling: Clear interfaces between components
+  - Future-proof: Easy to extend without touching unrelated code
+
 ## [0.9.5] - 2025-12-09
 
 ### Added

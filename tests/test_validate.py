@@ -3,6 +3,7 @@ from datetime import date, time
 from func_to_web import *
 from func_to_web.validate_params import validate_params
 from func_to_web.types import *
+from func_to_web.analyze_function import analyze
 
 def test_int_parameter():
     def func(x: int): 

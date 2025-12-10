@@ -6,6 +6,7 @@ import math
 
 from func_to_web import *
 from func_to_web.types import *
+from func_to_web.analyze_function import analyze
 
 # --- BASIC TYPES ---
 

@@ -1,4 +1,4 @@
-# Func To Web 0.9.5
+# Func To Web 0.9.6
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -7,7 +7,7 @@
 
 > **Type hints → Web UI.** Minimal-boilerplate web apps from Python functions.
 
-![func-to-web Demo](docs/images/functoweb.jpg)
+![func-to-web Demo](https://raw.githubusercontent.com/offerrall/FuncToWeb/refs/heads/main/docs/images/functoweb.jpg)
 
 ## Quick Start (30 seconds)
 
@@ -33,7 +33,7 @@ Open `http://127.0.0.1:8000` → **You have a working web app!**
 </td>
 <td width="50%">
 
-![Demo](docs/images/quick.jpg)
+![Demo](https://raw.githubusercontent.com/offerrall/FuncToWeb/refs/heads/main/docs/images/quick.jpg)
 
 </td>
 </tr>

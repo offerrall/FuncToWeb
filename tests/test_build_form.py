@@ -235,7 +235,6 @@ def test_email_field():
     assert fields[0]['type'] == 'email'
     assert 'pattern' in fields[0]
 
-
 def test_image_file_field():
     def func(photo: ImageFile):
         pass
@@ -244,7 +243,7 @@ def test_image_file_field():
     fields = build_form_fields(params)
     
     assert fields[0]['type'] == 'file'
-    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp'
+    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif'
     assert 'pattern' in fields[0]
 
 
@@ -256,7 +255,7 @@ def test_data_file_field():
     fields = build_form_fields(params)
     
     assert fields[0]['type'] == 'file'
-    assert fields[0]['accept'] == '.csv,.xlsx,.xls,.json'
+    assert fields[0]['accept'] == '.csv,.xlsx,.xls,.json,.xml,.yaml,.yml'
 
 
 def test_text_file_field():
@@ -267,7 +266,7 @@ def test_text_file_field():
     fields = build_form_fields(params)
     
     assert fields[0]['type'] == 'file'
-    assert fields[0]['accept'] == '.txt,.md,.log'
+    assert fields[0]['accept'] == '.txt,.md,.log,.rtf'
 
 
 def test_document_file_field():
@@ -278,7 +277,7 @@ def test_document_file_field():
     fields = build_form_fields(params)
     
     assert fields[0]['type'] == 'file'
-    assert fields[0]['accept'] == '.pdf,.doc,.docx'
+    assert fields[0]['accept'] == '.pdf,.doc,.docx,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.ods'
 
 
 def test_literal_string_field():
@@ -732,10 +731,10 @@ def test_all_file_types_together():
     
     assert len(fields) == 4
     assert all(f['type'] == 'file' for f in fields)
-    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp'
-    assert fields[1]['accept'] == '.csv,.xlsx,.xls,.json'
-    assert fields[2]['accept'] == '.txt,.md,.log'
-    assert fields[3]['accept'] == '.pdf,.doc,.docx'
+    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif'
+    assert fields[1]['accept'] == '.csv,.xlsx,.xls,.json,.xml,.yaml,.yml'
+    assert fields[2]['accept'] == '.txt,.md,.log,.rtf'
+    assert fields[3]['accept'] == '.pdf,.doc,.docx,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.ods'
 
 
 def test_optional_files_with_defaults():
