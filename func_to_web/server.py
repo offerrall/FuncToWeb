@@ -52,6 +52,7 @@ def run(
         db_location: Directory or path for the SQLite database. 
                      If None, uses current working directory.
         cleanup_hours: Auto-cleanup files older than this many hours (default: 24).
+                       Cleanup runs on startup and then every hour while server runs.
                        Set to 0 to disable auto-cleanup.
         fastapi_config: Optional dictionary with extra arguments for FastAPI app 
                         (e.g. {'title': 'My App', 'version': '1.0.0'}).
@@ -114,7 +115,7 @@ def run(
     
     @app.on_event("startup")
     async def startup_cleanup():
-        """Background cleanup on startup (non-blocking)."""
+        """Background cleanup on startup and periodic cleanup while running."""
         if cleanup_hours > 0:
             await asyncio.to_thread(cleanup_old_files, cleanup_hours)
         
@@ -125,6 +126,15 @@ def run(
                 "Consider enabling cleanup (cleanup_hours > 0) or manually cleaning old files.",
                 UserWarning
             )
+        
+        if cleanup_hours > 0:
+            async def periodic_cleanup_task():
+                """Run cleanup every hour to remove old files automatically."""
+                while True:
+                    await asyncio.sleep(3600)
+                    await asyncio.to_thread(cleanup_old_files, cleanup_hours)
+            
+            asyncio.create_task(periodic_cleanup_task())
     
     if template_dir is None:
         template_dir = Path(__file__).parent / "templates"
