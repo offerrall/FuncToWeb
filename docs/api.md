@@ -12,12 +12,6 @@
       show_source: true
       heading_level: 3
 
-::: func_to_web.db_manager
-    options:
-      show_root_heading: true
-      show_source: true
-      heading_level: 3
-
 ::: func_to_web.file_handler
     options:
       show_root_heading: true

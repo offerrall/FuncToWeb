@@ -1,4 +1,3 @@
-"""Main server configuration and run function."""
 import asyncio
 import warnings
 from pathlib import Path
@@ -9,17 +8,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from . import config
 from .analyze_function import analyze
-from .db_manager import set_db_path, init_db, get_file_count
-from .file_handler import cleanup_old_files
+from .file_handler import cleanup_old_files, get_returned_files_count
 from .auth import setup_auth_middleware
 from .routes import (
     setup_download_route,
     setup_single_function_routes,
     setup_multiple_function_routes
 )
-
-__version__ = "0.9.6"
 
 
 def run(
@@ -28,10 +25,11 @@ def run(
     port: int = 8000, 
     auth: dict[str, str] | None = None,
     secret_key: str | None = None,
+    uploads_dir: str | Path = "./uploads",
+    returns_dir: str | Path = "./returned_files",
+    auto_delete_uploads: bool = True,
     template_dir: str | Path | None = None,
     root_path: str = "",
-    db_location: str | Path | None = None,
-    cleanup_hours: int = 24,
     fastapi_config: dict[str, Any] | None = None,
     **kwargs
 ) -> None:
@@ -47,59 +45,36 @@ def run(
         auth: Optional dictionary of {username: password} for authentication.
         secret_key: Secret key for session signing (required if auth is used). 
                     If None, a random one is generated on startup.
+        uploads_dir: Directory for uploaded files (default: "./uploads").
+        returns_dir: Directory for returned files (default: "./returned_files").
+        auto_delete_uploads: If True, delete uploaded files after processing (default: True).
         template_dir: Optional custom template directory.
         root_path: Prefix for the API path (useful for reverse proxies).
-        db_location: Directory or path for the SQLite database. 
-                     If None, uses current working directory.
-        cleanup_hours: Auto-cleanup files older than this many hours (default: 24).
-                       Cleanup runs on startup and then every hour while server runs.
-                       Set to 0 to disable auto-cleanup.
         fastapi_config: Optional dictionary with extra arguments for FastAPI app 
                         (e.g. {'title': 'My App', 'version': '1.0.0'}).
         **kwargs: Extra options passed directly to `uvicorn.Config`.
-                  Examples: `ssl_keyfile`, `ssl_certfile`, `log_level`.
+                  Examples: `ssl_keyfile`, `ssl_certfile`, `log_level`, `workers`.
         
     Raises:
-        ValueError: If workers > 1 is specified.
-        FileNotFoundError: If template directory or database parent directory doesn't exist.
+        FileNotFoundError: If template directory doesn't exist.
         TypeError: If function parameters use unsupported types.
+    
+    Notes:
+        - Returned files are automatically deleted 1 hour after creation (hardcoded).
+        - Cleanup runs on startup and then every hour while server is running.
+        - Multiple workers are supported (each worker runs its own cleanup task).
     """
     
-    if kwargs.get('workers', 1) > 1:
-        raise ValueError(
-            "\n" + "="*70 + "\n"
-            "func-to-web does not support multiple workers (workers > 1)\n"
-            "="*70 + "\n"
-            "Reason: SQLite-based file tracking is not designed for concurrent\n"
-            "        writes across multiple processes.\n\n"
-            "For scaling:\n"
-            "  • Single worker can handle 500-1000 req/s with async I/O\n"
-            "  • For higher loads, run multiple instances:\n\n"
-            "      # Terminal 1\n"
-            "      python app.py --port 8001\n\n"
-            "      # Terminal 2\n"
-            "      python app.py --port 8002\n\n"
-            "  • Configure Nginx with sticky sessions (ip_hash)\n"
-            "  • See docs for details: https://offerrall.github.io/FuncToWeb/server-configuration/\n"
-            "="*70
-        )
+    # Setup directories
+    uploads_path = Path(uploads_dir)
+    returns_path = Path(returns_dir)
+    uploads_path.mkdir(parents=True, exist_ok=True)
+    returns_path.mkdir(parents=True, exist_ok=True)
     
-    if db_location:
-        db_path = Path(db_location)
-        if db_path.suffix == '':
-            db_path.mkdir(parents=True, exist_ok=True)
-            set_db_path(db_path)
-        else:
-            if not db_path.parent.exists():
-                raise FileNotFoundError(
-                    f"Parent directory '{db_path.parent}' does not exist. "
-                    "Create it first or use an existing directory."
-                )
-            set_db_path(db_path)
-    else:
-        set_db_path(Path.cwd())
-    
-    init_db()
+    # Set global config
+    config.UPLOADS_DIR = uploads_path
+    config.RETURNS_DIR = returns_path
+    config.AUTO_DELETE_UPLOADS = auto_delete_uploads
     
     funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
     
@@ -115,26 +90,27 @@ def run(
     
     @app.on_event("startup")
     async def startup_cleanup():
-        """Background cleanup on startup and periodic cleanup while running."""
-        if cleanup_hours > 0:
-            await asyncio.to_thread(cleanup_old_files, cleanup_hours)
+        """Cleanup old files on startup and run periodic cleanup task."""
+        # Cleanup old files on startup
+        await asyncio.to_thread(cleanup_old_files)
         
-        file_count = get_file_count()
+        # Warn if too many files
+        file_count = get_returned_files_count()
         if file_count > 10000:
             warnings.warn(
-                f"Database has {file_count} file references. "
-                "Consider enabling cleanup (cleanup_hours > 0) or manually cleaning old files.",
+                f"Returns directory has {file_count} files. "
+                "Consider manually cleaning old files or restarting the server.",
                 UserWarning
             )
         
-        if cleanup_hours > 0:
-            async def periodic_cleanup_task():
-                """Run cleanup every hour to remove old files automatically."""
-                while True:
-                    await asyncio.sleep(3600)
-                    await asyncio.to_thread(cleanup_old_files, cleanup_hours)
-            
-            asyncio.create_task(periodic_cleanup_task())
+        # Periodic cleanup task (runs every hour)
+        async def periodic_cleanup_task():
+            """Run cleanup every hour to remove files older than 1 hour."""
+            while True:
+                await asyncio.sleep(3600)
+                await asyncio.to_thread(cleanup_old_files)
+        
+        asyncio.create_task(periodic_cleanup_task())
     
     if template_dir is None:
         template_dir = Path(__file__).parent / "templates"
@@ -174,6 +150,6 @@ def run(
 
     uvicorn_params.update(kwargs)
     
-    config = uvicorn.Config(app, **uvicorn_params)
-    server = uvicorn.Server(config)
+    config_obj = uvicorn.Config(app, **uvicorn_params)
+    server = uvicorn.Server(config_obj)
     asyncio.run(server.serve())

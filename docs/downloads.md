@@ -44,9 +44,9 @@ run(create_multiple_files)
 - **Any file type**: PDF, Excel, ZIP, images, JSON, CSV, binary data, etc.
 - **Large files**: Uses streaming - handles GB+ files efficiently
 - **Clean UI**: List of files with individual download buttons
-- **Persistent registry**: Files tracked in SQLite database (thread-safe)
-- **1-hour grace period**: Files remain available for 1 hour after download
-- **Automatic cleanup**: Old files removed after 24 hours (configurable)
+- **Filesystem tracking**: Metadata encoded in filenames (no database required)
+- **1-hour retention**: Files available for 1 hour from creation (hardcoded)
+- **Automatic cleanup**: Files older than 1 hour removed every hour
 
 ## Working with Libraries
 
@@ -90,47 +90,37 @@ run([create_pdf, create_excel, create_archive])
 
 ## Performance
 
-- **No size limits**: Uses temporary files and streaming
+- **No size limits**: Handles very large files (GB+) in streaming mode
 - **Constant memory usage**: Regardless of file size
 - **Same efficiency as file uploads**: 8MB chunks
-- **SQLite registry**: Thread-safe file tracking with persistent database
+- **Filesystem-based**: Metadata encoded in filenames (no database)
 - **Background cleanup**: Non-blocking startup cleanup process
 
 ## File Cleanup & Retention
 
-Generated files have a **smart cleanup lifecycle**:
+Generated files have a **simple 1-hour lifecycle**:
 
 1. **Immediate availability**: Files ready for download right after generation
-2. **1-hour grace period**: After first download, files remain available for re-download for 1 hour
-3. **24-hour retention**: Files older than 24 hours are automatically cleaned up every hour while the server runs (and on startup)
-4. **Configurable**: Adjust retention period with `cleanup_hours` parameter
+2. **1-hour retention**: Files automatically deleted 1 hour after creation (hardcoded, non-configurable)
+3. **Automatic cleanup**: Cleanup runs on startup and every hour while server runs
+4. **No download tracking**: Files expire based on creation time, not download time
+
+**Directory configuration:**
 ```python
-# Default: 24-hour cleanup
+# Default directories
 run(my_function)
+# Returned files stored in: ./returned_files
 
-# Custom: 6-hour cleanup
-run(my_function, cleanup_hours=6)
-
-# Disable auto-cleanup
-run(my_function, cleanup_hours=0)
-```
-
-**Database location** is also configurable:
-```python
-# Default: func_to_web.db in current directory
-run(my_function)
-
-# Custom location
-run(my_function, db_location="/path/to/data")
-
-# Temporary (uses system temp dir)
-import tempfile
-run(my_function, db_location=tempfile.gettempdir())
+# Custom directory
+run(
+    my_function,
+    returns_dir="/path/to/returns"
+)
 ```
 
 ## Auto-Healing
 
-If a file is manually deleted from disk but still exists in the database, the system automatically detects this and cleans up the broken reference when someone tries to download it.
+If a file is manually deleted from disk, the system automatically detects this when someone tries to download it and returns a "File expired" error.
 
 ## What's Next?
 

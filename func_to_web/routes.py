@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 import os
 import re
@@ -8,18 +7,20 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, FileResponse as FastAPIFileResponse
 from fastapi.templating import Jinja2Templates
 
+from . import config
 from .analyze_function import ParamInfo, analyze
 from .validate_params import validate_params
 from .build_form_fields import build_form_fields
 from .process_result import process_result
 from .file_handler import (
     save_uploaded_file,
-    get_temp_file,
-    cleanup_temp_file,
+    cleanup_uploaded_file,
+    get_returned_file,
+    cleanup_returned_file,
     create_response_with_files
 )
 
-UUID_PATTERN = re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+UUID_PATTERN = re.compile(r'^[a-f0-9]{32}$')
 
 
 async def handle_form_submission(
@@ -37,6 +38,8 @@ async def handle_form_submission(
     Returns:
         JSON response with result or error.
     """
+    uploaded_files = []
+    
     try:
         form_data = await request.form()
         data = {}
@@ -44,20 +47,35 @@ async def handle_form_submission(
         for name, value in form_data.items():
             if hasattr(value, 'filename'):
                 suffix = os.path.splitext(value.filename)[1]
-                data[name] = await save_uploaded_file(value, suffix)
+                file_path = await save_uploaded_file(value, suffix)
+                data[name] = file_path
+                uploaded_files.append(file_path)
             else:
                 data[name] = value
         
         validated = validate_params(data, params)
+        
         if inspect.iscoroutinefunction(func):
             result = await func(**validated)
         else:
             result = func(**validated)
+        
+        # Clean up uploaded files if auto_delete enabled
+        if config.AUTO_DELETE_UPLOADS:
+            for file_path in uploaded_files:
+                cleanup_uploaded_file(file_path)
+        
         processed = process_result(result)
         response = create_response_with_files(processed)
         
         return JSONResponse(response)
+        
     except Exception as e:
+        # Clean up uploaded files on error
+        if config.AUTO_DELETE_UPLOADS:
+            for file_path in uploaded_files:
+                cleanup_uploaded_file(file_path)
+        
         return JSONResponse({"success": False, "error": str(e)}, status_code=400)
 
 
@@ -72,7 +90,7 @@ def setup_download_route(app):
         if not UUID_PATTERN.match(file_id):
             return JSONResponse({"error": "Invalid file ID"}, status_code=400)
         
-        file_info = get_temp_file(file_id)
+        file_info = get_returned_file(file_id)
         
         if not file_info:
             return JSONResponse({"error": "File not found"}, status_code=404)
@@ -81,7 +99,7 @@ def setup_download_route(app):
         filename = file_info['filename']
         
         if not os.path.exists(path):
-            cleanup_temp_file(file_id, delete_from_disk=False)
+            cleanup_returned_file(file_id, delete_from_disk=False)
             return JSONResponse({"error": "File expired"}, status_code=404)
         
         safe_filename = os.path.basename(filename)
@@ -91,12 +109,6 @@ def setup_download_route(app):
             filename=safe_filename,
             media_type='application/octet-stream'
         )
-        
-        async def cleanup():
-            await asyncio.sleep(3600)
-            cleanup_temp_file(file_id)
-        
-        response.background = cleanup
         
         return response
 

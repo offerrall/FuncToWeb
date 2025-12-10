@@ -1,6 +1,6 @@
 # Server Configuration
 
-Customize the server host, port, template directory, file cleanup, and underlying server options.
+Customize the server host, port, template directory, file storage, and underlying server options.
 
 ## Basic Usage
 ```python
@@ -23,12 +23,13 @@ run([func1, func2], root_path="/my-tool")
 - `port` - Server port (default: `8000`).
 - `auth` - Dictionary of users/passwords for authentication (see [Authentication](authentication.md)).
 - `secret_key` - Key for signing session cookies (see [Authentication](authentication.md)).
+- `uploads_dir` - Directory for uploaded files (default: `"./uploads"`).
+- `returns_dir` - Directory for returned files (default: `"./returned_files"`).
+- `auto_delete_uploads` - If True, delete uploaded files after processing (default: `True`).
 - `template_dir` - Custom template directory (optional).
 - `root_path` - URL prefix for running behind a reverse proxy (default: `""`).
-- `db_location` - Directory or path for the SQLite database (default: current working directory).
-- `cleanup_hours` - Auto-cleanup files older than this many hours (default: `24`). Cleanup runs on startup and then every hour while server runs. Set to `0` to disable.
 - `fastapi_config` - Dictionary with extra options for the FastAPI app (e.g., title, version).
-- `**kwargs` - Extra options passed directly to the Uvicorn server configuration (SSL, timeouts, etc.).
+- `**kwargs` - Extra options passed directly to Uvicorn. Any valid Uvicorn configuration option is supported.
 
 ## Common Configurations
 
@@ -49,35 +50,37 @@ run(my_function, port=5000)
 run(my_function, host="0.0.0.0", port=8000)
 ```
 
-### File Cleanup Configuration
+### File Storage Configuration
 
-**Default behavior (24-hour retention):**
+**Default directories:**
 ```python
 run(my_function)
+# Uploaded files: ./uploads
+# Returned files: ./returned_files
 ```
 
-**Custom retention period (6 hours):**
+**Custom directories:**
 ```python
-run(my_function, cleanup_hours=6)
+run(
+    my_function,
+    uploads_dir="/data/uploads",
+    returns_dir="/data/returns"
+)
 ```
 
-**Disable automatic cleanup:**
+**Upload file cleanup:**
 ```python
-run(my_function, cleanup_hours=0)
+# Auto-delete uploads after processing (default)
+run(my_function, auto_delete_uploads=True)
+
+# Keep uploads (must clean manually)
+run(my_function, auto_delete_uploads=False)
 ```
 
-**Custom database location:**
-```python
-# Store in specific directory
-run(my_function, db_location="/var/data/my_app")
-
-# Store in temporary directory (cleaned by OS)
-import tempfile
-run(my_function, db_location=tempfile.gettempdir())
-
-# Default: current working directory
-run(my_function)  # Creates func_to_web.db in current dir
-```
+**Returned files lifecycle:**
+- Files available for **1 hour** after creation (hardcoded)
+- Cleanup runs on startup and every hour
+- Not configurable (simplified design)
 
 ### Reverse Proxy Configuration (Docker/Nginx)
 
@@ -87,30 +90,44 @@ If you are hosting your app behind a reverse proxy (like Nginx or Traefik) under
 run(my_function, root_path="/tools/app")
 ```
 
-### Advanced Uvicorn Options (SSL, Timeouts)
+### Uvicorn Configuration Options
 
-You can pass any valid Uvicorn configuration argument as extra keyword arguments. These are passed directly to `uvicorn.Config`.
+func-to-web passes all extra keyword arguments directly to Uvicorn. You can use any valid [Uvicorn configuration option](https://www.uvicorn.org/settings/).
 
-**Enable SSL (HTTPS):**
+**Examples:**
 ```python
+# SSL/HTTPS
 run(
     my_function,
-    port=443,
     ssl_keyfile="./key.pem",
     ssl_certfile="./cert.pem"
 )
-```
 
-**Performance Tuning:**
-```python
+# Performance tuning
 run(
     my_function,
-    limit_max_requests=10000,   # Restart worker after N requests
-    timeout_keep_alive=60       # Keep-alive timeout
+    limit_max_requests=10000,
+    timeout_keep_alive=60,
+    limit_concurrency=200
+)
+
+# Logging
+run(
+    my_function,
+    log_level="debug",
+    access_log=True
+)
+
+# Any Uvicorn option works
+run(
+    my_function,
+    workers=4,
+    reload=True,
+    proxy_headers=True
 )
 ```
 
-**Note:** Multiple workers (`workers > 1`) are **not supported**. See [Scaling](#scaling-guidelines) below.
+See [Uvicorn documentation](https://www.uvicorn.org/settings/) for all available options.
 
 ### Custom API Metadata
 
@@ -133,130 +150,31 @@ run(my_function, template_dir="my_custom_templates")
 
 To use custom templates, copy the default templates from the `./func_to_web/templates/` directory and modify them as needed, then specify the path in `template_dir`. With custom templates, you can completely change the look and functionality of the web interface.
 
-## Scaling Guidelines
-
-### Why Multiple Workers Are Not Supported
-
-func-to-web uses SQLite for file tracking, which is not designed for concurrent writes across multiple processes. Attempting to use `workers > 1` will raise an error:
-```python
-# ❌ This will raise ValueError
-run(my_function, workers=4)
-```
-
-**Error message:**
-```
-ValueError: func-to-web does not support multiple workers (workers > 1)
-
-Reason: SQLite-based file tracking is not designed for concurrent
-        writes across multiple processes.
-
-For scaling:
-  • Single worker can handle 500-1000 req/s with async I/O
-  • For higher loads, run multiple instances
-```
-
-### Single Worker Performance
-
-A single worker can handle:
-
-- ✅ **500-1,000 requests/second** for I/O-bound operations
-- ✅ **50-100 concurrent users** with async operations
-- ✅ **GB+ file uploads/downloads** via streaming
-
-**Sufficient for:**
-- Internal team dashboards (5-50 users)
-- Admin panels and internal tools
-- Data science workflows
-- Prototyping and MVPs
-
-### Scaling with Multiple Instances
-
-For higher loads, run multiple instances on different ports behind a load balancer:
-
-**Step 1: Run instances on different ports**
-```bash
-# Terminal 1
-python app.py --port 8001 --db-location /data/instance1
-
-# Terminal 2
-python app.py --port 8002 --db-location /data/instance2
-
-# Terminal 3
-python app.py --port 8003 --db-location /data/instance3
-```
-
-**Step 2: Configure Nginx with sticky sessions**
-```nginx
-upstream func_to_web {
-    ip_hash;  # Sticky sessions - same user → same backend
-    server 127.0.0.1:8001;
-    server 127.0.0.1:8002;
-    server 127.0.0.1:8003;
-}
-
-server {
-    listen 80;
-    server_name myapp.example.com;
-    
-    location / {
-        proxy_pass http://func_to_web;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-**Why sticky sessions?** Each instance has its own SQLite database. Users must be routed to the same instance to download their generated files.
-
-### Limitations of Multiple Instances
-
-- **IP change**: If user's IP changes (WiFi → 4G), they may lose access to files
-- **Instance crash**: If an instance crashes, files on that instance become unavailable
-- **Not suitable**: For >1,000 concurrent users or distributed systems
-
-### Enterprise Scaling
-
-For very high loads (1,000+ concurrent users), consider:
-- FastAPI + Celery + Redis + PostgreSQL
-- Shared storage (NFS/EFS) with coordination layer
-- Microservices architecture
-
-func-to-web is optimized for team-scale applications, not Twitter-scale systems.
-
 ## Production Example
 
-Complete production setup with all options:
+Complete production setup:
 ```python
 import os
-from pathlib import Path
 from func_to_web import run
 
 run(
     my_functions,
-    host="127.0.0.1",                           # Behind Nginx
+    host="127.0.0.1",
     port=8000,
     auth={"admin": os.environ["ADMIN_PASSWORD"]},
     secret_key=os.environ["SECRET_KEY"],
-    root_path="/tools/my-app",                  # Reverse proxy path
-    db_location="/var/data/func_to_web",        # Persistent data
-    cleanup_hours=48,                           # 2-day retention
+    uploads_dir="/data/uploads",
+    returns_dir="/data/returns",
+    auto_delete_uploads=True,
+    root_path="/tools/my-app",
+    ssl_keyfile="/etc/ssl/key.pem",
+    ssl_certfile="/etc/ssl/cert.pem",
     fastapi_config={
         "title": "Production Tools",
         "version": "1.0.0"
     }
 )
 ```
-
-## Summary
-
-func-to-web is designed for **simplicity and reliability** in team-scale applications:
-
-✅ **Single worker**: Handles 500-1,000 req/s  
-✅ **Multiple instances**: Scale horizontally with Nginx  
-✅ **Team-scale**: Optimized for 5-100 concurrent users  
-⚠️ **Not Twitter-scale**: For massive loads, use FastAPI + Redis
-
-**Note:** The architecture prioritizes ease of use and reliability over maximum scalability. For most teams, single-worker performance is more than sufficient.
 
 ## That's It!
 

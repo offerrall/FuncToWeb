@@ -39,4 +39,6 @@ def create_mixed_sizes(prefix: str):
     )
     return [small, medium, large]
 
+# Note: All files are deleted after one hour
+
 run([create_text_file, create_large_file, create_multiple_files, create_mixed_sizes])

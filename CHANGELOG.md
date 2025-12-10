@@ -1,5 +1,97 @@
 # Changelog
 
+## [0.9.7] - 2025-12-10
+
+### Philosophy Change
+
+Version 0.9.6 introduced SQLite for file tracking, blocked multiple workers, and added complex configuration. This was overengineered. func-to-web should be simple, fast, and reliable.
+
+0.9.7 returns to simplicity with filesystem-based tracking, multiple workers support, and sensible defaults.
+
+---
+
+### Removed
+
+- **SQLite Database**
+  - No more database files or locks
+  - File metadata encoded directly in filenames
+  - Format: `{uuid}___{timestamp}___{filename}`
+
+- **Parameters Removed**
+  - `db_location` - no longer needed
+  - `cleanup_hours` - now hardcoded to 1 hour
+
+- **Workers Limitation**
+  - `workers > 1` no longer blocked
+  - Scale vertically without restrictions
+
+### Added
+
+- **Automatic Upload Cleanup**
+  - New parameter: `auto_delete_uploads` (default: `True`)
+  - Uploaded files deleted after function completes
+  - Disable with `auto_delete_uploads=False` if needed
+
+- **Directory Configuration**
+  - New parameter: `uploads_dir` (default: `"./uploads"`)
+  - New parameter: `returns_dir` (default: `"./returned_files"`)
+
+### Changed
+
+- **File Retention**
+  - Returned files deleted 1 hour after creation (hardcoded)
+  - No download tracking needed
+  - Cleanup runs every hour automatically
+
+- **Multiple Workers**
+  - Now supported like any other Uvicorn option
+  - Each worker runs independent cleanup
+  - File operations are atomic, no conflicts
+
+- **Architecture**
+  - Removed `db_manager.py` module
+  - Simplified `file_handler.py`
+  - Faster startup (no database initialization)
+
+### Fixed
+
+- Database lock errors eliminated
+- Race conditions eliminated
+- Improved startup performance
+
+### Documentation
+
+- Updated all docs to remove SQLite references
+- Removed `db_location` and `cleanup_hours` from examples
+- Added `auto_delete_uploads` documentation
+- Updated API reference (removed `db_manager`)
+
+### Migration from 0.9.6
+
+**Before:**
+```python
+run(my_function, db_location="/data", cleanup_hours=48)
+```
+
+**After:**
+```python
+run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
+# Files now expire after 1 hour (hardcoded)
+```
+
+**Breaking Changes:**
+- `db_location` removed (use `returns_dir`)
+- `cleanup_hours` removed (hardcoded to 1 hour)
+- `func_to_web.db` no longer created
+
+**Non-Breaking:**
+- `workers` parameter now supported
+- All other parameters unchanged
+
+### Summary
+
+0.9.6 was overengineered. 0.9.7 is simple again: no database, automatic cleanup, multiple workers supported. Filesystem operations are fast, atomic, and sufficient.
+
 ## [0.9.6] - 2025-12-10
 
 ### Added

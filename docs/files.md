@@ -66,7 +66,7 @@ When uploading files, you'll see real-time feedback:
 
 ## Working with Uploaded Files
 
-Uploaded files are saved to temporary locations. You can access them as file paths:
+Uploaded files are saved to the uploads directory. You can access them as file paths:
 ```python
 from func_to_web import run
 from func_to_web.types import ImageFile
@@ -81,62 +81,88 @@ def process_image(image: ImageFile):
 run(process_image)
 ```
 
+## Automatic Upload Cleanup
+
+By default, uploaded files are **automatically deleted** after your function finishes processing:
+```python
+from func_to_web import run
+from func_to_web.types import ImageFile
+from PIL import Image, ImageFilter
+
+def process_image(image: ImageFile):
+    img = Image.open(image)
+    result = img.filter(ImageFilter.BLUR)
+    return result
+    # File automatically deleted after return
+
+run(process_image)  # auto_delete_uploads=True by default
+```
+
+**Disable auto-delete** if you need files to persist:
+```python
+run(process_image, auto_delete_uploads=False)
+```
+
+**Configure upload directory:**
+```python
+run(
+    process_image,
+    uploads_dir="/path/to/uploads",
+    auto_delete_uploads=True
+)
+```
+
 ## File Cleanup for Uploaded Files
 
-**Important:** func-to-web does **not** automatically clean up uploaded files. They are saved to the system's temporary directory:
+**By default**, func-to-web **automatically cleans up** uploaded files after processing (`auto_delete_uploads=True`). This is the recommended behavior.
 
-- **Linux/Mac**: `/tmp`
-- **Windows**: `%TEMP%` (typically `C:\Users\Username\AppData\Local\Temp`)
-
-### OS Cleanup Behavior
-
-| OS | Automatic Cleanup | When |
-|----|-------------------|------|
-| **Linux** | ✅ Yes | On restart (and often after 10 days) |
-| **macOS** | ✅ Yes | On restart (and after 3 days unused) |
-| **Windows** | ⚠️ Maybe | Only if Storage Sense is enabled (disabled by default) |
-
-**Warning for Windows users:** Files in `%TEMP%` can accumulate indefinitely unless you manually run Disk Cleanup or enable Storage Sense.
+**If you disable auto-delete** (`auto_delete_uploads=False`), files remain in the uploads directory **indefinitely** until you manually delete them. The OS will **not** clean them automatically.
 
 ### Cleanup Options
 
-**Option 1: Let the OS handle it** (simple, but unreliable on Windows)
+**Option 1: Use auto-delete (default, recommended)**
+```python
+def process_image(image: ImageFile):
+    img = Image.open(image)
+    result = img.filter(ImageFilter.BLUR)
+    return result
+    # File automatically deleted after processing
+
+run(process_image)  # auto_delete_uploads=True by default
+```
+
+**Option 2: Disable auto-delete** (files persist indefinitely)
 ```python
 def process_image(image: ImageFile):
     img = Image.open(image)
     return img.filter(ImageFilter.BLUR)
-    # File remains in temp directory
+    # File remains in uploads directory forever
+
+run(process_image, auto_delete_uploads=False)
 ```
 
-**Option 2: Manual cleanup** (recommended for production)
+**When to disable auto-delete:**
+
+- You need to access files after the function completes
+- Multiple functions need to process the same file
+- You're implementing your own cleanup logic
+
+**If auto-delete is disabled**, you must manually clean up:
 ```python
 import os
+from pathlib import Path
 
-def process_image(image: ImageFile):
-    try:
-        img = Image.open(image)
-        result = img.filter(ImageFilter.BLUR)
-        return result
-    finally:
-        os.unlink(image)  # Delete file immediately
+# Manual cleanup script
+uploads_dir = Path("./uploads")
+for file in uploads_dir.glob("upload_*"):
+    os.unlink(file)
 ```
 
-**Option 3: Process in-memory** (for small files)
-```python
-import os
-
-def process_image(image: ImageFile):
-    with open(image, 'rb') as f:
-        data = f.read()
-    os.unlink(image)  # Delete immediately after reading
-    # Process data in memory...
-```
-
-**Recommendation:** For production applications, especially on Windows, implement manual cleanup (Option 2) to avoid disk space issues.
+**Recommendation:** Use the default `auto_delete_uploads=True` unless you have a specific reason to preserve uploaded files.
 
 ### Returned Files (Different Behavior)
 
-Files you **return** using `FileResponse` are handled differently and **are** automatically cleaned up by func-to-web after 24 hours (configurable). See [File Downloads](downloads.md) for details.
+Files you **return** using `FileResponse` are handled differently and **are** automatically cleaned up by func-to-web after 1 hour (hardcoded). See [File Downloads](downloads.md) for details.
 
 ## Next Steps
 

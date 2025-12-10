@@ -1,7 +1,7 @@
 import io
 import base64
-import tempfile
 from .types import FileResponse as UserFileResponse
+from .file_handler import save_returned_file
 from .check_return_is_table import detect_and_convert_table, is_homogeneous_list_of_dicts, is_homogeneous_list_of_tuples
 
 def process_result(result):
@@ -72,12 +72,11 @@ def process_result(result):
         if all(isinstance(f, UserFileResponse) for f in result):
             files = []
             for f in result:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{f.filename}") as tmp:
-                    tmp.write(f.data)
-                    files.append({
-                        'path': tmp.name,
-                        'filename': f.filename
-                    })
+                file_id, file_path = save_returned_file(f.data, f.filename)
+                files.append({
+                    'path': file_path,
+                    'filename': f.filename
+                })
             return {
                 'type': 'downloads',
                 'files': files
@@ -127,13 +126,12 @@ def process_result(result):
     
     # ===== SINGLE FILE =====
     if isinstance(result, UserFileResponse):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{result.filename}") as tmp:
-            tmp.write(result.data)
-            return {
-                'type': 'download',
-                'path': tmp.name,
-                'filename': result.filename
-            }
+        file_id, file_path = save_returned_file(result.data, result.filename)
+        return {
+            'type': 'download',
+            'path': file_path,
+            'filename': result.filename
+        }
     
     # ===== DEFAULT: TEXT =====
     return {
