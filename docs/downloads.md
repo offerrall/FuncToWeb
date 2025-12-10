@@ -102,7 +102,7 @@ Generated files have a **smart cleanup lifecycle**:
 
 1. **Immediate availability**: Files ready for download right after generation
 2. **1-hour grace period**: After first download, files remain available for re-download for 1 hour
-3. **24-hour retention**: Files older than 24 hours are automatically cleaned up on server startup
+3. **24-hour retention**: Files older than 24 hours are automatically cleaned up every hour while the server runs (and on startup)
 4. **Configurable**: Adjust retention period with `cleanup_hours` parameter
 ```python
 # Default: 24-hour cleanup

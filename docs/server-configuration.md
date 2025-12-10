@@ -26,7 +26,7 @@ run([func1, func2], root_path="/my-tool")
 - `template_dir` - Custom template directory (optional).
 - `root_path` - URL prefix for running behind a reverse proxy (default: `""`).
 - `db_location` - Directory or path for the SQLite database (default: current working directory).
-- `cleanup_hours` - Auto-cleanup files older than this many hours (default: `24`). Set to `0` to disable.
+- `cleanup_hours` - Auto-cleanup files older than this many hours (default: `24`). Cleanup runs on startup and then every hour while server runs. Set to `0` to disable.
 - `fastapi_config` - Dictionary with extra options for the FastAPI app (e.g., title, version).
 - `**kwargs` - Extra options passed directly to the Uvicorn server configuration (SSL, timeouts, etc.).
 
