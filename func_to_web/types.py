@@ -32,7 +32,8 @@ class _OptionalDisabledMarker:
 class FileResponse(BaseModel):
     """Model for file response."""
     data: bytes
-    filename: str
+    filename: Annotated[str, Field(max_length=150)]
+
 
 OptionalEnabled = Annotated[None, _OptionalEnabledMarker()]
 OptionalDisabled = Annotated[None, _OptionalDisabledMarker()]

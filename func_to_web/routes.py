@@ -44,14 +44,41 @@ async def handle_form_submission(
         form_data = await request.form()
         data = {}
         
-        for name, value in form_data.items():
-            if hasattr(value, 'filename'):
-                suffix = os.path.splitext(value.filename)[1]
-                file_path = await save_uploaded_file(value, suffix)
-                data[name] = file_path
-                uploaded_files.append(file_path)
+        for name, info in params.items():
+            if info.is_list:
+                raw_values = form_data.getlist(name)
+                
+                if not raw_values and name in form_data:
+                     raw_values = [form_data[name]]
+
+                processed_list = []
+                for val in raw_values:
+                    if hasattr(val, 'filename'):
+                        suffix = os.path.splitext(val.filename)[1]
+                        file_path = await save_uploaded_file(val, suffix)
+                        uploaded_files.append(file_path)
+                        processed_list.append(file_path)
+                    else:
+                        processed_list.append(val)
+                
+                if len(processed_list) == 1 and isinstance(processed_list[0], str) and processed_list[0].startswith('['):
+                    data[name] = processed_list[0]
+                else:
+                    data[name] = processed_list
+
             else:
-                data[name] = value
+                value = form_data.get(name)
+                if hasattr(value, 'filename'):
+                    suffix = os.path.splitext(value.filename)[1]
+                    file_path = await save_uploaded_file(value, suffix)
+                    uploaded_files.append(file_path)
+                    data[name] = file_path
+                else:
+                    data[name] = value
+
+        for key, value in form_data.items():
+            if key.endswith('_optional_toggle'):
+                data[key] = value
         
         validated = validate_params(data, params)
         

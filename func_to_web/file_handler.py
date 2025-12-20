@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -8,18 +9,21 @@ from . import config
 
 CHUNK_SIZE = 8 * 1024 * 1024
 FILE_BUFFER_SIZE = 8 * 1024 * 1024
+MAX_FILENAME_LENGTH = 255
+MAX_USER_FILENAME_LENGTH = 100
 
 
 def _encode_filename(file_id: str, timestamp: int, original_name: str) -> str:
-    """Encode file metadata in filename.
+    """Encode file metadata in filename for RETURNED files.
     
+    Used only for files returned by user functions (FileResponse).
     Format: {file_id}___{timestamp}___{safe_filename}
     Example: 550e8400-e29b-41d4-a716-446655440000___1702380000___report.pdf
     
     Args:
         file_id: UUID for the file.
         timestamp: Unix timestamp (seconds since epoch).
-        original_name: Original filename from user.
+        original_name: Filename from user's FileResponse.
         
     Returns:
         Encoded filename string.
@@ -29,7 +33,9 @@ def _encode_filename(file_id: str, timestamp: int, original_name: str) -> str:
 
 
 def _decode_filename(encoded_name: str) -> dict[str, Any] | None:
-    """Decode file metadata from filename.
+    """Decode file metadata from filename for RETURNED files.
+    
+    Used only for files returned by user functions (FileResponse).
     
     Args:
         encoded_name: Filename in format {file_id}___{timestamp}___{filename}
@@ -51,18 +57,89 @@ def _decode_filename(encoded_name: str) -> dict[str, Any] | None:
         return None
 
 
+def _sanitize_filename(filename: str) -> str:
+    """Sanitize user-uploaded filename against security attacks.
+    
+    Used only for UPLOADED files (files received from users).
+    Protects against:
+    - Directory traversal (../, ../../)
+    - Special characters that could cause issues
+    - Reserved names on Windows (CON, PRN, AUX, etc.)
+    - Unicode homoglyphs
+    - Null bytes
+    
+    Args:
+        filename: Original filename from user upload.
+        
+    Returns:
+        Safe filename with only alphanumeric chars, dots, hyphens, underscores, and spaces.
+    """
+    filename = os.path.basename(filename)
+    filename = filename.encode('ascii', 'ignore').decode('ascii')
+    safe = re.sub(r'[^a-zA-Z0-9._\s-]', '_', filename)
+    safe = re.sub(r'\.{2,}', '.', safe)
+    safe = re.sub(r'_{2,}', '_', safe)
+    safe = re.sub(r'\s{2,}', ' ', safe)
+    safe = safe.strip('. _')
+    
+    reserved = {
+        'CON', 'PRN', 'AUX', 'NUL',
+        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+    }
+    
+    name_without_ext = os.path.splitext(safe)[0].upper()
+    if name_without_ext in reserved:
+        safe = f"file_{safe}"
+    
+    if not safe or safe == '.' or safe == '..':
+        safe = 'file'
+    
+    return safe
+
+
 async def save_uploaded_file(uploaded_file: Any, suffix: str) -> str:
-    """Save an uploaded file to uploads directory.
+    """Save an UPLOADED file (received from user) to uploads directory.
+    
+    Sanitizes filename, preserves original name (up to 100 chars), and adds unique ID.
+    Format: {sanitized_name}_{unique_id}.{ext}
+    Example: My_Report_2024_a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p8.pdf
+    
+    Security features:
+    - Filename sanitization against directory traversal
+    - 100 character limit on user-provided name
+    - UUID for uniqueness filename
+    - Path resolution check to ensure file stays in uploads directory
     
     Args:
         uploaded_file: The uploaded file object from FastAPI.
-        suffix: File extension to use.
+        suffix: File extension to use as fallback.
         
     Returns:
         Path to the saved file (string).
+        
+    Raises:
+        ValueError: If security check fails (file would be outside uploads directory).
     """
-    file_id = uuid.uuid4().hex[:12]
-    file_path = config.UPLOADS_DIR / f"upload_{file_id}{suffix}"
+    original_name = uploaded_file.filename if hasattr(uploaded_file, 'filename') else 'file'
+    safe_name = _sanitize_filename(original_name)
+    
+    name_without_ext, ext = os.path.splitext(safe_name)
+    if not ext:
+        ext = suffix
+    
+    if len(name_without_ext) > MAX_USER_FILENAME_LENGTH:
+        name_without_ext = name_without_ext[:MAX_USER_FILENAME_LENGTH]
+    
+    unique_id = uuid.uuid4().hex
+    final_name = f"{name_without_ext}_{unique_id}{ext}"
+    
+    file_path = config.UPLOADS_DIR / final_name
+    file_path_resolved = file_path.resolve()
+    uploads_dir_resolved = config.UPLOADS_DIR.resolve()
+    
+    if not str(file_path_resolved).startswith(str(uploads_dir_resolved)):
+        raise ValueError("Security: Invalid file path detected")
     
     with open(file_path, 'wb', buffering=FILE_BUFFER_SIZE) as f:
         while chunk := await uploaded_file.read(CHUNK_SIZE):
@@ -72,7 +149,7 @@ async def save_uploaded_file(uploaded_file: Any, suffix: str) -> str:
 
 
 def cleanup_uploaded_file(file_path: str) -> None:
-    """Delete an uploaded file from disk.
+    """Delete an UPLOADED file from disk.
     
     Args:
         file_path: Path to the uploaded file.
@@ -85,11 +162,14 @@ def cleanup_uploaded_file(file_path: str) -> None:
 
 
 def save_returned_file(data: bytes, filename: str) -> tuple[str, str]:
-    """Save a returned file to returns directory with metadata in filename.
+    """Save a RETURNED file (from user's FileResponse) to returns directory.
+    
+    This is SAFE because WE control the filename (it comes from user's code, not from upload).
+    The filename is already validated by Pydantic (max 150 chars) in FileResponse.
     
     Args:
         data: File content bytes.
-        filename: Original filename.
+        filename: Filename from user's FileResponse (already validated).
         
     Returns:
         Tuple of (file_id, file_path).
@@ -106,12 +186,12 @@ def save_returned_file(data: bytes, filename: str) -> tuple[str, str]:
 
 
 def get_returned_file(file_id: str) -> dict[str, str] | None:
-    """Get returned file info by file_id.
+    """Get RETURNED file info by file_id.
     
     Searches the returns directory for a file matching the file_id.
     
     Args:
-        file_id: Unique identifier for the file.
+        file_id: Unique identifier for the returned file.
         
     Returns:
         Dictionary with 'path' and 'filename' keys, or None if not found.
@@ -131,10 +211,10 @@ def get_returned_file(file_id: str) -> dict[str, str] | None:
 
 
 def cleanup_returned_file(file_id: str, delete_from_disk: bool = True) -> None:
-    """Remove returned file from disk.
+    """Remove RETURNED file from disk.
     
     Args:
-        file_id: Unique identifier for the file.
+        file_id: Unique identifier for the returned file.
         delete_from_disk: If True, delete the physical file from disk.
     """
     try:
@@ -153,7 +233,7 @@ def cleanup_returned_file(file_id: str, delete_from_disk: bool = True) -> None:
 
 
 def get_old_returned_files(max_age_seconds: int) -> list[str]:
-    """Get file_ids of returned files older than max_age_seconds.
+    """Get file_ids of RETURNED files older than max_age_seconds.
     
     Parses timestamps from filenames and compares against current time.
     
@@ -161,7 +241,7 @@ def get_old_returned_files(max_age_seconds: int) -> list[str]:
         max_age_seconds: Maximum age in seconds.
         
     Returns:
-        List of file_ids (strings).
+        List of file_ids (strings) for returned files.
     """
     try:
         current_time = int(time.time())
@@ -181,7 +261,7 @@ def get_old_returned_files(max_age_seconds: int) -> list[str]:
 
 
 def get_returned_files_count() -> int:
-    """Get count of returned files in directory.
+    """Get count of RETURNED files in directory.
     
     Returns:
         Number of valid returned files.
@@ -199,9 +279,11 @@ def get_returned_files_count() -> int:
 
 
 def cleanup_old_files() -> None:
-    """Remove returned files older than 1 hour (hardcoded).
+    """Remove RETURNED files older than 1 hour (hardcoded).
     
     This runs on startup and every hour while server is running.
+    Only affects files in the returns directory (FileResponse outputs).
+    Uploaded files are cleaned up immediately after processing if AUTO_DELETE_UPLOADS is True.
     """
     try:
         max_age_seconds = config.RETURNS_LIFETIME_SECONDS
@@ -215,9 +297,10 @@ def cleanup_old_files() -> None:
 
 
 def create_response_with_files(processed: dict[str, Any]) -> dict[str, Any]:
-    """Create JSON response with file downloads.
+    """Create JSON response with RETURNED file downloads.
     
     Converts file paths to file_ids for the download endpoint.
+    Only processes files returned by user functions (FileResponse).
     
     Args:
         processed: Processed result from process_result().

@@ -121,7 +121,7 @@ def validate_params(form_data: dict, params_info: dict[str, ParamInfo]) -> dict:
     return validated
 
 
-def validate_list_param(value: str | None, info: ParamInfo, param_name: str) -> list:
+def validate_list_param(value: str | list | None, info: ParamInfo, param_name: str) -> list:
     """Validate and convert a JSON string to a typed list.
     
     Args:
@@ -138,7 +138,9 @@ def validate_list_param(value: str | None, info: ParamInfo, param_name: str) -> 
         json.JSONDecodeError: If JSON is invalid.
     """
     # Parse JSON
-    if not value or value == "":
+    if isinstance(value, list):
+        list_value = value
+    elif not value or value == "":
         list_value = []
     else:
         try:

@@ -3,12 +3,10 @@
     if (!themeToggle) return;
     
     const html = document.documentElement;
-    
-    // Cargar tema guardado o usar 'light' por defecto
+
     const savedTheme = localStorage.getItem('theme') || 'light';
     html.setAttribute('data-theme', savedTheme);
-    
-    // Toggle theme al hacer click
+
     themeToggle.addEventListener('click', () => {
         const currentTheme = html.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -479,9 +477,18 @@ function setupFormSubmit(submitUrl) {
                 keysToRemove.forEach(key => formData.delete(key));
                 
                 const wrappers = container.querySelectorAll('.list-item-wrapper');
-                const listValues = extractListValues(wrappers, fieldType);
                 
-                formData.set(fieldName, JSON.stringify(listValues));
+                if (fieldType === 'file') {
+                    wrappers.forEach(wrapper => {
+                        const input = wrapper.querySelector('input[type="file"]');
+                        if (!input.disabled && input.files.length > 0) {
+                            formData.append(fieldName, input.files[0]);
+                        }
+                    });
+                } else {
+                    const listValues = extractListValues(wrappers, fieldType);
+                    formData.set(fieldName, JSON.stringify(listValues));
+                }
             });
             
             const xhr = new XMLHttpRequest();

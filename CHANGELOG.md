@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.8] - 2025-12-21
+
+### Changed
+- **FileResponse Filename Limit**: 150-character maximum (Pydantic validated)
+
+### Security
+- **Filename Sanitization**: User-uploaded files sanitized against directory traversal, reserved names, and special characters
+  - Format: `{sanitized_name}_{32char_uuid}.{ext}`
+  - 100-char limit on user portion, ~143 total length
+  - Preserves original name for identification
+
+### Fixed
+- **File Lists**: Fixed bug where `list[File]` would fail with JSON parsing error
+  - Backend now uses `form_data.getlist()` to properly group uploaded files
+  - `validate_list_param()` accepts pre-processed lists in addition to JSON strings
+
+
 ## [0.9.7] - 2025-12-10
 
 ### Philosophy Change
