@@ -1,5 +1,8 @@
+from pathlib import Path
 from func_to_web import run
 from func_to_web.types import File
+
+desktop_path = Path.home() / "Desktop"
 
 def upload_files(
     files: list[File],
@@ -8,4 +11,4 @@ def upload_files(
         print(f"Uploaded file: {f}")
     return "Files uploaded successfully!"
 
-run(upload_files, auto_delete_uploads=False)
+run(upload_files, auto_delete_uploads=False, uploads_dir=desktop_path)
