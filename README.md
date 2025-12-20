@@ -85,8 +85,8 @@ Complete documentation with **examples and screenshots** for each feature:
 - ✅ **Rapid Prototyping** - From pure Python function to usable web interface in seconds.
 - ✅ **Image Processing** - Upload, process, and download images with PIL/Pillow.
 - ✅ **Data Science & Reporting** - Instantly publish Pandas/Polars DataFrames and matplotlib plots without frontend code.
+- ✅ **High-Performance File Transfer** - Stream uploads and downloads at native network/disk speeds. Handles massive files efficiently with minimal memory footprint.
 - ✅ **Secure Internal Apps** - Admin panels, dashboards, and team tools protected by built-in authentication.
-- ✅ **Production Deployments** - Docker-friendly, supports Nginx/Traefik reverse proxies, SSL, and high-performance streaming.
 
 ## Quick Examples
 
