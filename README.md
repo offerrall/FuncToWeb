@@ -110,10 +110,4 @@ Check the [`examples/`](examples/) folder for 20 complete examples (Covers all f
 pytest tests/ -v
 ```
 
-## Deploy Docs
-
-```bash
-mkdocs gh-deploy
-```
-
 [MIT License](LICENSE) • **Made by [Beltrán Offerrall](https://github.com/offerrall)** • Contributions welcome!
