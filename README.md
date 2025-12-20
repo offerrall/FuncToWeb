@@ -90,7 +90,60 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ## Quick Examples
 
-Check the [`examples/`](examples/) folder for 20 complete examples (Covers all features)
+### DIY AirDrop / LocalSend (Very Fast File Transfers)
+
+```python
+from pathlib import Path
+from func_to_web import run
+from func_to_web.types import File
+
+desktop_path = Path.home() / "Desktop"
+
+def upload_files(
+    files: list[File],
+): 
+    for f in files:
+        print(f"Uploaded file: {f}")
+    return "Files uploaded successfully!"
+
+run(upload_files, auto_delete_uploads=False, uploads_dir=desktop_path)
+```
+
+### Secure Admin Panel
+Protect sensitive tools with built-in authentication in one line.
+
+```python
+import subprocess
+from typing import Literal
+from func_to_web import run
+
+# 🔒 MANDATORY: Use HTTPS (Nginx).
+
+def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
+    """Restarts a system service."""
+    # check=True raises an error shown in the Web UI if the command fails
+    subprocess.run(["sudo", "supervisorctl", "restart", service], check=True)
+    return f"✅ Service {service} restarted."
+
+run(restart_service, auth={"admin": "super_secret_password"})
+```
+
+### QR Code Generator
+Generate QR codes instantly from text.
+
+```python
+import qrcode
+from func_to_web import run
+from func_to_web.types import ImageFile
+
+def make_qr(text: str):
+    """Returns a QR code image for the given text."""
+    return qrcode.make(text).get_image()
+
+run(make_qr)
+```
+
+Check the [`examples/`](examples/) folder for +20 complete examples (Covers all features)
 
 ## Requirements
 
