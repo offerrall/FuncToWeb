@@ -3,6 +3,7 @@ import os
 import re
 from typing import Callable
 
+import asyncio
 from fastapi import Request
 from fastapi.responses import JSONResponse, FileResponse as FastAPIFileResponse
 from fastapi.templating import Jinja2Templates
@@ -85,14 +86,14 @@ async def handle_form_submission(
         if inspect.iscoroutinefunction(func):
             result = await func(**validated)
         else:
-            result = func(**validated)
+            result = await asyncio.to_thread(func, **validated)
         
         # Clean up uploaded files if auto_delete enabled
         if config.AUTO_DELETE_UPLOADS:
             for file_path in uploaded_files:
                 cleanup_uploaded_file(file_path)
         
-        processed = process_result(result)
+        processed = await asyncio.to_thread(process_result, result)
         response = create_response_with_files(processed)
         
         return JSONResponse(response)

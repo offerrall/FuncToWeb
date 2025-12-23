@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.9] - 2025-12-23
+
+### Performance
+- **Non-blocking Execution**: Standard Python functions (`def`) are now automatically executed in a thread pool. This prevents CPU-heavy tasks from blocking the main event loop.
+- **Async Disk I/O**: Offloaded `FileResponse` processing and disk writing to background threads.
+  - Generating and saving large files (GB+) no longer freezes the server.
+  - The UI remains responsive for other users while files are being written to disk.
+- **Improved Concurrency**: The server can now handle multiple simultaneous heavy requests (calculations or downloads) without queue blocking.
+
 ## [0.9.8] - 2025-12-21
 
 ### Changed

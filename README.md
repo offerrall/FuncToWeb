@@ -1,4 +1,4 @@
-# Func To Web 0.9.8
+# Func To Web 0.9.9
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -71,6 +71,7 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[Server Options](https://offerrall.github.io/FuncToWeb/server-configuration/)**: Custom host, port, path and more
 - **Large Files**: Optimized streaming (GB+ files)
 - **Progress Bars**: Real-time upload/download tracking
+- **Concurrency**: Handles multiple heavy requests and users simultaneously.
 - **Error Handling**: Beautiful error messages
 
 </td>
