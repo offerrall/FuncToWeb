@@ -4,6 +4,36 @@ from .types import FileResponse as UserFileResponse
 from .file_handler import save_returned_file
 from .check_return_is_table import detect_and_convert_table, is_homogeneous_list_of_dicts, is_homogeneous_list_of_tuples
 
+
+def _process_file_response(file_response: UserFileResponse) -> tuple[str, str]:
+    """Process a single FileResponse and return (file_id, file_path).
+    
+    Args:
+        file_response: FileResponse instance with either data or path.
+        
+    Returns:
+        Tuple of (file_id, file_path) for the saved file.
+        
+    Raises:
+        ValueError: If file cannot be read or FileResponse is invalid.
+    """
+
+    if file_response.path is not None:
+        try:
+            with open(file_response.path, 'rb') as file:
+                file_data = file.read()
+        except FileNotFoundError:
+            raise ValueError(f"File not found: {file_response.path}")
+        except PermissionError:
+            raise ValueError(f"Permission denied reading file: {file_response.path}")
+        except Exception as e:
+            raise ValueError(f"Error reading file {file_response.path}: {str(e)}")
+        
+        return save_returned_file(file_data, file_response.filename)
+    
+    return save_returned_file(file_response.data, file_response.filename)
+
+
 def process_result(result):
     """
     Convert function result to appropriate display format.
@@ -50,12 +80,12 @@ def process_result(result):
     except ImportError:
         pass
 
-    # ===== TABLE DETECTION (FIRST) =====
+    # ===== TABLE DETECTION =====
     table_result = detect_and_convert_table(result)
     if table_result is not None:
         return table_result
     
-    # ===== TUPLE/LIST HANDLING (with smart nesting validation) =====
+    # ===== TUPLE/LIST HANDLING =====
     if isinstance(result, (tuple, list)):
         # Empty tuple/list
         if len(result) == 0:
@@ -72,7 +102,7 @@ def process_result(result):
         if all(isinstance(f, UserFileResponse) for f in result):
             files = []
             for f in result:
-                file_id, file_path = save_returned_file(f.data, f.filename)
+                file_id, file_path = _process_file_response(f)
                 files.append({
                     'path': file_path,
                     'filename': f.filename
@@ -126,7 +156,7 @@ def process_result(result):
     
     # ===== SINGLE FILE =====
     if isinstance(result, UserFileResponse):
-        file_id, file_path = save_returned_file(result.data, result.filename)
+        file_id, file_path = _process_file_response(result)
         return {
             'type': 'download',
             'path': file_path,

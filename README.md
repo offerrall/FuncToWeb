@@ -1,4 +1,4 @@
-# Func To Web 0.9.9
+# Func To Web 0.9.10
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)

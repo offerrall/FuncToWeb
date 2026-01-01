@@ -39,14 +39,13 @@ run(create_multiple_files)
 
 ## Key Features
 
-- **Single file**: Return `FileResponse(data=bytes, filename="file.ext")`
+- **Single file**: `FileResponse(data=bytes, filename="file.ext")` or `FileResponse(path="/path/to/file", filename="file.ext")`
 - **Multiple files**: Return `[FileResponse(...), FileResponse(...)]`
 - **Any file type**: PDF, Excel, ZIP, images, JSON, CSV, binary data, etc.
 - **Large files**: Uses streaming - handles GB+ files efficiently
 - **Clean UI**: List of files with individual download buttons
-- **Filesystem tracking**: Metadata encoded in filenames (no database required)
-- **1-hour retention**: Files available for 1 hour from creation (hardcoded)
-- **Automatic cleanup**: Files older than 1 hour removed every hour
+- **1-hour retention**: Files automatically deleted 1 hour after creation
+- **Automatic cleanup**: Runs on startup and every hour
 
 ## Working with Libraries
 
@@ -88,34 +87,47 @@ def create_archive(file_count: int):
 run([create_pdf, create_excel, create_archive])
 ```
 
+## Using Existing Files
+
+Return files that already exist on disk (useful for large files or external tools):
+```python
+from func_to_web import run
+from func_to_web.types import FileResponse
+import subprocess
+
+# Video processing with ffmpeg
+def compress_video(input_video: str) -> FileResponse:
+    output = "/tmp/compressed.mp4"
+    subprocess.run(['ffmpeg', '-i', input_video, '-vcodec', 'h264', output])
+    return FileResponse(path=output, filename="compressed.mp4")
+
+# Database backup
+def backup_database() -> FileResponse:
+    output = "/tmp/backup.sql"
+    subprocess.run(['pg_dump', 'mydb', '-f', output])
+    return FileResponse(path=output, filename="backup.sql")
+
+run([compress_video, backup_database])
+```
+
+**Note:** When using `path=`, the file is read and copied to the returns directory. The original file remains untouched.
+
 ## Performance
 
 - **No size limits**: Handles very large files (GB+) in streaming mode
-- **Constant memory usage**: Regardless of file size
-- **Same efficiency as file uploads**: 8MB chunks
+- **Memory efficient**: Use `path=` for large files, `data=` for small files
+- **8MB chunks**: Same efficiency as file uploads
 - **Filesystem-based**: Metadata encoded in filenames (no database)
-- **Background cleanup**: Non-blocking startup cleanup process
+- **Background cleanup**: Non-blocking startup process
 
-## File Cleanup & Retention
-
-Generated files have a **simple 1-hour lifecycle**:
-
-1. **Immediate availability**: Files ready for download right after generation
-2. **1-hour retention**: Files automatically deleted 1 hour after creation (hardcoded, non-configurable)
-3. **Automatic cleanup**: Cleanup runs on startup and every hour while server runs
-4. **No download tracking**: Files expire based on creation time, not download time
-
-**Directory configuration:**
+## Directory Configuration
 ```python
-# Default directories
+# Default directory
 run(my_function)
 # Returned files stored in: ./returned_files
 
 # Custom directory
-run(
-    my_function,
-    returns_dir="/path/to/returns"
-)
+run(my_function, returns_dir="/path/to/returns")
 ```
 
 ## Auto-Healing

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.10] - 2026-01-01
+### Added
+- VideoFile and AudioFile types for file uploads
+  - `VideoFile`: Accepts common video formats (mp4, mov, avi, mkv, wmv, flv, webm, mpeg, mpg)
+  - `AudioFile`: Accepts common audio formats (mp3, wav, aac, flac, ogg, m4a)
+- Updated ImageFile type to include additional formats (raw, psd)
+- FileResponse now accepts either binary data or file path
+  - `FileResponse(data=bytes, filename="file.ext")` - for in-memory files
+  - `FileResponse(path="/path/to/file", filename="file.ext")` - for existing files on disk
+  - Files specified by path are copied to returns_dir for consistent management
+  - Both approaches result in automatic 1-hour cleanup
+
+### Changed
+- Changed default title of index page from "Function Tools" to "Menu"
+
 ## [0.9.9] - 2025-12-23
 
 ### Performance
