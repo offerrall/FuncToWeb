@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.11] - 2026-01-07
+### Added
+- Grouped functions feature: organize multiple functions into collapsible accordion groups
+  - Pass a dictionary to `run()` with group names as keys and function lists as values
+  - Example: `run({'Math': [add, multiply], 'Text': [upper, lower]})`
+  - Groups display as accordion cards with badges showing function count
+  - Only one group can be open at a time for clean navigation
+  - Fully backwards compatible with existing single function and list modes
+
 ## [0.9.10] - 2026-01-01
 ### Added
 - VideoFile and AudioFile types for file uploads
