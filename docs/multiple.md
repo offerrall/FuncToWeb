@@ -1,35 +1,31 @@
-# Multiple Functions
+# Multiple Functions & Groups
 
-Serve multiple functions simultaneously with an auto-generated index page.
+Serve multiple functions with an auto-generated index page, optionally organized into collapsible groups.
+
+## Multiple Functions
 
 <div class="grid" markdown>
 
 <div markdown>
 
-Pass a list of functions to `run()` and func-to-web creates a responsive index page:
-
+Pass a list of functions to create an index page:
 ```python
 from func_to_web import run
 
 def calculate_bmi(weight_kg: float, height_m: float):
     """Calculate Body Mass Index"""
-    bmi = weight_kg / (height_m ** 2)
-    return f"BMI: {bmi:.2f}"
+    return f"BMI: {weight_kg / (height_m ** 2):.2f}"
 
 def celsius_to_fahrenheit(celsius: float):
     """Convert Celsius to Fahrenheit"""
-    fahrenheit = (celsius * 9/5) + 32
-    return f"{celsius}°C = {fahrenheit}°F"
+    return f"{celsius}°C = {(celsius * 9/5) + 32}°F"
 
 def reverse_text(text: str):
     """Reverse a string"""
     return text[::-1]
 
-# Pass a list of functions to create an index page
 run([calculate_bmi, celsius_to_fahrenheit, reverse_text])
 ```
-
-Users can select which tool they want to use from the index.
 
 </div>
 
@@ -41,12 +37,45 @@ Users can select which tool they want to use from the index.
 
 </div>
 
-## How It Works
+## Grouped Functions
 
-- Pass a **list of functions** instead of a single function
-- An **index page** is automatically generated
-- Users can **navigate between functions** easily
-- Each function gets its own page with a dedicated form
+<div class="grid" markdown>
+
+<div markdown>
+
+Pass a dictionary to organize functions into collapsible groups:
+```python
+from func_to_web import run
+
+def add(a: int, b: int):
+    return a + b
+
+def multiply(a: int, b: int):
+    return a * b
+
+def upper(text: str):
+    return text.upper()
+
+def lower(text: str):
+    return text.lower()
+
+run({
+    'Math': [add, multiply],
+    'Text': [upper, lower]
+})
+```
+
+Groups display as accordion cards - only one open at a time.
+
+</div>
+
+<div markdown>
+
+![Grouped Functions](images/grouped.jpg)
+
+</div>
+
+</div>
 
 ## Next Steps
 

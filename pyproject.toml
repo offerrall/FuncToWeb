@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "func-to-web"
-version = "0.9.10"
+version = "0.9.11"
 authors = [
     {name = "Beltrán Offerrall"}
 ]

@@ -32,7 +32,31 @@
     </div>
 
     <div class="container">
-        {% if tools %}
+        {% if groups %}
+            <div class="groups-container">
+                {% for group in groups %}
+                    <div class="group-card">
+                        <div class="group-header">
+                            <h2 class="group-title">{{ group.name }}</h2>
+                            <div class="group-count">{{ group.tools|length }}</div>
+                            <svg class="group-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="group-content">
+                            <div class="tools-grid">
+                                {% for tool in group.tools %}
+                                    <a href="{{ tool.path }}" class="tool-card">
+                                        <div class="tool-name">{{ tool.name }}</div>
+                                        <div class="tool-arrow">→</div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif tools %}
             <div class="tools-grid">
                 {% for tool in tools %}
                     <a href="{{ tool.path }}" class="tool-card">
@@ -49,9 +73,35 @@
             </div>
         {% endif %}
     </div>
+    
     <script src="/static/utils.js"></script>
     <script src="/static/builders.js"></script>
     <script src="/static/validators.js"></script>
     <script src="/static/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const groupHeaders = document.querySelectorAll('.group-header');
+            
+            groupHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const groupCard = header.parentElement;
+                    const isOpen = groupCard.classList.contains('open');
+                    
+                    document.querySelectorAll('.group-card').forEach(card => {
+                        card.classList.remove('open');
+                    });
+                    
+                    if (!isOpen) {
+                        groupCard.classList.add('open');
+                    }
+                });
+            });
+            
+            const firstGroup = document.querySelector('.group-card');
+            if (firstGroup) {
+                firstGroup.classList.add('open');
+            }
+        });
+    </script>
 </body>
 </html>

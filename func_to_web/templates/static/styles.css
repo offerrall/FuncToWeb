@@ -281,7 +281,6 @@ body.form-page {
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Resize solo en desktop */
 @media (min-width: 1025px) {
     .form-page .container {
         resize: horizontal;
@@ -1319,7 +1318,6 @@ body.login-page {
     font-size: 0.95rem;
 }
 
-/* Form Elements specific for Login to override generic styles if needed */
 .login-card .form-group {
     margin-bottom: 1.5rem;
 }
@@ -1333,7 +1331,7 @@ body.login-page {
 
 .login-card input {
     width: 100%;
-    padding: 0.875rem 1rem; /* Slightly larger touch target */
+    padding: 0.875rem 1rem;
     background: var(--bg);
     border: 2px solid transparent;
     border-radius: 8px;
@@ -1568,5 +1566,163 @@ body.login-page {
     .form-page .container {
         box-shadow: none;
         max-width: 100%;
+    }
+}
+
+/* ==================== TOOL GROUPS ==================== */
+
+.groups-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.group-card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.group-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    z-index: 2;
+}
+
+.group-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 10;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+}
+
+.group-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.group-card.open .group-header::before {
+    opacity: 1;
+}
+
+.group-header:hover {
+    background: var(--bg);
+}
+
+.group-card.open .group-header {
+    background: var(--bg);
+}
+
+.group-title {
+    flex: 1;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.group-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.group-chevron {
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-light);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.group-card.open .group-chevron {
+    transform: rotate(180deg);
+    stroke: var(--primary);
+}
+
+.group-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.group-card.open .group-content {
+    max-height: 5000px;
+}
+
+.group-content .tools-grid {
+    padding: 0.5rem 2rem 2rem 2rem;
+    margin-bottom: 0;
+}
+
+.group-content .tool-card {
+    min-height: 120px;
+    position: relative;
+    z-index: 1;
+}
+
+.group-content .tool-card:hover {
+    z-index: 5;
+}
+
+@media (max-width: 640px) {
+    .group-header {
+        padding: 1.25rem 1.5rem;
+        gap: 0.75rem;
+    }
+    
+    .group-title {
+        font-size: 1.125rem;
+    }
+    
+    .group-count {
+        min-width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.8125rem;
+    }
+    
+    .group-chevron {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .group-content .tools-grid {
+        padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+    .group-content .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

@@ -1,4 +1,4 @@
-# Func To Web 0.9.10
+# Func To Web 0.9.11
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -66,7 +66,7 @@ Complete documentation with **examples and screenshots** for each feature:
 
 ### **Features**
 - **[Authentication](https://offerrall.github.io/FuncToWeb/authentication/)**: Username/password protection
-- **[Function Descriptions](https://offerrall.github.io/FuncToWeb/function-descriptions/)**: Display docstrings in the UI
+- **[Multiple Functions & Groups](https://offerrall.github.io/FuncToWeb/multiple/)**: Serve multiple functions with index page or organize them into collapsible groups
 - **[Dark Mode](https://offerrall.github.io/FuncToWeb/dark-mode/)**: Automatic theme switching
 - **[Server Options](https://offerrall.github.io/FuncToWeb/server-configuration/)**: Custom host, port, path and more
 - **Large Files**: Optimized streaming (GB+ files)

@@ -88,7 +88,6 @@ async def handle_form_submission(
         else:
             result = await asyncio.to_thread(func, **validated)
         
-        # Clean up uploaded files if auto_delete enabled
         if config.AUTO_DELETE_UPLOADS:
             for file_path in uploaded_files:
                 cleanup_uploaded_file(file_path)
@@ -99,7 +98,6 @@ async def handle_form_submission(
         return JSONResponse(response)
         
     except Exception as e:
-        # Clean up uploaded files on error
         if config.AUTO_DELETE_UPLOADS:
             for file_path in uploaded_files:
                 cleanup_uploaded_file(file_path)
@@ -139,6 +137,40 @@ def setup_download_route(app):
         )
         
         return response
+
+
+def _register_function_routes(app, func: Callable, templates: Jinja2Templates, has_auth: bool):
+    """Register GET and POST routes for a function."""
+    params = analyze(func)
+    func_name = func.__name__.replace('_', ' ').title()
+    description = inspect.getdoc(func)
+    route = f"/{func.__name__}"
+    submit_route = f"{route}/submit"
+    
+    def make_form_handler(title: str, prms: dict, desc: str | None, submit_path: str):
+        async def form_view(request: Request):
+            flds = build_form_fields(prms)
+            return templates.TemplateResponse(
+                "form.html",
+                {
+                    "request": request,
+                    "title": title,
+                    "description": desc,
+                    "fields": flds,
+                    "submit_url": submit_path,
+                    "show_back_button": True,
+                    "has_auth": has_auth
+                }
+            )
+        return form_view
+    
+    def make_submit_handler(fn: Callable, prms: dict):
+        async def submit_view(request: Request):
+            return await handle_form_submission(request, fn, prms)
+        return submit_view
+    
+    app.get(route)(make_form_handler(func_name, params, description, submit_route))
+    app.post(submit_route)(make_submit_handler(func, params))
 
 
 def setup_single_function_routes(app, func: Callable, params: dict, templates: Jinja2Templates, has_auth: bool):
@@ -196,33 +228,37 @@ def setup_multiple_function_routes(app, funcs: list[Callable], templates: Jinja2
         )
     
     for func in funcs:
-        params = analyze(func)
-        func_name = func.__name__.replace('_', ' ').title()
-        description = inspect.getdoc(func)
-        route = f"/{func.__name__}"
-        submit_route = f"{route}/submit"
+        _register_function_routes(app, func, templates, has_auth)
+
+
+def setup_grouped_function_routes(app, grouped_funcs: dict[str, list[Callable]], templates: Jinja2Templates, has_auth: bool):
+    """Setup routes for grouped functions mode.
+    
+    Args:
+        app: FastAPI application instance.
+        grouped_funcs: Dictionary of {group_name: [functions]}.
+        templates: Jinja2Templates instance.
+        has_auth: Whether authentication is enabled.
+    """
+    @app.get("/")
+    async def index(request: Request):
+        groups = []
+        for group_name, funcs in grouped_funcs.items():
+            tools = [{
+                "name": f.__name__.replace('_', ' ').title(),
+                "path": f"/{f.__name__}"
+            } for f in funcs]
+            
+            groups.append({
+                "name": group_name,
+                "tools": tools
+            })
         
-        def make_form_handler(title: str, prms: dict, desc: str | None, submit_path: str):
-            async def form_view(request: Request):
-                flds = build_form_fields(prms)
-                return templates.TemplateResponse(
-                    "form.html",
-                    {
-                        "request": request,
-                        "title": title,
-                        "description": desc,
-                        "fields": flds,
-                        "submit_url": submit_path,
-                        "show_back_button": True,
-                        "has_auth": has_auth
-                    }
-                )
-            return form_view
-        
-        def make_submit_handler(fn: Callable, prms: dict):
-            async def submit_view(request: Request):
-                return await handle_form_submission(request, fn, prms)
-            return submit_view
-        
-        app.get(route)(make_form_handler(func_name, params, description, submit_route))
-        app.post(submit_route)(make_submit_handler(func, params))
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "groups": groups, "has_auth": has_auth}
+        )
+
+    for funcs in grouped_funcs.values():
+        for func in funcs:
+            _register_function_routes(app, func, templates, has_auth)

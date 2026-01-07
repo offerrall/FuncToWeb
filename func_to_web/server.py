@@ -15,12 +15,13 @@ from .auth import setup_auth_middleware
 from .routes import (
     setup_download_route,
     setup_single_function_routes,
-    setup_multiple_function_routes
+    setup_multiple_function_routes,
+    setup_grouped_function_routes
 )
 
 
 def run(
-    func_or_list: Callable[..., Any] | list[Callable[..., Any]], 
+    func_or_list: Callable[..., Any] | list[Callable[..., Any]] | dict[str, list[Callable[..., Any]]], 
     host: str = "0.0.0.0", 
     port: int = 8000, 
     auth: dict[str, str] | None = None,
@@ -37,9 +38,10 @@ def run(
     
     Single function mode: Creates a form at root (/) for the function.
     Multiple functions mode: Creates an index page with links to individual function forms.
+    Grouped functions mode: Creates an index page with grouped sections of functions.
     
     Args:
-        func_or_list: A single function or list of functions to wrap.
+        func_or_list: A single function, list of functions, or dict of {group_name: [functions]}.
         host: Server host address (default: "0.0.0.0").
         port: Server port (default: 8000).
         auth: Optional dictionary of {username: password} for authentication.
@@ -59,25 +61,47 @@ def run(
         FileNotFoundError: If template directory doesn't exist.
         TypeError: If function parameters use unsupported types.
     
+    Examples:
+        Single function:
+            run(my_function)
+        
+        Multiple functions:
+            run([func1, func2, func3])
+        
+        Grouped functions:
+            run({
+                'Math': [add, subtract, multiply],
+                'Text': [uppercase, lowercase]
+            })
+    
     Notes:
         - Returned files are automatically deleted 1 hour after creation (hardcoded).
         - Cleanup runs on startup and then every hour while server is running.
         - Multiple workers are supported (each worker runs its own cleanup task).
     """
-    
-    # Setup directories
+
     uploads_path = Path(uploads_dir)
     returns_path = Path(returns_dir)
     uploads_path.mkdir(parents=True, exist_ok=True)
     returns_path.mkdir(parents=True, exist_ok=True)
-    
-    # Set global config
+
     config.UPLOADS_DIR = uploads_path
     config.RETURNS_DIR = returns_path
     config.AUTO_DELETE_UPLOADS = auto_delete_uploads
     
-    funcs = func_or_list if isinstance(func_or_list, list) else [func_or_list]
+    is_grouped = isinstance(func_or_list, dict)
+    is_single = not isinstance(func_or_list, (list, dict))
     
+    if is_grouped:
+        grouped_funcs = func_or_list
+        funcs = []
+        for group_functions in grouped_funcs.values():
+            funcs.extend(group_functions)
+    elif is_single:
+        funcs = [func_or_list]
+    else:
+        funcs = func_or_list
+
     app_kwargs = {"root_path": root_path}
     
     if fastapi_config:
@@ -91,10 +115,8 @@ def run(
     @app.on_event("startup")
     async def startup_cleanup():
         """Cleanup old files on startup and run periodic cleanup task."""
-        # Cleanup old files on startup
         await asyncio.to_thread(cleanup_old_files)
-        
-        # Warn if too many files
+
         file_count = get_returned_files_count()
         if file_count > 10000:
             warnings.warn(
@@ -103,7 +125,6 @@ def run(
                 UserWarning
             )
         
-        # Periodic cleanup task (runs every hour)
         async def periodic_cleanup_task():
             """Run cleanup every hour to remove files older than 1 hour."""
             while True:
@@ -111,7 +132,7 @@ def run(
                 await asyncio.to_thread(cleanup_old_files)
         
         asyncio.create_task(periodic_cleanup_task())
-    
+
     if template_dir is None:
         template_dir = Path(__file__).parent / "templates"
     else:
@@ -125,16 +146,18 @@ def run(
     
     setup_download_route(app)
     
-    if len(funcs) == 1:
+    if is_single:
         func = funcs[0]
         params = analyze(func)
         setup_single_function_routes(app, func, params, templates, bool(auth))
+    elif is_grouped:
+        setup_grouped_function_routes(app, grouped_funcs, templates, bool(auth))
     else:
         setup_multiple_function_routes(app, funcs, templates, bool(auth))
-    
+
     if auth:
         setup_auth_middleware(app, auth, templates, secret_key)
-    
+
     uvicorn_params = {
         "host": host,
         "port": port,
