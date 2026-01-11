@@ -75,11 +75,12 @@ Your function receives the Enum member with access to both `.name` and `.value`.
 
 <div markdown>
 
-Use functions inside `Literal` to generate options dynamically at runtime:
+Use `Dropdown()` to generate options dynamically at runtime:
 ```python
-from typing import Literal
+from typing import Annotated
 from random import sample
 from func_to_web import run
+from func_to_web.types import Dropdown
 
 THEMES = ['light', 'dark', 'auto', 'neon', 'retro']
 
@@ -88,7 +89,7 @@ def get_themes():
     return sample(THEMES, k=3)
 
 def configure_app(
-    theme: Literal[get_themes],  # type: ignore
+    theme: Annotated[str, Dropdown(get_themes)]
 ):
     """Configure app with dynamic dropdown"""
     return f"Selected theme: {theme}"
@@ -96,7 +97,19 @@ def configure_app(
 run(configure_app)
 ```
 
-The `# type: ignore` comment is needed to suppress type checker warnings.
+The function is called each time the form is rendered, ensuring fresh options every time.
+
+**Legacy syntax (still supported):**
+```python
+from typing import Literal
+
+def configure_app(
+    theme: Literal[get_themes]  # type: ignore
+):
+    return f"Selected theme: {theme}"
+```
+
+This older syntax using `Literal[func]` still works for backwards compatibility, but `Dropdown()` is the recommended approach.
 
 </div>
 
@@ -116,6 +129,25 @@ The `# type: ignore` comment is needed to suppress type checker warnings.
 - Filter available choices based on business logic
 
 The function is called each time the form is generated, ensuring fresh options every time.
+
+## Important: No Server-Side Validation
+
+Dynamic dropdowns **do not validate** the selected value on the server. This is intentional because the available options may change between form render and submission.
+
+**If your application requires security or business logic validation**, you must validate the value yourself in your function:
+
+```python
+    def process_action(action: Annotated[str, Dropdown(get_actions)]):
+        # ⚠️ Validate the value yourself if security matters
+        valid_actions = get_valid_actions_for_current_user()
+        if action not in valid_actions:
+            raise ValueError(f"Invalid action: {action}")
+        
+        # Proceed with validated action
+        return perform_action(action)
+```
+    
+This differs from static `Literal` types, which **are** validated server-side since the options are fixed.
 
 ## What's Next?
 

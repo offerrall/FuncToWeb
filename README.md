@@ -1,8 +1,8 @@
-# Func To Web 0.9.11
+# Func To Web 0.9.12
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-514%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-598%20passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 > **Type hints → Web UI.** Minimal-boilerplate web apps from Python functions.
@@ -53,7 +53,7 @@ Complete documentation with **examples and screenshots** for each feature:
 - **[File Uploads](https://offerrall.github.io/FuncToWeb/files/)**: `File`, `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`
 - **[Dynamic Lists](https://offerrall.github.io/FuncToWeb/lists/)**: `list[Type]` with add/remove buttons
 - **[Optional Fields](https://offerrall.github.io/FuncToWeb/optional/)**: `Type | None` with toggle switches
-- **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static (`Literal`, `Enum`) or Dynamic (`Literal[func]`)
+- **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static (`Literal`, `Enum`) or Dynamic (`Dropdown(func)`)
 - **[Validation](https://offerrall.github.io/FuncToWeb/constraints/)**: Pydantic constraints (min/max, regex, list validation)
 </td>
 <td width="50%">

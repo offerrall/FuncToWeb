@@ -243,7 +243,7 @@ def test_image_file_field():
     fields = build_form_fields(params)
     
     assert fields[0]['type'] == 'file'
-    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif'
+    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif,.raw,.psd'
     assert 'pattern' in fields[0]
 
 
@@ -731,7 +731,7 @@ def test_all_file_types_together():
     
     assert len(fields) == 4
     assert all(f['type'] == 'file' for f in fields)
-    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif'
+    assert fields[0]['accept'] == '.png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.svg,.ico,.heic,.avif,.raw,.psd'
     assert fields[1]['accept'] == '.csv,.xlsx,.xls,.json,.xml,.yaml,.yml'
     assert fields[2]['accept'] == '.txt,.md,.log,.rtf'
     assert fields[3]['accept'] == '.pdf,.doc,.docx,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.ods'
@@ -1709,3 +1709,505 @@ def test_complex_function_with_enums():
     assert fields[3]['is_optional'] is True
     assert fields[4]['type'] == 'email'
     assert fields[5]['type'] == 'checkbox'
+
+# --- DROPDOWN BUILD FORM TESTS ---
+
+def test_dropdown_basic_field():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 1
+    assert fields[0]['name'] == 'theme'
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark', 'neon')
+    assert fields[0]['required'] is True
+    assert fields[0]['is_optional'] is False
+
+
+def test_dropdown_int_field():
+    def get_numbers():
+        return [1, 2, 3, 4, 5]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (1, 2, 3, 4, 5)
+    assert fields[0]['required'] is True
+
+
+def test_dropdown_float_field():
+    def get_values():
+        return [0.5, 1.0, 1.5, 2.0]
+    
+    def func(multiplier: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (0.5, 1.0, 1.5, 2.0)
+
+
+def test_dropdown_with_default():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] = 'dark'):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark', 'neon')
+    assert fields[0]['default'] == 'dark'
+    assert fields[0]['required'] is True
+
+
+def test_dropdown_single_option():
+    def get_mode():
+        return ['readonly']
+    
+    def func(mode: Annotated[str, Dropdown(get_mode)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('readonly',)
+
+
+def test_dropdown_refreshes_on_each_call():
+    """Test that Dropdown re-executes function on each build_form_fields call"""
+    counter = {'value': 0}
+    
+    def get_dynamic_options():
+        counter['value'] += 1
+        return [f'Option{counter["value"]}']
+    
+    def func(choice: Annotated[str, Dropdown(get_dynamic_options)]):
+        pass
+    
+    params = analyze(func)
+    
+    # First call
+    fields1 = build_form_fields(params)
+    options1 = fields1[0]['options']
+    
+    # Second call - should re-execute and get different result
+    fields2 = build_form_fields(params)
+    options2 = fields2[0]['options']
+    
+    assert options1 == ('Option2',)  # Counter was 1 in analyze, now 2
+    assert options2 == ('Option3',)  # Counter was 2, now 3
+    assert options1 != options2
+
+
+def test_dropdown_with_negative_numbers():
+    def get_numbers():
+        return [-10, -5, 0, 5, 10]
+    
+    def func(value: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (-10, -5, 0, 5, 10)
+
+
+def test_dropdown_with_zero():
+    def get_numbers():
+        return [0, 1, 2]
+    
+    def func(value: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert 0 in fields[0]['options']
+
+
+def test_dropdown_with_unicode():
+    def get_emojis():
+        return ['😀', '😎', '🚀', '🎉']
+    
+    def func(emoji: Annotated[str, Dropdown(get_emojis)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('😀', '😎', '🚀', '🎉')
+
+
+def test_dropdown_with_special_characters():
+    def get_symbols():
+        return ['+', '-', '*', '/']
+    
+    def func(symbol: Annotated[str, Dropdown(get_symbols)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('+', '-', '*', '/')
+
+
+# --- OPTIONAL DROPDOWN ---
+
+def test_optional_dropdown():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False
+    assert fields[0]['required'] is False
+
+
+def test_optional_dropdown_with_default():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None = 'dark'):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark', 'neon')
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is True
+    assert fields[0]['default'] == 'dark'
+
+
+def test_optional_dropdown_with_none_default():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None = None):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False
+    assert fields[0]['default'] is None
+
+
+def test_optional_dropdown_enabled():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalEnabled):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is True
+
+
+def test_optional_dropdown_disabled():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalDisabled):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False
+
+
+def test_optional_dropdown_enabled_with_default():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalEnabled = 'dark'):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is True
+    assert fields[0]['default'] == 'dark'
+
+
+def test_optional_dropdown_disabled_with_default():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalDisabled = 'dark'):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['is_optional'] is True
+    assert fields[0]['optional_enabled'] is False
+    assert fields[0]['default'] == 'dark'
+
+
+# --- DROPDOWN COMPATIBILITY WITH LITERAL[FUNC] ---
+
+def test_literal_func_still_works_in_build_form():
+    """Ensure legacy Literal[func] syntax still works in build_form_fields"""
+    def get_options():
+        return ['A', 'B', 'C']
+    
+    def func(choice: Literal[get_options]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('A', 'B', 'C')
+
+
+def test_dropdown_and_literal_func_coexist():
+    """Test that Dropdown and Literal[func] work together"""
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_sizes():
+        return ['S', 'M', 'L']
+    
+    def func(
+        theme: Annotated[str, Dropdown(get_themes)],
+        size: Literal[get_sizes]
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 2
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('S', 'M', 'L')
+
+
+def test_dropdown_and_static_literal():
+    """Test Dropdown works alongside static Literal"""
+    def get_modes():
+        return ['fast', 'slow']
+    
+    def func(
+        theme: Literal['light', 'dark'],
+        mode: Annotated[str, Dropdown(get_modes)]
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 2
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('light', 'dark')
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('fast', 'slow')
+
+
+# --- MULTIPLE DROPDOWNS ---
+
+def test_multiple_dropdowns():
+    def get_colors():
+        return ['red', 'blue', 'green']
+    
+    def get_sizes():
+        return [1, 2, 3]
+    
+    def func(
+        color: Annotated[str, Dropdown(get_colors)],
+        size: Annotated[int, Dropdown(get_sizes)]
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 2
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == ('red', 'blue', 'green')
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == (1, 2, 3)
+
+
+def test_dropdown_mixed_with_other_types():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(
+        name: str,
+        theme: Annotated[str, Dropdown(get_themes)],
+        age: int,
+        active: bool,
+        email: Email
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 5
+    assert fields[0]['type'] == 'text'
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('light', 'dark')
+    assert fields[2]['type'] == 'number'
+    assert fields[3]['type'] == 'checkbox'
+    assert fields[4]['type'] == 'email'
+
+
+def test_complex_function_with_dropdowns():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_languages():
+        return ['en', 'es', 'fr']
+    
+    def func(
+        username: str,
+        theme: Annotated[str, Dropdown(get_themes)],
+        language: Annotated[str, Dropdown(get_languages)],
+        opt_theme: Annotated[str, Dropdown(get_themes)] | None,
+        age: Annotated[int, Field(ge=18)],
+        active: bool
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 6
+    assert fields[0]['type'] == 'text'
+    assert fields[1]['type'] == 'select'
+    assert fields[1]['options'] == ('light', 'dark')
+    assert fields[2]['type'] == 'select'
+    assert fields[2]['options'] == ('en', 'es', 'fr')
+    assert fields[3]['type'] == 'select'
+    assert fields[3]['is_optional'] is True
+    assert fields[4]['type'] == 'number'
+    assert fields[4]['min'] == 18
+    assert fields[5]['type'] == 'checkbox'
+
+
+def test_dropdown_field_order_preserved():
+    def get_a():
+        return ['a1', 'a2']
+    
+    def get_b():
+        return ['b1', 'b2']
+    
+    def get_c():
+        return ['c1', 'c2']
+    
+    def func(
+        z: Annotated[str, Dropdown(get_a)],
+        y: Annotated[str, Dropdown(get_b)],
+        x: Annotated[str, Dropdown(get_c)]
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['name'] == 'z'
+    assert fields[1]['name'] == 'y'
+    assert fields[2]['name'] == 'x'
+
+
+def test_dropdown_with_decimal_floats():
+    def get_values():
+        return [0.25, 0.5, 0.75, 1.0]
+    
+    def func(multiplier: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (0.25, 0.5, 0.75, 1.0)
+
+
+def test_dropdown_bool_options():
+    def get_bools():
+        return [True, False]
+    
+    def func(flag: Annotated[bool, Dropdown(get_bools)]):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert fields[0]['type'] == 'select'
+    assert fields[0]['options'] == (True, False)
+
+
+def test_all_dropdown_types_together():
+    """Test all valid Dropdown types in one function"""
+    def get_strings():
+        return ['a', 'b']
+    
+    def get_ints():
+        return [1, 2]
+    
+    def get_floats():
+        return [1.5, 2.5]
+    
+    def get_bools():
+        return [True, False]
+    
+    def func(
+        s: Annotated[str, Dropdown(get_strings)],
+        i: Annotated[int, Dropdown(get_ints)],
+        f: Annotated[float, Dropdown(get_floats)],
+        b: Annotated[bool, Dropdown(get_bools)]
+    ):
+        pass
+    
+    params = analyze(func)
+    fields = build_form_fields(params)
+    
+    assert len(fields) == 4
+    assert all(f['type'] == 'select' for f in fields)
+    assert fields[0]['options'] == ('a', 'b')
+    assert fields[1]['options'] == (1, 2)
+    assert fields[2]['options'] == (1.5, 2.5)
+    assert fields[3]['options'] == (True, False)

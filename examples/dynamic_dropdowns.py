@@ -1,6 +1,7 @@
 from random import sample
 
-from func_to_web import run, Literal
+from func_to_web import run, Annotated
+from func_to_web.types import Dropdown
 
 # Available options pool
 THEMES = ['light', 'dark', 'auto', 'neon', 'retro']
@@ -15,8 +16,8 @@ def get_random_size():
 
 
 def configure_app(
-    theme: Literal[get_random_theme],  # type: ignore
-    size: Literal[get_random_size] = None,  # type: ignore
+    theme: Annotated[str, Dropdown(get_random_theme)],
+    size: Annotated[str, Dropdown(get_random_size)] = None,
 ):
     """Configure app with dynamic dropdowns"""
     return {

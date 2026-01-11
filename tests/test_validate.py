@@ -2272,3 +2272,696 @@ def test_enum_float_with_decimal_precision():
     
     assert validated['mult'] == Multiplier.QUARTER
     assert validated['mult'].value == 0.25
+
+# --- DROPDOWN VALIDATION TESTS ---
+
+def test_dropdown_string_valid():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'dark'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == 'dark'
+    assert isinstance(validated['theme'], str)
+
+
+def test_dropdown_int_valid():
+    def get_numbers():
+        return [1, 2, 3, 4, 5]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'number': '3'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['number'] == 3
+    assert isinstance(validated['number'], int)
+
+
+def test_dropdown_float_valid():
+    def get_values():
+        return [0.5, 1.0, 1.5, 2.0]
+    
+    def func(multiplier: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'multiplier': '1.5'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['multiplier'] == 1.5
+    assert isinstance(validated['multiplier'], float)
+
+
+def test_dropdown_bool_valid():
+    def get_bools():
+        return [True, False]
+    
+    def func(flag: Annotated[bool, Dropdown(get_bools)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'flag': 'on'}  # True value
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['flag'] is True
+
+
+def test_dropdown_skips_validation():
+    """Test that Dropdown skips option validation (dynamic values may change)"""
+    def get_options():
+        return ['A', 'B', 'C']
+    
+    def func(choice: Annotated[str, Dropdown(get_options)]):
+        pass
+    
+    params = analyze(func)
+    # Simulate that options changed after form render - user selects 'D'
+    form_data = {'choice': 'D'}
+    
+    # Should NOT raise because Dropdown skips validation (like dynamic Literal)
+    validated = validate_params(form_data, params)
+    
+    assert validated['choice'] == 'D'
+
+
+def test_dropdown_with_negative_numbers():
+    def get_numbers():
+        return [-10, -5, 0, 5, 10]
+    
+    def func(value: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'value': '-5'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['value'] == -5
+
+
+def test_dropdown_with_zero():
+    def get_numbers():
+        return [0, 1, 2]
+    
+    def func(value: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'value': '0'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['value'] == 0
+
+
+def test_dropdown_with_decimal_floats():
+    def get_values():
+        return [0.25, 0.5, 0.75, 1.0]
+    
+    def func(multiplier: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'multiplier': '0.75'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['multiplier'] == 0.75
+
+
+def test_dropdown_empty_value():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': ''}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == ''
+
+
+# --- OPTIONAL DROPDOWN ---
+
+def test_optional_dropdown_disabled():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'light'}  # No toggle
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] is None
+
+
+def test_optional_dropdown_enabled_with_value():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': 'dark',
+        'theme_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == 'dark'
+
+
+def test_optional_dropdown_enabled_empty_value():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': '',
+        'theme_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == ''
+
+
+def test_optional_dropdown_enabled_marker():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalEnabled):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'theme': 'dark',
+        'theme_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == 'dark'
+
+
+def test_optional_dropdown_disabled_marker():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalDisabled):
+        pass
+    
+    params = analyze(func)
+    form_data = {'theme': 'light'}  # No toggle
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] is None
+
+
+def test_optional_dropdown_int_enabled():
+    def get_numbers():
+        return [1, 2, 3]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'number': '2',
+        'number_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['number'] == 2
+    assert isinstance(validated['number'], int)
+
+
+def test_optional_dropdown_float_enabled():
+    def get_values():
+        return [0.5, 1.0, 1.5]
+    
+    def func(value: Annotated[float, Dropdown(get_values)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'value': '1.0',
+        'value_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['value'] == 1.0
+    assert isinstance(validated['value'], float)
+
+
+def test_optional_dropdown_bool_enabled_checked():
+    def get_bools():
+        return [True, False]
+    
+    def func(flag: Annotated[bool, Dropdown(get_bools)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'flag': 'on',
+        'flag_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['flag'] is True
+
+
+def test_optional_dropdown_bool_enabled_unchecked():
+    def get_bools():
+        return [True, False]
+    
+    def func(flag: Annotated[bool, Dropdown(get_bools)] | None):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'flag_optional_toggle': 'on'
+        # No 'flag' key means unchecked
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['flag'] is False
+
+
+# --- DROPDOWN COMPATIBILITY WITH LITERAL[FUNC] ---
+
+def test_literal_func_still_skips_validation():
+    """Ensure legacy Literal[func] still works and skips validation"""
+    def get_options():
+        return ['A', 'B', 'C']
+    
+    def func(choice: Literal[get_options]):
+        pass
+    
+    params = analyze(func)
+    # Simulate that options changed - user sends 'Z'
+    form_data = {'choice': 'Z'}
+    
+    # Should NOT raise
+    validated = validate_params(form_data, params)
+    
+    assert validated['choice'] == 'Z'
+
+
+def test_dropdown_and_literal_func_both_skip():
+    """Test that both Dropdown and Literal[func] skip validation"""
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_sizes():
+        return ['S', 'M', 'L']
+    
+    def func(
+        theme: Annotated[str, Dropdown(get_themes)],
+        size: Literal[get_sizes]
+    ):
+        pass
+    
+    params = analyze(func)
+    # Both send values not in original lists
+    form_data = {
+        'theme': 'neon',
+        'size': 'XL'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['theme'] == 'neon'
+    assert validated['size'] == 'XL'
+
+
+def test_dropdown_and_static_literal_validation():
+    """Test Dropdown skips but static Literal validates"""
+    def get_modes():
+        return ['fast', 'slow']
+    
+    def func(
+        theme: Literal['light', 'dark'],
+        mode: Annotated[str, Dropdown(get_modes)]
+    ):
+        pass
+    
+    params = analyze(func)
+    
+    # Static Literal enforces validation
+    form_data = {'theme': 'neon', 'mode': 'turbo'}
+    
+    with pytest.raises(ValueError, match="theme.*not in"):
+        validate_params(form_data, params)
+    
+    # But Dropdown accepts any value
+    form_data = {'theme': 'light', 'mode': 'turbo'}
+    validated = validate_params(form_data, params)
+    assert validated['mode'] == 'turbo'
+
+
+# --- MULTIPLE DROPDOWNS ---
+
+def test_multiple_dropdowns_all_valid():
+    def get_colors():
+        return ['red', 'blue', 'green']
+    
+    def get_sizes():
+        return [1, 2, 3]
+    
+    def func(
+        color: Annotated[str, Dropdown(get_colors)],
+        size: Annotated[int, Dropdown(get_sizes)]
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'color': 'blue',
+        'size': '2'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['color'] == 'blue'
+    assert validated['size'] == 2
+
+
+def test_multiple_dropdowns_skip_validation():
+    def get_options1():
+        return ['A', 'B']
+    
+    def get_options2():
+        return [1, 2]
+    
+    def func(
+        choice1: Annotated[str, Dropdown(get_options1)],
+        choice2: Annotated[int, Dropdown(get_options2)]
+    ):
+        pass
+    
+    params = analyze(func)
+    # Both send values not in original lists
+    form_data = {
+        'choice1': 'Z',
+        'choice2': '99'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['choice1'] == 'Z'
+    assert validated['choice2'] == 99
+
+
+def test_dropdown_mixed_with_other_types():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(
+        name: str,
+        theme: Annotated[str, Dropdown(get_themes)],
+        age: Annotated[int, Field(ge=18)],
+        active: bool,
+        email: Email
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'name': 'John',
+        'theme': 'dark',
+        'age': '25',
+        'active': 'on',
+        'email': 'john@example.com'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['name'] == 'John'
+    assert validated['theme'] == 'dark'
+    assert validated['age'] == 25
+    assert validated['active'] is True
+    assert validated['email'] == 'john@example.com'
+
+
+def test_complex_function_with_dropdowns():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_languages():
+        return ['en', 'es', 'fr']
+    
+    def func(
+        username: str,
+        theme: Annotated[str, Dropdown(get_themes)],
+        language: Annotated[str, Dropdown(get_languages)],
+        opt_theme: Annotated[str, Dropdown(get_themes)] | None,
+        age: Annotated[int, Field(ge=18)],
+        active: bool
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'username': 'alice',
+        'theme': 'dark',
+        'language': 'es',
+        'opt_theme': 'light',
+        'opt_theme_optional_toggle': 'on',
+        'age': '25',
+        'active': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['username'] == 'alice'
+    assert validated['theme'] == 'dark'
+    assert validated['language'] == 'es'
+    assert validated['opt_theme'] == 'light'
+    assert validated['age'] == 25
+    assert validated['active'] is True
+
+
+def test_dropdown_with_unicode():
+    def get_emojis():
+        return ['😀', '😎', '🚀']
+    
+    def func(emoji: Annotated[str, Dropdown(get_emojis)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'emoji': '😎'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['emoji'] == '😎'
+
+
+def test_dropdown_with_special_characters():
+    def get_symbols():
+        return ['+', '-', '*', '/']
+    
+    def func(symbol: Annotated[str, Dropdown(get_symbols)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'symbol': '*'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['symbol'] == '*'
+
+
+def test_all_dropdown_types_together():
+    """Test all valid Dropdown types in validation"""
+    def get_strings():
+        return ['a', 'b']
+    
+    def get_ints():
+        return [1, 2]
+    
+    def get_floats():
+        return [1.5, 2.5]
+    
+    def get_bools():
+        return [True, False]
+    
+    def func(
+        s: Annotated[str, Dropdown(get_strings)],
+        i: Annotated[int, Dropdown(get_ints)],
+        f: Annotated[float, Dropdown(get_floats)],
+        b: Annotated[bool, Dropdown(get_bools)]
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        's': 'a',
+        'i': '1',
+        'f': '1.5',
+        'b': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['s'] == 'a'
+    assert validated['i'] == 1
+    assert validated['f'] == 1.5
+    assert validated['b'] is True
+
+
+def test_dropdown_type_conversion_int():
+    """Test that Dropdown properly converts string to int"""
+    def get_numbers():
+        return [1, 2, 3]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'number': '2'}  # String from form
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['number'] == 2
+    assert type(validated['number']) is int
+
+
+def test_dropdown_type_conversion_float():
+    """Test that Dropdown properly converts string to float"""
+    def get_values():
+        return [1.5, 2.5]
+    
+    def func(value: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'value': '1.5'}  # String from form
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['value'] == 1.5
+    assert type(validated['value']) is float
+
+
+def test_dropdown_invalid_type_conversion_raises():
+    """Test that Dropdown raises error on invalid type conversion"""
+    def get_numbers():
+        return [1, 2, 3]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'number': 'not_a_number'}
+    
+    with pytest.raises(ValueError):
+        validate_params(form_data, params)
+
+
+def test_dropdown_allows_changed_options():
+    """Test the key feature: Dropdown allows values not in original list"""
+    def get_options():
+        # Simulates what was returned at form render time
+        return ['old1', 'old2']
+    
+    def func(choice: Annotated[str, Dropdown(get_options)]):
+        pass
+    
+    params = analyze(func)
+    
+    # User somehow has 'new_option' (maybe options changed server-side)
+    form_data = {'choice': 'new_option'}
+    
+    # Should NOT raise - this is the whole point of Dropdown
+    validated = validate_params(form_data, params)
+    assert validated['choice'] == 'new_option'
+
+
+def test_multiple_optionals_some_enabled_with_dropdowns():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_sizes():
+        return ['S', 'M', 'L']
+    
+    def func(
+        opt1: Annotated[str, Dropdown(get_themes)] | None,
+        opt2: Annotated[str, Dropdown(get_sizes)] | None,
+        opt3: int | None
+    ):
+        pass
+    
+    params = analyze(func)
+    form_data = {
+        'opt1': 'dark',
+        'opt1_optional_toggle': 'on',
+        'opt2': 'M',
+        # opt2 toggle missing - disabled
+        'opt3': '42',
+        'opt3_optional_toggle': 'on'
+    }
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['opt1'] == 'dark'
+    assert validated['opt2'] is None
+    assert validated['opt3'] == 42
+
+
+def test_dropdown_with_whitespace_in_string():
+    def get_options():
+        return ['option one', 'option two']
+    
+    def func(choice: Annotated[str, Dropdown(get_options)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'choice': 'option one'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['choice'] == 'option one'
+
+
+def test_dropdown_scientific_notation_float():
+    def get_values():
+        return [1.5e10, 2.5e10]
+    
+    def func(value: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    form_data = {'value': '1.5e10'}
+    
+    validated = validate_params(form_data, params)
+    
+    assert validated['value'] == 1.5e10

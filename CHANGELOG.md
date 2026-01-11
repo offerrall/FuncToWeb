@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.12] - 2025-01-11
+### Added
+- **New `Dropdown()` type for dynamic dropdowns** - cleaner, type-safe syntax for dropdowns with runtime-generated options
+  - Use `Annotated[str, Dropdown(get_options)]` instead of `Literal[get_options]`
+  - Provides better IDE support and clearer intent
+  - Example:
+
+```python
+    from typing import Annotated
+    from func_to_web.types import Dropdown
+    
+    def get_users():
+        return ['alice', 'bob', 'charlie']
+    
+    def send_message(to: Annotated[str, Dropdown(get_users)]):
+        return f"Message sent to {to}"
+```
+
+  - Works with `str`, `int`, `float`, and `bool` types
+  - Fully backwards compatible - `Literal[func]` syntax still supported
+
 ## [0.9.11] - 2026-01-07
 ### Added
 - Grouped functions feature: organize multiple functions into collapsible accordion groups

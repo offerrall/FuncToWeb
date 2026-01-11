@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Callable
+from dataclasses import dataclass
 from pydantic import Field, BaseModel
 from pydantic import model_validator
 from datetime import date, time
@@ -44,6 +45,10 @@ class FileResponse(BaseModel):
         if self.data is not None and self.path is not None:
             raise ValueError("Cannot provide both 'data' and 'path'")
         return self
+
+@dataclass
+class Dropdown():
+    data_function: Callable[[], list]
 
 OptionalEnabled = Annotated[None, _OptionalEnabledMarker()]
 OptionalDisabled = Annotated[None, _OptionalDisabledMarker()]

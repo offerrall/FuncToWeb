@@ -3008,3 +3008,305 @@ def test_string_enum():
     assert params['status'].type == str
     assert params['status'].enum_type is Status
     assert params['status'].field_info is not None
+
+# --- DROPDOWN TYPES ---
+
+def test_dropdown_basic():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default is None
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is get_themes
+    assert params['theme'].is_optional is False
+
+def test_dropdown_int():
+    def get_numbers():
+        return [1, 2, 3, 4, 5]
+    
+    def func(number: Annotated[int, Dropdown(get_numbers)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'number' in params
+    assert params['number'].type == int
+    assert params['number'].default is None
+    assert params['number'].field_info is not None
+    assert params['number'].dynamic_func is get_numbers
+    assert params['number'].is_optional is False
+
+def test_dropdown_float():
+    def get_values():
+        return [0.5, 1.0, 1.5, 2.0]
+    
+    def func(multiplier: Annotated[float, Dropdown(get_values)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'multiplier' in params
+    assert params['multiplier'].type == float
+    assert params['multiplier'].default is None
+    assert params['multiplier'].field_info is not None
+    assert params['multiplier'].dynamic_func is get_values
+    assert params['multiplier'].is_optional is False
+
+def test_dropdown_with_default():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] = 'dark'):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is get_themes
+    assert params['theme'].is_optional is False
+
+def test_dropdown_single_option():
+    def get_mode():
+        return ['readonly']
+    
+    def func(mode: Annotated[str, Dropdown(get_mode)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'mode' in params
+    assert params['mode'].type == str
+    assert params['mode'].default is None
+    assert params['mode'].field_info is not None
+    assert params['mode'].dynamic_func is get_mode
+    assert params['mode'].is_optional is False
+
+def test_dropdown_type_mismatch_raises():
+    def get_strings():
+        return ['a', 'b', 'c']
+    
+    with pytest.raises(TypeError, match="Dropdown type mismatch"):
+        def func(value: Annotated[int, Dropdown(get_strings)]):
+            pass
+        analyze(func)
+
+def test_dropdown_mixed_types_raises():
+    def get_mixed():
+        return [1, 'two', 3]
+    
+    with pytest.raises(TypeError, match="Dropdown returned mixed types"):
+        def func(value: Annotated[str, Dropdown(get_mixed)]):
+            pass
+        analyze(func)
+
+def test_dropdown_empty_list_raises():
+    def get_empty():
+        return []
+    
+    with pytest.raises(ValueError, match="Dropdown function returned empty list"):
+        def func(value: Annotated[str, Dropdown(get_empty)]):
+            pass
+        analyze(func)
+
+def test_dropdown_invalid_default_raises():
+    def get_themes():
+        return ['light', 'dark']
+    
+    with pytest.raises(ValueError, match="not in Dropdown options"):
+        def func(theme: Annotated[str, Dropdown(get_themes)] = 'neon'):
+            pass
+        analyze(func)
+
+def test_dropdown_returns_tuple():
+    def get_options():
+        return ('A', 'B', 'C')
+    
+    with pytest.raises(TypeError, match="must return a list"):
+        def func(choice: Annotated[str, Dropdown(get_options)]):
+            pass
+        analyze(func)
+
+def test_dropdown_returns_single_value():
+    def get_value():
+        return 'single'
+    
+    with pytest.raises(TypeError, match="must return a list"):
+        def func(value: Annotated[str, Dropdown(get_value)]):
+            pass
+        analyze(func)
+
+# --- OPTIONAL DROPDOWN ---
+
+def test_optional_dropdown():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None = None):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default is None
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is get_themes
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is False
+
+def test_optional_dropdown_with_default():
+    def get_themes():
+        return ['light', 'dark', 'neon']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | None = 'dark'):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].field_info is not None
+    assert params['theme'].dynamic_func is get_themes
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+
+def test_optional_dropdown_enabled():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalEnabled):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].dynamic_func is get_themes
+
+def test_optional_dropdown_disabled():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalDisabled):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'theme' in params
+    assert params['theme'].type == str
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is False
+    assert params['theme'].dynamic_func is get_themes
+
+def test_optional_dropdown_enabled_with_default():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalEnabled = 'dark'):
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is True
+    assert params['theme'].dynamic_func is get_themes
+
+def test_optional_dropdown_disabled_with_default():
+    def get_themes():
+        return ['light', 'dark']
+    
+    def func(theme: Annotated[str, Dropdown(get_themes)] | OptionalDisabled = 'dark'):
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].type == str
+    assert params['theme'].default == 'dark'
+    assert params['theme'].is_optional is True
+    assert params['theme'].optional_enabled is False
+    assert params['theme'].dynamic_func is get_themes
+
+# --- DROPDOWN COMPATIBILITY WITH LITERAL[FUNC] ---
+
+def test_literal_func_still_works():
+    """Ensure legacy Literal[func] syntax still works"""
+    def get_options():
+        return ['A', 'B', 'C']
+    
+    def func(choice: Literal[get_options]):
+        pass
+    
+    params = analyze(func)
+    
+    assert 'choice' in params
+    assert params['choice'].type == str
+    assert params['choice'].dynamic_func is get_options
+
+def test_dropdown_and_literal_different_params():
+    """Test that Dropdown and Literal[func] can coexist in same function"""
+    def get_themes():
+        return ['light', 'dark']
+    
+    def get_sizes():
+        return ['S', 'M', 'L']
+    
+    def func(
+        theme: Annotated[str, Dropdown(get_themes)],
+        size: Literal[get_sizes]
+    ):
+        pass
+    
+    params = analyze(func)
+    
+    assert params['theme'].dynamic_func is get_themes
+    assert params['size'].dynamic_func is get_sizes
+
+# --- DROPDOWN WITH CONSTRAINTS (if supported in future) ---
+
+def test_dropdown_int_declared_str_returned_raises():
+    """Test type validation: declared int but returns str"""
+    def get_strings():
+        return ['one', 'two', 'three']
+    
+    with pytest.raises(TypeError, match="Dropdown type mismatch.*Declared type is int.*returned str"):
+        def func(value: Annotated[int, Dropdown(get_strings)]):
+            pass
+        analyze(func)
+
+def test_dropdown_str_declared_float_returned_raises():
+    """Test type validation: declared str but returns float"""
+    def get_floats():
+        return [1.5, 2.5, 3.5]
+    
+    with pytest.raises(TypeError, match="Dropdown type mismatch.*Declared type is str.*returned float"):
+        def func(value: Annotated[str, Dropdown(get_floats)]):
+            pass
+        analyze(func)
+
+def test_dropdown_bool_options():
+    """Test Dropdown with boolean options"""
+    def get_bools():
+        return [True, False]
+    
+    def func(flag: Annotated[bool, Dropdown(get_bools)]):
+        pass
+    
+    params = analyze(func)
+    
+    assert params['flag'].type == bool
+    assert params['flag'].dynamic_func is get_bools

@@ -7,7 +7,7 @@ import types
 from pydantic import TypeAdapter
 from datetime import date, time
 
-from .types import _OptionalEnabledMarker, _OptionalDisabledMarker
+from .types import _OptionalEnabledMarker, _OptionalDisabledMarker, Dropdown
 
 VALID = {int, float, str, bool, date, time}
 
@@ -215,6 +215,50 @@ def analyze(func: Callable[..., Any]) -> dict[str, ParamInfo]:
         if not is_list and list_f is not None:
             f = list_f
             list_f = None
+        
+        # 4.5 Detect and process Dropdown
+        dropdown_instance = None
+        
+        # Check if Dropdown is in metadata
+        if f and isinstance(f, Dropdown):
+            dropdown_instance = f
+            f = None
+        elif list_f and isinstance(list_f, Dropdown):
+            dropdown_instance = list_f
+            list_f = None
+        
+        # Process Dropdown if found
+        if dropdown_instance:
+            # Execute function to get options
+            opts = dropdown_instance.data_function()
+            
+            # Validate it's a list
+            if not isinstance(opts, list):
+                raise TypeError(f"'{name}': Dropdown function must return a list, got {type(opts).__name__}")
+            
+            if not opts:
+                raise ValueError(f"'{name}': Dropdown function returned empty list")
+            
+            # Validate all options are same type
+            types_set = {type(o) for o in opts}
+            if len(types_set) > 1:
+                raise TypeError(f"'{name}': Dropdown returned mixed types")
+            
+            # Validate returned type matches declared type
+            returned_type = types_set.pop()
+            if returned_type != t:
+                raise TypeError(
+                    f"'{name}': Dropdown type mismatch. "
+                    f"Declared type is {t.__name__}, but function returned {returned_type.__name__}"
+                )
+            
+            # Validate default against options
+            if not is_list and default is not None and default not in opts:
+                raise ValueError(f"'{name}': default '{default}' not in Dropdown options {opts}")
+            
+            # Convert to Literal for rest of pipeline
+            f = Literal[tuple(opts)]
+            dynamic_func = dropdown_instance.data_function
         
         # 5. Handle Literal types (dropdowns)
         if get_origin(t) is Literal:
