@@ -127,6 +127,7 @@ function initializeForm(submitUrl) {
     setupColorInputs();
     setupOptionalToggles();
     setupListFields();
+    setupFileListInputs();
     setupValidation();
     setupFormSubmit(submitUrl);
     setupKeyboardShortcuts();
@@ -303,6 +304,8 @@ function setupOptionalToggles() {
         const listContainer = document.querySelector(`[data-list="${fieldName}"]`);
         const colorPicker = document.querySelector(`[data-color-picker="${fieldName}"]`);
         const colorPreview = document.querySelector(`[data-color-preview="${fieldName}"]`);
+        const addFilesBtn = document.querySelector(`[data-add-files="${fieldName}"]`);
+        const fileListDiv = document.getElementById(`fileList-${fieldName}`);
         
         function updateFieldState() {
             const isEnabled = toggle.checked;
@@ -334,6 +337,14 @@ function setupOptionalToggles() {
             
             setColorPickerEnabled(colorPicker, isEnabled);
             setColorPreviewEnabled(colorPreview, isEnabled);
+            
+            if (addFilesBtn) {
+                addFilesBtn.disabled = !isEnabled;
+            }
+            
+            if (fileListDiv) {
+                fileListDiv.style.display = isEnabled ? 'flex' : 'none';
+            }
         }
         
         toggle.addEventListener('change', updateFieldState);
@@ -557,4 +568,62 @@ function displayResult(data) {
     const resultElement = createResultElement(data);
     resultDiv.appendChild(resultElement);
     resultDiv.style.display = 'block';
+}
+
+function setupFileListInputs() {
+    document.querySelectorAll('[data-file-list]').forEach(input => {
+        const fieldName = input.dataset.fileList;
+        
+        input.addEventListener('change', (e) => {
+            updateFileList(fieldName, e.target.files);
+        });
+    });
+    
+    document.querySelectorAll('[data-add-files]').forEach(btn => {
+        const fieldName = btn.dataset.addFiles;
+        const input = document.querySelector(`[data-file-list="${fieldName}"]`);
+        
+        btn.addEventListener('click', () => {
+            const tempInput = document.createElement('input');
+            tempInput.type = 'file';
+            tempInput.multiple = true;
+            if (input.accept) tempInput.accept = input.accept;
+            
+            tempInput.addEventListener('change', (e) => {
+                const dt = new DataTransfer();
+                
+                Array.from(input.files).forEach(file => dt.items.add(file));
+                Array.from(e.target.files).forEach(file => dt.items.add(file));
+                
+                input.files = dt.files;
+                updateFileList(fieldName, input.files);
+            });
+            
+            tempInput.click();
+        });
+    });
+}
+
+function updateFileList(fieldName, files) {
+    const fileListDiv = document.getElementById(`fileList-${fieldName}`);
+    fileListDiv.innerHTML = '';
+    
+    Array.from(files).forEach((file, index) => {
+        const item = createFileListItem(file, index, fieldName);
+        fileListDiv.appendChild(item);
+    });
+}
+
+function removeFileFromList(fieldName, indexToRemove) {
+    const input = document.querySelector(`[data-file-list="${fieldName}"]`);
+    const dt = new DataTransfer();
+    
+    Array.from(input.files).forEach((file, index) => {
+        if (index !== indexToRemove) {
+            dt.items.add(file);
+        }
+    });
+    
+    input.files = dt.files;
+    updateFileList(fieldName, input.files);
 }

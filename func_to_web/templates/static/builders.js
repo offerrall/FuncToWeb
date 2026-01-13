@@ -1,5 +1,5 @@
 // ============================================================================
-// BUILDERS.JS - DOM Construction (Pure creation, no side effects)
+// BUILDERS.JS - DOM Construction
 // ============================================================================
 
 // ===== INPUT BUILDERS =====
@@ -281,4 +281,39 @@ function createTableResult(headers, rows) {
     
     container.appendChild(table);
     return container;
+}
+
+// ===== FILE LIST ITEM BUILDER =====
+
+function createFileListItem(file, index, fieldName) {
+    const item = document.createElement('div');
+    item.className = 'file-list-item';
+    item.dataset.fileIndex = index;
+    
+    const fileInfo = document.createElement('div');
+    fileInfo.className = 'file-info';
+    
+    const name = document.createElement('span');
+    name.className = 'file-name';
+    name.textContent = file.name;
+    name.title = file.name;
+    
+    const size = document.createElement('span');
+    size.className = 'file-size';
+    size.textContent = formatBytes(file.size);
+    
+    fileInfo.appendChild(name);
+    fileInfo.appendChild(size);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'file-remove-btn';
+    removeBtn.textContent = '×';
+    removeBtn.title = 'Remove file';
+    removeBtn.onclick = () => removeFileFromList(fieldName, index);
+    
+    item.appendChild(fileInfo);
+    item.appendChild(removeBtn);
+    
+    return item;
 }

@@ -83,6 +83,29 @@ def process_image(image: ImageFile):
 run(process_image)
 ```
 
+## Multiple File Uploads
+
+Upload multiple files at once using lists:
+```python
+from func_to_web import run
+from func_to_web.types import ImageFile
+
+def process_multiple_images(images: list[ImageFile]):
+    # images is a list of file paths
+    for img_path in images:
+        img = Image.open(img_path)
+        # Process each image...
+    return f"Processed {len(images)} images"
+
+run(process_multiple_images)
+```
+
+**UI Features:**
+- Select multiple files from the same folder at once
+- Click the **+** button to add more files from other folders
+- Remove individual files with the **×** button
+- See all file names and sizes before uploading
+
 ## Automatic Upload Cleanup
 
 By default, uploaded files are **automatically deleted** after your function finishes processing:

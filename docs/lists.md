@@ -6,6 +6,7 @@
 
 ## Basic Usage
 Create dynamic lists of any type with add/remove buttons.
+
 ```python
 from func_to_web import run
 from func_to_web.types import Color, Email
@@ -20,7 +21,23 @@ def process_data(
 
 run(process_data)
 ```
+
+</div>
+
+<div markdown>
+
+![Dynamic Lists](images/lists_basic.jpg)
+
+</div>
+
+</div>
+
+<div class="grid" markdown>
+
+<div markdown>
+
 ## List Constraints
+
 ```python
 from func_to_web import run
 from typing import Annotated
@@ -39,24 +56,61 @@ def rate_movies(
 run(rate_movies)
 ```
 
-## Key Features
-- **Dynamic add/remove buttons** for each list
-- Works with **all types**: `int`, `float`, `str`, `bool`, `date`, `time`, `Color`, `Email`, Files Types
-- Default values: `list[str] = ["hello", "world"]`
-- All non-optional lists require at least 1 item
-- Not supported with `Literal`
-- Lists cannot be nested (e.g., `list[list[int]]` is not supported)
+</div>
+
+<div markdown>
+
+![List Constraints](images/lists_constraints.jpg)
+
+</div>
+
+</div>
+
+<div class="grid" markdown>
+
+<div markdown>
+
+## File Lists
+Upload multiple files from different folders easily.
+
+```python
+from func_to_web import run
+from func_to_web.types import ImageFile, DataFile
+
+def batch_process(
+    images: list[ImageFile],           # Multiple images
+    datasets: list[DataFile],          # Multiple CSV/Excel files
+):
+    return f"Processed {len(images)} images and {len(datasets)} datasets"
+
+run(batch_process)
+```
+
+**Features:**
+- Select multiple files from one folder at once
+- Click **"+"** button to add more files from other folders
+- Remove individual files with **×** button
+- See file names and sizes in real-time
+- **File lists** can be combined with constraints using `Field(min_length=..., max_length=...)`
 
 </div>
 
 <div markdown>
 
-![Dynamic Lists](images/lists_basic.jpg)
+![File Lists](images/file_lists.jpg)
 
 </div>
 
 </div>
 
+## Key Features
+- **Dynamic add/remove buttons** for each list
+- **File uploads** support multiple files from different folders
+- Works with **all types**: `int`, `float`, `str`, `bool`, `date`, `time`, `Color`, `Email`, File Types
+- Default values: `list[str] = ["hello", "world"]`
+- All non-optional lists require at least 1 item
+- Not supported with `Literal`
+- Lists cannot be nested (e.g., `list[list[int]]` is not supported)
 
 ## Next Steps
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.13] - 2025-01-13
+### Added
+- **Multiple file upload improvements for `list[FileType]`**
+  - New "+" button next to file input allows adding files from different folders
+  - Visual file list shows selected files with names, sizes, and remove buttons
+  - Supports all file types: `ImageFile`, `VideoFile`, `AudioFile`, `DataFile`, `TextFile`, `DocumentFile`, `File`
+  - Files can be selected from one folder, then more added from other folders
+  - Individual files can be removed before upload
+  - File list automatically hides when optional field is disabled
+
+### Changed
+- Improved UX for file uploads with real-time feedback and preview
+- Only frontend changes, fully backwards compatible with existing backend logic
+
 ## [0.9.12] - 2025-01-11
 ### Added
 - **New `Dropdown()` type for dynamic dropdowns** - cleaner, type-safe syntax for dropdowns with runtime-generated options

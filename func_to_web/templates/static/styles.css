@@ -1210,12 +1210,9 @@ body.index-page {
     z-index: 1000;
 }
 
-/* El theme toggle ahora vive dentro del flex container, 
-   así que le quitamos el posicionamiento absoluto/fijo si es necesario,
-   o simplemente dejamos que el contenedor lo posicione */
 .header-actions .theme-toggle {
     position: static; 
-    margin: 0; /* Reset de márgenes */
+    margin: 0;
 }
 
 .logout-button {
@@ -1725,4 +1722,145 @@ body.login-page {
     .group-content .tools-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* ==================== FILE LIST ===================== */
+
+.file-list {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--bg);
+}
+
+.file-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.file-list::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-radius: 3px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.file-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+.file-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.file-size {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.file-remove-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    line-height: 1;
+    margin: 0;
+    width: auto;
+    height: auto;
+    text-transform: none;
+    flex-shrink: 0;
+}
+
+.file-remove-btn:hover {
+    color: #dc2626;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ==================== FILE INPUT WRAPPER ==================== */
+
+.file-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.file-input-wrapper .file-input {
+    flex: 1;
+    margin: 0;
+}
+
+.file-input-wrapper .add-more-files-btn {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: var(--text-light);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-input-wrapper .add-more-files-btn:hover {
+    background: transparent;
+    color: var(--primary);
+    transform: scale(1.2);
+    box-shadow: none;
+}
+
+.file-input-wrapper .add-more-files-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--text-light);
+}
+
+.file-input-wrapper .add-more-files-btn:disabled:hover {
+    background: transparent;
+    color: var(--text-light);
+    transform: none;
 }
