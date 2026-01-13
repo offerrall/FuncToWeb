@@ -100,11 +100,7 @@ def process_multiple_images(images: list[ImageFile]):
 run(process_multiple_images)
 ```
 
-**UI Features:**
-- Select multiple files from the same folder at once
-- Click the **+** button to add more files from other folders
-- Remove individual files with the **×** button
-- See all file names and sizes before uploading
+Click the **+** button to add more files from other folders
 
 ## Automatic Upload Cleanup
 

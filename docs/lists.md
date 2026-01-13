@@ -86,12 +86,7 @@ def batch_process(
 run(batch_process)
 ```
 
-**Features:**
-- Select multiple files from one folder at once
-- Click **"+"** button to add more files from other folders
-- Remove individual files with **×** button
-- See file names and sizes in real-time
-- **File lists** can be combined with constraints using `Field(min_length=..., max_length=...)`
+Click **"+"** button to add more files from other folders
 
 </div>
 
