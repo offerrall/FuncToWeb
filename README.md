@@ -9,7 +9,7 @@
 
 ![func-to-web Demo](https://raw.githubusercontent.com/offerrall/FuncToWeb/refs/heads/main/docs/images/functoweb.jpg)
 
-> **Active Development:** FuncToWeb is actively maintained and used in production by myself and the community (featured in [Awesome Python](https://github.com/vinta/awesome-python)). The current version (0.9.x) is **stable and production-ready**. Version 1.0.0 is in active development with major improvements including function chaining with shared context and cleaner architecture for long-term maintainability. Until then, only critical bug fixes will be released.
+> FuncToWeb is actively maintained and used in production by myself and the community (featured in [Awesome Python](https://github.com/vinta/awesome-python)). The current version (0.9.x) is **stable and production-ready**. Version 1.0.0 is in active development with major improvements including function chaining with shared context and cleaner architecture for long-term maintainability. Until then, only critical bug fixes will be released.
 
 
 ## Quick Start (30 seconds)
