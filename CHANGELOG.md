@@ -1,6 +1,13 @@
 # Changelog
 
-## [0.9.13] - 2025-01-13
+
+## [0.9.14] - 2026-04-01
+### Fixed
+- Starlette compatibility issue
+  - Added explicit starlette<1.0.0
+
+
+## [0.9.13] - 2026-01-13
 ### Added
 - **Multiple file upload improvements for `list[FileType]`**
   - New "+" button next to file input allows adding files from different folders
@@ -14,7 +21,7 @@
 - Improved UX for file uploads with real-time feedback and preview
 - Only frontend changes, fully backwards compatible with existing backend logic
 
-## [0.9.12] - 2025-01-11
+## [0.9.12] - 2026-01-11
 ### Added
 - **New `Dropdown()` type for dynamic dropdowns** - cleaner, type-safe syntax for dropdowns with runtime-generated options
   - Use `Annotated[str, Dropdown(get_options)]` instead of `Literal[get_options]`
