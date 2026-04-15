@@ -1,0 +1,74 @@
+.functoweb-upload-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--functoweb-overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.functoweb-upload-overlay.hidden {
+    display: none;
+}
+
+.functoweb-upload-modal {
+    background: var(--functoweb-surface-bg);
+    border: 1px solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-container-border-radius);
+    padding: 2rem;
+    min-width: 400px;
+    max-width: 90%;
+    box-shadow: var(--functoweb-container-shadow);
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-upload-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: var(--functoweb-title-font-weight);
+    color: var(--functoweb-title-color);
+    text-align: center;
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-progress-bar {
+    width: 100%;
+    height: 32px;
+    background: var(--functoweb-surface-bg);
+    border: 2px solid var(--functoweb-surface-border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.functoweb-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--functoweb-button-bg), var(--functoweb-button-bg-hover));
+    transition: width 0.3s ease;
+    width: 0%;
+    border-radius: 14px;
+}
+
+.functoweb-progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    color: var(--functoweb-surface-text);
+    font-weight: 500;
+    font-family: var(--functoweb-font-family);
+}
+
+#progress-percent {
+    font-weight: 700;
+    color: var(--functoweb-button-bg);
+}
+
+#progress-size {
+    color: var(--functoweb-description-color);
+}

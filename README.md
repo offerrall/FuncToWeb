@@ -1,18 +1,15 @@
-# Func To Web 0.9.14
+# Func To Web 1.0.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-598%20passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Type hints → Web UI.** Minimal-boilerplate web apps from Python functions.
+> Type hints → Web UI. Minimal-boilerplate web apps from Python functions.
 
-![func-to-web Demo](https://raw.githubusercontent.com/offerrall/FuncToWeb/refs/heads/main/docs/images/functoweb.jpg)
-
-> FuncToWeb is actively maintained and used in production by myself and the community (featured in [Awesome Python](https://github.com/vinta/awesome-python)). The current version (0.9.x) is **stable and production-ready**. Version 1.0.0 is in active development with major improvements including function chaining with shared context and cleaner architecture for long-term maintainability. Until then, only critical bug fixes will be released.
+![func-to-web Demo](/docs/images/functoweb.jpg)
 
 
-## Quick Start (30 seconds)
+## Quick start
 
 <table>
 <tr>
@@ -31,123 +28,186 @@ def divide(a: float, b: float):
 run(divide)
 ```
 
-Open `http://127.0.0.1:8000` → **You have a working web app!**
+Open `http://127.0.0.1:8000`.
 
 </td>
 <td width="50%">
 
-![Demo](https://raw.githubusercontent.com/offerrall/FuncToWeb/refs/heads/main/docs/images/quick.jpg)
+![demo](/docs/images/quick.jpg)
 
 </td>
 </tr>
 </table>
 
-## Complete Feature Overview
+## Inputs
 
-Complete documentation with **examples and screenshots** for each feature:
+| Type | Widget | |
+|------|--------|-|
+| `int`, `float` | Number input with step buttons and optional slider | [docs](docs/numeric.md) |
+| `str`, `Email` | Text input, textarea, password, or email | [docs](docs/string.md) |
+| `bool` | Toggle switch | [docs](docs/boolean.md) |
+| `date`, `time` | Date and time pickers | [docs](docs/datetime.md) |
+| `Color` | Hex color picker | [docs](docs/color.md) |
+| `File`, `ImageFile`, `VideoFile`, `AudioFile`, `DataFile`, `TextFile`, `DocumentFile` | File upload with extension filter | [docs](docs/files.md) |
+| `Literal`, `Enum`, `Dropdown(func)` | Select / dropdown | [docs](docs/dropdown.md) |
+| `list[T]` | Dynamic list with add/remove buttons | [docs](docs/lists.md) |
+| `T \| None` | Any input with enable/disable toggle | [docs](docs/optional.md) |
+| `Params` | Reusable parameter groups | [docs](docs/params.md) |
+| `Annotated[T, ...]` | Compose constraints, labels, sliders, placeholders | [docs](docs/composition.md) |
 
-<table>
-<tr>
-<td width="50%">
+## Outputs
 
-### **Input Types**
-- **[Basic Types](https://offerrall.github.io/FuncToWeb/types/)**: `int`, `float`, `str`, `bool`, `date`, `time`
-- **[Special Types](https://offerrall.github.io/FuncToWeb/types/)**: `Color`, `Email`
-- **[File Uploads](https://offerrall.github.io/FuncToWeb/files/)**: `File`, `ImageFile`, `DataFile`, `TextFile`, `DocumentFile`
-- **[Dynamic Lists](https://offerrall.github.io/FuncToWeb/lists/)**: `list[Type]` with add/remove buttons
-- **[Optional Fields](https://offerrall.github.io/FuncToWeb/optional/)**: `Type | None` with toggle switches
-- **[Dropdowns](https://offerrall.github.io/FuncToWeb/dropdowns/)**: Static (`Literal`, `Enum`) or Dynamic (`Dropdown(func)`)
-- **[Validation](https://offerrall.github.io/FuncToWeb/constraints/)**: Pydantic constraints (min/max, regex, list validation)
-</td>
-<td width="50%">
+| Return type | Rendered as | |
+|-------------|-------------|-|
+| `str`, `int`, `float`, `None` | Text with copy button | [docs](docs/outputs.md#text) |
+| `PIL Image`, `Matplotlib Figure` | Inline image with expand button | [docs](docs/outputs.md#images) |
+| `FileResponse`, `list[FileResponse]` | Download button(s) | [docs](docs/outputs.md#file-downloads) |
+| `list[dict]`, `list[tuple]`, `DataFrame`, `ndarray` | Sortable, paginated table with CSV export | [docs](docs/outputs.md#tables) |
+| `ActionTable` | Clickable table → next function with prefill | [docs](docs/outputs.md#actiontable) |
+| `tuple` / `list` | Multiple outputs combined | [docs](docs/outputs.md#multiple-outputs) |
+| `print()` | Streamed to browser in real time | [docs](docs/outputs.md#print-output) |
 
-### **Output Types**
-- **[Images & Plots](https://offerrall.github.io/FuncToWeb/images/)**: Return PIL Images and Matplotlib figures
-- **[File Downloads](https://offerrall.github.io/FuncToWeb/downloads/)**: Return `FileResponse` for any file type
-- **[Tables](https://offerrall.github.io/FuncToWeb/tables/)**: Return `list[dict]`, `list[tuple]`, Pandas, NumPy, or Polars DataFrames
-- **[Multiple Outputs](https://offerrall.github.io/FuncToWeb/multiple-outputs/)**: Return tuples/lists combining text, images, tables, and files
+## Features
 
-### **Features**
-- **[Authentication](https://offerrall.github.io/FuncToWeb/authentication/)**: Username/password protection
-- **[Multiple Functions & Groups](https://offerrall.github.io/FuncToWeb/multiple/)**: Serve multiple functions with index page or organize them into collapsible groups
-- **[Dark Mode](https://offerrall.github.io/FuncToWeb/dark-mode/)**: Automatic theme switching
-- **[Server Options](https://offerrall.github.io/FuncToWeb/server-configuration/)**: Custom host, port, path and more
-- **Large Files**: Optimized streaming (GB+ files)
-- **Progress Bars**: Real-time upload/download tracking
-- **Concurrency**: Handles multiple heavy requests and users simultaneously.
-- **Error Handling**: Beautiful error messages
+- Multiple functions with index page or collapsible groups — [docs](docs/multiple.md)
+- URL prefill — forms open prefilled from query params — [docs](docs/url_prefill.md)
+- Real-time `print()` output in the browser — [docs](docs/outputs.md#print-output)
+- Username/password authentication — [docs](docs/auth.md)
+- Dark mode — [docs](docs/dark_mode.md)
+- Configurable host, port and path — [docs](docs/config.md)
 
-</td>
-</tr>
-</table>
+> Full documentation with examples and screenshots for every feature: **[offerrall.github.io/FuncToWeb](https://offerrall.github.io/FuncToWeb)**
 
-**[Full Documentation](https://offerrall.github.io/FuncToWeb)** 
-**[API Reference](https://offerrall.github.io/FuncToWeb/api/)**
+## ActionTable and Params
+**`Params`** groups typed parameters into a reusable class. Add a field once, it appears in every function that uses it.
 
-## Perfect For
+**`ActionTable`** turns a table into navigation — click a row and the next function opens with its form prefilled from that row's data. No routing, no state.
 
-- ✅ **Rapid Prototyping** - From pure Python function to usable web interface in seconds.
-- ✅ **Image Processing** - Upload, process, and download images with PIL/Pillow.
-- ✅ **Data Science & Reporting** - Instantly publish Pandas/Polars DataFrames and matplotlib plots without frontend code.
-- ✅ **High-Performance File Transfer** - Stream uploads and downloads at native network/disk speeds. Handles massive files efficiently with minimal memory footprint.
-- ✅ **Secure Internal Apps** - Admin panels, dashboards, and team tools protected by built-in authentication.
-
-## Quick Examples
-
-### DIY AirDrop / LocalSend (Very Fast File Transfers)
+The example below is a full CRUD user database in 70 lines:
 
 ```python
+import json
 from pathlib import Path
-from func_to_web import run
-from func_to_web.types import File
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run, ActionTable, HiddenFunction, Params, Email
 
-desktop_path = Path.home() / "Desktop"
+DB_FILE = Path("users.json")
 
-def upload_files(
-    files: list[File],
-): 
-    for f in files:
-        print(f"Uploaded file: {f}")
-    return "Files uploaded successfully!"
+class UserData(Params):
+    name: Annotated[str, Field(min_length=2, max_length=50)]
+    email: Email
+    phone: Annotated[str, Field(pattern=r'^\+?[0-9]{9,15}$')]
 
-run(upload_files, auto_delete_uploads=False, uploads_dir=desktop_path)
+def _load() -> dict:
+    if not DB_FILE.exists():
+        return {}
+    return {int(k): v for k, v in json.loads(DB_FILE.read_text()).items()}
+
+def _save(db: dict):
+    DB_FILE.write_text(json.dumps(db, indent=2))
+
+def _check(db: dict, id: int):
+    if id not in db:
+        raise ValueError(f"User {id} not found")
+
+def _user_dict(uid: int, data: UserData) -> dict:
+    return {"id": uid, **vars(data)}
+
+def edit_users():
+    """Edit users"""
+    return ActionTable(data=_load, action=edit_user)
+
+def delete_users():
+    """Delete users"""
+    return ActionTable(data=_load, action=delete_user)
+
+def create_user(data: UserData):
+    """Create a new user"""
+    db = _load()
+    uid = max(db) + 1 if db else 1
+    db[uid] = _user_dict(uid, data)
+    _save(db)
+    return f"User {uid} created"
+
+def edit_user(id: int, data: UserData):
+    """Edit an existing user"""
+    db = _load()
+    _check(db, id)
+    db[id] = _user_dict(id, data)
+    _save(db)
+    return f"User {id} updated"
+
+def delete_user(id: int):
+    """Delete a user"""
+    db = _load()
+    _check(db, id)
+    del db[id]
+    _save(db)
+    return f"User {id} deleted"
+
+run([edit_users, delete_users, create_user, HiddenFunction(delete_user), HiddenFunction(edit_user)])
 ```
 
-### Secure Admin Panel
-Protect sensitive tools with built-in authentication in one line.
+![Demo](/docs/images/crud_1.jpg)
+
+`UserData` is the single source of truth. Swap the JSON file for SQLAlchemy and you have a production-ready CRUD in a few more lines.
+
+> `ActionTable` is experimental. Simple types (str, int, float) work well. Files are not yet supported via row navigation.
+
+## Using Func To Web alongside your frontend
+
+Every function has its own URL with query param prefill.  
+That means any existing web app can embed a Func To Web function in an iframe — open a modal, pass the data via URL, let Func To Web handle the form and validation, close.
+
+This works best for self-contained operations: editing a record, uploading and processing files, generating a report, running a bulk action...
+
+## Examples
+
+### File transfer
+
+```python
+from func_to_web import run, File
+import shutil, os
+
+downloads = os.path.expanduser("~/Downloads")
+
+def upload_files(files: list[File]):
+    for f in files:
+        shutil.move(f, downloads)
+    return "Done."
+
+run(upload_files)
+```
+
+### Protected admin panel
 
 ```python
 import subprocess
 from typing import Literal
 from func_to_web import run
 
-# 🔒 MANDATORY: Use HTTPS (Nginx).
-
 def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
-    """Restarts a system service."""
-    # check=True raises an error shown in the Web UI if the command fails
     subprocess.run(["sudo", "supervisorctl", "restart", service], check=True)
-    return f"✅ Service {service} restarted."
+    return f"{service} restarted."
 
-run(restart_service, auth={"admin": "super_secret_password"})
+run(restart_service, auth={"admin": "your_password"})
+# Use HTTPS in production.
 ```
 
-### QR Code Generator
-Generate QR codes instantly from text.
+### QR code generator
 
 ```python
 import qrcode
 from func_to_web import run
 
 def make_qr(text: str):
-    """Returns a QR code image for the given text."""
     return qrcode.make(text).get_image()
 
 run(make_qr)
 ```
 
-### PDF Merger
-Merge multiple PDF files into a single document instantly.
+### PDF merger
 
 ```python
 from io import BytesIO
@@ -156,37 +216,38 @@ from func_to_web import run
 from func_to_web.types import DocumentFile, FileResponse
 
 def merge_pdfs(files: list[DocumentFile]):
-    """Upload PDFs and get a single merged file back."""
     merger = PdfWriter()
     for pdf in files:
         merger.append(pdf)
-
     output = BytesIO()
     merger.write(output)
-    
     return FileResponse(data=output.getvalue(), filename="merged.pdf")
 
 run(merge_pdfs)
 ```
 
-Check the [`examples/`](examples/) folder for +20 complete examples (Covers all features)
+More in [`examples/`](examples/) and [`examples/apps/`](examples/apps/).
+
+---
 
 ## Requirements
 
-**Core:**
+**External:**
 - Python 3.10+
-- FastAPI, Uvicorn, Pydantic, Jinja2, python-multipart, itsdangerous
+- FastAPI, Uvicorn, Jinja2, python-multipart, itsdangerous, aiofiles, starlette
 
-**Optional (for extended functionality):**
+**Internal:**
+- [pytypeinput](https://github.com/offerrall/pytypeinput) — type analysis engine (2030+ tests). Powers Func To Web's type system and can be used standalone to build other interfaces — a CLI, a Qt app, or anything else.
+- [pytypeinputweb](https://github.com/offerrall/pytypeinputweb) — JS/CSS form renderer built on pytypeinput.
+
+**Optional (for specific features):**
 - Pillow, Matplotlib, Pandas, NumPy, Polars
 
-**Development:**
-- pytest, mkdocs, mkdocs-material
+---
 
-## Run Tests
 
-```bash
-pytest tests/ -v
-```
+400 stars and Awesome Python — didn't see that coming at all. Built this to scratch my own itch, so genuinely thanks.
 
-[MIT License](LICENSE) • **Made by [Beltrán Offerrall](https://github.com/offerrall)** • Contributions welcome!
+I want to keep making it better and I'd love to hear how you actually use it, what's missing, what's annoying. If there's demand I'll open a Discord, otherwise issues work fine. Any help — code, docs, bug reports — is very welcome.
+
+[MIT License](LICENSE) · Made by [Beltrán Offerrall](https://github.com/offerrall) · Contributions welcome

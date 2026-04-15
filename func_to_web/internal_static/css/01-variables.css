@@ -1,0 +1,233 @@
+:root {
+    --functoweb-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    
+    /* ===== SIDEBAR ===== */
+    --functoweb-sidebar-min-width: 300px;
+    --functoweb-sidebar-max-width: 320px;
+    --functoweb-sidebar-padding: 1.25rem;
+    --functoweb-sidebar-gap: 0.375rem;
+    --functoweb-sidebar-header-height: 4rem;
+    --functoweb-sidebar-border-width: 2px;
+    
+    /* ===== SIDEBAR MOBILE ===== */
+    --functoweb-sidebar-mobile-toggle-size: 2.75rem;
+    --functoweb-sidebar-mobile-toggle-top: 0.5rem;
+    --functoweb-sidebar-mobile-toggle-left: 0.5rem;
+    --functoweb-sidebar-mobile-toggle-border-radius: 8px;
+    --functoweb-sidebar-mobile-toggle-gap: 0.375rem;
+    --functoweb-sidebar-mobile-toggle-padding: 0.5rem;
+    
+    /* ===== CONTAINER ===== */
+    --functoweb-container-max-width: 600px;
+    --functoweb-container-padding: 2rem;
+    --functoweb-container-border-radius: 16px;
+    --functoweb-container-shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    --functoweb-container-shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --functoweb-container-margin: 1rem auto;
+    --functoweb-container-side-margin: 1rem;
+    
+    /* ===== TITLE ===== */
+    --functoweb-title-margin-top: 0;
+    --functoweb-title-margin-bottom: 1.5rem;
+    --functoweb-title-font-size: 2rem;
+    --functoweb-title-font-weight: 700;
+    --functoweb-title-letter-spacing: -0.02em;
+    
+    /* ===== DESCRIPTION ===== */
+    --functoweb-description-margin-top: 0.75rem;
+    --functoweb-description-margin-bottom: 0.75rem;
+    --functoweb-description-line-height: 1.6;
+    --functoweb-description-font-size: 0.9375rem;
+    
+    /* ===== FORM ===== */
+    --functoweb-form-gap: 1rem;
+    --functoweb-submit-margin-top: 0rem;
+    
+    /* ===== BUTTON ===== */
+    --functoweb-button-color: white;
+    --functoweb-button-padding: 0.875rem 2rem;
+    --functoweb-button-border-radius: 10px;
+    --functoweb-button-font-size: 1rem;
+    --functoweb-button-font-weight: 600;
+    --functoweb-button-disabled-opacity: 0.5;
+    
+    /* ===== THEME TOGGLE ===== */
+    --functoweb-theme-toggle-top: 0.5rem;
+    --functoweb-theme-toggle-right: 0.5rem;
+    --functoweb-theme-toggle-size: 2.75rem;
+    --functoweb-theme-toggle-icon-size: 1.25rem;
+    --functoweb-theme-toggle-border-width: 2px;
+    --functoweb-theme-toggle-hover-scale: 1.08;
+    --functoweb-theme-toggle-stroke-width: 2;
+    
+    /* ===== NAV ITEMS ===== */
+    --functoweb-nav-link-padding: 0.75rem 1rem;
+    --functoweb-nav-link-font-size: 0.9375rem;
+    --functoweb-nav-link-font-weight: 500;
+    --functoweb-nav-link-border-radius: 8px;
+    --functoweb-nav-group-padding: 0.625rem 1rem;
+    --functoweb-nav-group-font-size: 0.875rem;
+    --functoweb-nav-group-font-weight: 600;
+    --functoweb-nav-subgroup-padding-left: 1rem;
+    --functoweb-nav-arrow-size: 0.75rem;
+    
+    /* ===== ITEMS (INDEX) ===== */
+    --functoweb-items-gap: 1rem;
+    --functoweb-items-margin-top: 1.5rem;
+    
+    /* ===== FUNCTION CARD ===== */
+    --functoweb-card-padding: 1.5rem;
+    --functoweb-card-border-radius: 12px;
+    --functoweb-card-border-width: 2px;
+    --functoweb-card-title-font-size: 1.25rem;
+    --functoweb-card-title-font-weight: 650;
+    --functoweb-card-description-margin-top: 0.5rem;
+    --functoweb-card-description-font-size: 0.9375rem;
+    --functoweb-card-description-line-height: 1.5;
+    --functoweb-card-hover-translate: -2px;
+    --functoweb-card-hover-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    
+    /* ===== GROUPS (INDEX) ===== */
+    --functoweb-group-border-radius: 12px;
+    --functoweb-group-border-width: 2px;
+    --functoweb-group-header-padding: 1rem 1.25rem;
+    --functoweb-group-header-font-size: 1.125rem;
+    --functoweb-group-header-font-weight: 650;
+    --functoweb-group-content-padding: 1rem;
+    --functoweb-group-icon-size: 1.125rem;
+    
+    /* ===== SHARED SURFACE COLORS - LIGHT ===== */
+    --functoweb-surface-bg-light: #fff;
+    --functoweb-surface-border-light: #d1d5db;
+    --functoweb-surface-focus-light: #3b82f6;
+    --functoweb-surface-disabled-bg-light: #f9fafb;
+    --functoweb-surface-track-bg-light: #e5e7eb;
+    --functoweb-surface-text-light: #1a1a1a;
+    --functoweb-label-color-light: #1a1a1a;
+    
+    /* ===== SHARED SURFACE COLORS - DARK ===== */
+    --functoweb-surface-bg-dark: #1e1e1e;
+    --functoweb-surface-border-dark: #374151;
+    --functoweb-surface-focus-dark: #60a5fa;
+    --functoweb-surface-disabled-bg-dark: #2a2a2a;
+    --functoweb-surface-track-bg-dark: #374151;
+    --functoweb-surface-text-dark: #f0f0f0;
+    --functoweb-label-color-dark: #f0f0f0;
+    
+    /* ===== COLORS - LIGHT ===== */
+    --functoweb-title-color-light: #1a1a1a;
+    --functoweb-description-color-light: #6b7280;
+    --functoweb-button-bg-light: #3b82f6;
+    --functoweb-button-bg-hover-light: #2563eb;
+    --functoweb-button-bg-active-light: #1d4ed8;
+    --functoweb-button-bg-disabled-light: #9ca3af;
+    --functoweb-bg-light: #f3f4f6;
+    --functoweb-nav-link-hover-bg-light: #f3f4f6;
+    --functoweb-nav-link-active-bg-light: #e5e7eb;
+    --functoweb-sidebar-bg-light: #ffffff;
+    --functoweb-overlay-bg-light: rgba(0, 0, 0, 0.5);
+    
+    /* ===== COLORS - DARK ===== */
+    --functoweb-title-color-dark: #f0f0f0;
+    --functoweb-description-color-dark: #9ca3af;
+    --functoweb-button-bg-dark: #60a5fa;
+    --functoweb-button-bg-hover-dark: #3b82f6;
+    --functoweb-button-bg-active-dark: #2563eb;
+    --functoweb-button-bg-disabled-dark: #4b5563;
+    --functoweb-bg-dark: #1a1a1a;
+    --functoweb-nav-link-hover-bg-dark: #2a2a2a;
+    --functoweb-nav-link-active-bg-dark: #374151;
+    --functoweb-sidebar-bg-dark: #111111;
+    --functoweb-overlay-bg-dark: rgba(0, 0, 0, 0.7);
+    
+    /* ===== ACTIVE COLORS ===== */
+    --functoweb-title-color: var(--functoweb-title-color-light);
+    --functoweb-description-color: var(--functoweb-description-color-light);
+    --functoweb-button-bg: var(--functoweb-button-bg-light);
+    --functoweb-button-bg-hover: var(--functoweb-button-bg-hover-light);
+    --functoweb-button-bg-active: var(--functoweb-button-bg-active-light);
+    --functoweb-button-bg-disabled: var(--functoweb-button-bg-disabled-light);
+    --functoweb-bg: var(--functoweb-bg-light);
+    --functoweb-nav-link-hover-bg: var(--functoweb-nav-link-hover-bg-light);
+    --functoweb-nav-link-active-bg: var(--functoweb-nav-link-active-bg-light);
+    --functoweb-sidebar-bg: var(--functoweb-sidebar-bg-light);
+    --functoweb-overlay-bg: var(--functoweb-overlay-bg-light);
+    --functoweb-container-shadow: var(--functoweb-container-shadow-light);
+    --functoweb-surface-bg: var(--functoweb-surface-bg-light);
+    --functoweb-surface-border: var(--functoweb-surface-border-light);
+    --functoweb-surface-focus: var(--functoweb-surface-focus-light);
+    --functoweb-surface-disabled-bg: var(--functoweb-surface-disabled-bg-light);
+    --functoweb-surface-track-bg: var(--functoweb-surface-track-bg-light);
+    --functoweb-surface-text: var(--functoweb-surface-text-light);
+    --functoweb-label-color: var(--functoweb-label-color-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --functoweb-title-color: var(--functoweb-title-color-dark);
+        --functoweb-description-color: var(--functoweb-description-color-dark);
+        --functoweb-button-bg: var(--functoweb-button-bg-dark);
+        --functoweb-button-bg-hover: var(--functoweb-button-bg-hover-dark);
+        --functoweb-button-bg-active: var(--functoweb-button-bg-active-dark);
+        --functoweb-button-bg-disabled: var(--functoweb-button-bg-disabled-dark);
+        --functoweb-bg: var(--functoweb-bg-dark);
+        --functoweb-nav-link-hover-bg: var(--functoweb-nav-link-hover-bg-dark);
+        --functoweb-nav-link-active-bg: var(--functoweb-nav-link-active-bg-dark);
+        --functoweb-sidebar-bg: var(--functoweb-sidebar-bg-dark);
+        --functoweb-overlay-bg: var(--functoweb-overlay-bg-dark);
+        --functoweb-container-shadow: var(--functoweb-container-shadow-dark);
+        --functoweb-surface-bg: var(--functoweb-surface-bg-dark);
+        --functoweb-surface-border: var(--functoweb-surface-border-dark);
+        --functoweb-surface-focus: var(--functoweb-surface-focus-dark);
+        --functoweb-surface-disabled-bg: var(--functoweb-surface-disabled-bg-dark);
+        --functoweb-surface-track-bg: var(--functoweb-surface-track-bg-dark);
+        --functoweb-surface-text: var(--functoweb-surface-text-dark);
+        --functoweb-label-color: var(--functoweb-label-color-dark);
+    }
+}
+
+[data-theme="light"],
+.light-mode {
+    --functoweb-title-color: var(--functoweb-title-color-light);
+    --functoweb-description-color: var(--functoweb-description-color-light);
+    --functoweb-button-bg: var(--functoweb-button-bg-light);
+    --functoweb-button-bg-hover: var(--functoweb-button-bg-hover-light);
+    --functoweb-button-bg-active: var(--functoweb-button-bg-active-light);
+    --functoweb-button-bg-disabled: var(--functoweb-button-bg-disabled-light);
+    --functoweb-bg: var(--functoweb-bg-light);
+    --functoweb-nav-link-hover-bg: var(--functoweb-nav-link-hover-bg-light);
+    --functoweb-nav-link-active-bg: var(--functoweb-nav-link-active-bg-light);
+    --functoweb-sidebar-bg: var(--functoweb-sidebar-bg-light);
+    --functoweb-overlay-bg: var(--functoweb-overlay-bg-light);
+    --functoweb-container-shadow: var(--functoweb-container-shadow-light);
+    --functoweb-surface-bg: var(--functoweb-surface-bg-light);
+    --functoweb-surface-border: var(--functoweb-surface-border-light);
+    --functoweb-surface-focus: var(--functoweb-surface-focus-light);
+    --functoweb-surface-disabled-bg: var(--functoweb-surface-disabled-bg-light);
+    --functoweb-surface-track-bg: var(--functoweb-surface-track-bg-light);
+    --functoweb-surface-text: var(--functoweb-surface-text-light);
+    --functoweb-label-color: var(--functoweb-label-color-light);
+}
+
+[data-theme="dark"],
+.dark-mode {
+    --functoweb-title-color: var(--functoweb-title-color-dark);
+    --functoweb-description-color: var(--functoweb-description-color-dark);
+    --functoweb-button-bg: var(--functoweb-button-bg-dark);
+    --functoweb-button-bg-hover: var(--functoweb-button-bg-hover-dark);
+    --functoweb-button-bg-active: var(--functoweb-button-bg-active-dark);
+    --functoweb-button-bg-disabled: var(--functoweb-button-bg-disabled-dark);
+    --functoweb-bg: var(--functoweb-bg-dark);
+    --functoweb-nav-link-hover-bg: var(--functoweb-nav-link-hover-bg-dark);
+    --functoweb-nav-link-active-bg: var(--functoweb-nav-link-active-bg-dark);
+    --functoweb-sidebar-bg: var(--functoweb-sidebar-bg-dark);
+    --functoweb-overlay-bg: var(--functoweb-overlay-bg-dark);
+    --functoweb-container-shadow: var(--functoweb-container-shadow-dark);
+    --functoweb-surface-bg: var(--functoweb-surface-bg-dark);
+    --functoweb-surface-border: var(--functoweb-surface-border-dark);
+    --functoweb-surface-focus: var(--functoweb-surface-focus-dark);
+    --functoweb-surface-disabled-bg: var(--functoweb-surface-disabled-bg-dark);
+    --functoweb-surface-track-bg: var(--functoweb-surface-track-bg-dark);
+    --functoweb-surface-text: var(--functoweb-surface-text-dark);
+    --functoweb-label-color: var(--functoweb-label-color-dark);
+}

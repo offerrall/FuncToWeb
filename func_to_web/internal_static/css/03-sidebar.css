@@ -1,0 +1,129 @@
+.functoweb-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--functoweb-sidebar-min-width);
+    min-width: var(--functoweb-sidebar-min-width);
+    max-width: var(--functoweb-sidebar-max-width);
+    height: 100vh;
+    background: var(--functoweb-sidebar-bg);
+    border-right: var(--functoweb-sidebar-border-width) solid var(--functoweb-surface-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    contain: layout size;
+}
+
+.functoweb-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: var(--functoweb-sidebar-padding);
+    height: var(--functoweb-sidebar-header-height);
+    border-bottom: var(--functoweb-sidebar-border-width) solid var(--functoweb-surface-border);
+    flex-shrink: 0;
+}
+
+.functoweb-sidebar-close {
+    color: var(--functoweb-description-color);
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.functoweb-sidebar-close:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+}
+
+.functoweb-sidebar-close-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    font-weight: 300;
+}
+
+.functoweb-sidebar-menu {
+    flex: 1;
+    padding: var(--functoweb-sidebar-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--functoweb-sidebar-gap);
+    overflow-y: overlay;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--functoweb-surface-border) transparent;
+}
+
+.functoweb-sidebar-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.functoweb-sidebar-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.functoweb-sidebar-menu::-webkit-scrollbar-thumb {
+    background: var(--functoweb-surface-border);
+    border-radius: 4px;
+    border: 2px solid var(--functoweb-sidebar-bg);
+}
+
+.functoweb-sidebar-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--functoweb-description-color);
+}
+
+.functoweb-sidebar-mobile-toggle {
+    position: fixed;
+    top: var(--functoweb-sidebar-mobile-toggle-top);
+    left: var(--functoweb-sidebar-mobile-toggle-left);
+    width: var(--functoweb-sidebar-mobile-toggle-size);
+    height: var(--functoweb-sidebar-mobile-toggle-size);
+    background: var(--functoweb-surface-bg);
+    border: var(--functoweb-sidebar-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-sidebar-mobile-toggle-border-radius);
+    cursor: pointer;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--functoweb-sidebar-mobile-toggle-gap);
+    padding: var(--functoweb-sidebar-mobile-toggle-padding);
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.functoweb-sidebar-mobile-toggle span {
+    width: 1.25rem;
+    height: 2px;
+    background: var(--functoweb-title-color);
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.functoweb-sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--functoweb-overlay-bg);
+    z-index: 999;
+    opacity: 0;
+}
+
+.functoweb-sidebar-overlay.active {
+    opacity: 1;
+}
+
+.functoweb-sidebar.hidden {
+    transform: translateX(-100%);
+}

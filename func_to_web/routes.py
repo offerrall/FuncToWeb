@@ -1,264 +1,88 @@
-import inspect
-import os
 import re
-from typing import Callable
 
-import asyncio
-from fastapi import Request
-from fastapi.responses import JSONResponse, FileResponse as FastAPIFileResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, FileResponse as FastAPIFileResponse, JSONResponse
 
-from . import config
-from .analyze_function import ParamInfo, analyze
-from .validate_params import validate_params
-from .build_form_fields import build_form_fields
-from .process_result import process_result
-from .file_handler import (
-    save_uploaded_file,
-    cleanup_uploaded_file,
-    get_returned_file,
-    cleanup_returned_file,
-    create_response_with_files
-)
-
-UUID_PATTERN = re.compile(r'^[a-f0-9]{32}$')
+from .builder import render_index
+from .models import FunctionMetadata, NormalizedInput
+from .core.normalization import get_all_functions
+from .core.return_file_handler import get_returned_file
+from .route_handlers import create_handlers
 
 
-async def handle_form_submission(
-    request: Request, 
-    func: Callable, 
-    params: dict[str, ParamInfo]
-) -> JSONResponse:
-    """Handle form submission for any function.
-    
-    Args:
-        request: FastAPI request object.
-        func: Function to call with validated parameters.
-        params: Parameter metadata from analyze().
-        
-    Returns:
-        JSON response with result or error.
-    """
-    uploaded_files = []
-    
-    try:
-        form_data = await request.form()
-        data = {}
-        
-        for name, info in params.items():
-            if info.is_list:
-                raw_values = form_data.getlist(name)
-                
-                if not raw_values and name in form_data:
-                     raw_values = [form_data[name]]
+UUID_PATTERN = re.compile(r"^[a-f0-9]{32}$")
 
-                processed_list = []
-                for val in raw_values:
-                    if hasattr(val, 'filename'):
-                        suffix = os.path.splitext(val.filename)[1]
-                        file_path = await save_uploaded_file(val, suffix)
-                        uploaded_files.append(file_path)
-                        processed_list.append(file_path)
-                    else:
-                        processed_list.append(val)
-                
-                if len(processed_list) == 1 and isinstance(processed_list[0], str) and processed_list[0].startswith('['):
-                    data[name] = processed_list[0]
-                else:
-                    data[name] = processed_list
 
-            else:
-                value = form_data.get(name)
-                if hasattr(value, 'filename'):
-                    suffix = os.path.splitext(value.filename)[1]
-                    file_path = await save_uploaded_file(value, suffix)
-                    uploaded_files.append(file_path)
-                    data[name] = file_path
-                else:
-                    data[name] = value
+def register_function_routes(
+    app: FastAPI,
+    meta: FunctionMetadata,
+    app_input: NormalizedInput,
+    url: str
+) -> None:
+    """Register routes for a single function."""
+    page_handler, submit_handler = create_handlers(meta, app_input, base_url=url)
 
-        for key, value in form_data.items():
-            if key.endswith('_optional_toggle'):
-                data[key] = value
-        
-        validated = validate_params(data, params)
-        
-        if inspect.iscoroutinefunction(func):
-            result = await func(**validated)
+    app.get(url, response_class=HTMLResponse)(page_handler)
+    app.post(f"{url}/submit")(submit_handler)
+
+
+def register_navigation_routes(
+    app: FastAPI,
+    nav_items: list,
+    app_input: NormalizedInput
+) -> None:
+    """Recursively register routes for all navigation items."""
+    # Resolve all functions once, then match them by slug.
+    all_functions = get_all_functions(app_input.items)
+
+    for item in nav_items:
+        if item["type"] == "function":
+            meta = next((m for m in all_functions if m.slug == item["slug"]), None)
+            if meta:
+                register_function_routes(app, meta, app_input, item["url"])
         else:
-            result = await asyncio.to_thread(func, **validated)
-        
-        if config.AUTO_DELETE_UPLOADS:
-            for file_path in uploaded_files:
-                cleanup_uploaded_file(file_path)
-        
-        processed = await asyncio.to_thread(process_result, result)
-        response = create_response_with_files(processed)
-        
-        return JSONResponse(response)
-        
-    except Exception as e:
-        if config.AUTO_DELETE_UPLOADS:
-            for file_path in uploaded_files:
-                cleanup_uploaded_file(file_path)
-        
-        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+            register_navigation_routes(app, item["children"], app_input)
 
 
-def setup_download_route(app):
-    """Setup file download route.
-    
-    Args:
-        app: FastAPI application instance.
-    """
+def setup_multi_items(app: FastAPI, app_input: NormalizedInput) -> None:
+
+    visible = [item for item in app_input.navigation_data if item["type"] == "function" and not item.get("hidden")]
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        if len(visible) == 1:
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=visible[0]["url"])
+        return render_index(app_input)
+
+    register_navigation_routes(app, app_input.navigation_data, app_input)
+
+
+def setup_single_function(app: FastAPI, app_input: NormalizedInput) -> None:
+    """Set up routes for single-function mode."""
+    meta = app_input.single_function
+
+    page_handler, submit_handler = create_handlers(meta, app_input, base_url="")
+
+    app.get("/", response_class=HTMLResponse)(page_handler)
+    app.post("/submit")(submit_handler)
+
+
+def setup_download_route(app: FastAPI) -> None:
+    """Register the file download route."""
+
     @app.get("/download/{file_id}")
     async def download_file(file_id: str):
+        # Reject invalid IDs before touching the file store.
         if not UUID_PATTERN.match(file_id):
             return JSONResponse({"error": "Invalid file ID"}, status_code=400)
-        
+
         file_info = get_returned_file(file_id)
-        
         if not file_info:
-            return JSONResponse({"error": "File not found"}, status_code=404)
-        
-        path = file_info['path']
-        filename = file_info['filename']
-        
-        if not os.path.exists(path):
-            cleanup_returned_file(file_id, delete_from_disk=False)
-            return JSONResponse({"error": "File expired"}, status_code=404)
-        
-        safe_filename = os.path.basename(filename)
-        
-        response = FastAPIFileResponse(
-            path=path,
-            filename=safe_filename,
-            media_type='application/octet-stream'
+            return JSONResponse({"error": "File not found or expired"}, status_code=404)
+
+        return FastAPIFileResponse(
+            path=file_info["path"],
+            filename=file_info["filename"],
+            media_type="application/octet-stream",
         )
-        
-        return response
-
-
-def _register_function_routes(app, func: Callable, templates: Jinja2Templates, has_auth: bool):
-    """Register GET and POST routes for a function."""
-    params = analyze(func)
-    func_name = func.__name__.replace('_', ' ').title()
-    description = inspect.getdoc(func)
-    route = f"/{func.__name__}"
-    submit_route = f"{route}/submit"
-    
-    def make_form_handler(title: str, prms: dict, desc: str | None, submit_path: str):
-        async def form_view(request: Request):
-            flds = build_form_fields(prms)
-            return templates.TemplateResponse(
-                "form.html",
-                {
-                    "request": request,
-                    "title": title,
-                    "description": desc,
-                    "fields": flds,
-                    "submit_url": submit_path,
-                    "show_back_button": True,
-                    "has_auth": has_auth
-                }
-            )
-        return form_view
-    
-    def make_submit_handler(fn: Callable, prms: dict):
-        async def submit_view(request: Request):
-            return await handle_form_submission(request, fn, prms)
-        return submit_view
-    
-    app.get(route)(make_form_handler(func_name, params, description, submit_route))
-    app.post(submit_route)(make_submit_handler(func, params))
-
-
-def setup_single_function_routes(app, func: Callable, params: dict, templates: Jinja2Templates, has_auth: bool):
-    """Setup routes for single function mode.
-    
-    Args:
-        app: FastAPI application instance.
-        func: The function to wrap.
-        params: Parameter metadata.
-        templates: Jinja2Templates instance.
-        has_auth: Whether authentication is enabled.
-    """
-    func_name = func.__name__.replace('_', ' ').title()
-    description = inspect.getdoc(func)
-    
-    @app.get("/")
-    async def form(request: Request):
-        fields = build_form_fields(params)
-        return templates.TemplateResponse(
-            "form.html",
-            {
-                "request": request,
-                "title": func_name,
-                "description": description,
-                "fields": fields,
-                "submit_url": "/submit",
-                "show_back_button": False,
-                "has_auth": has_auth
-            }
-        )
-
-    @app.post("/submit")
-    async def submit(request: Request):
-        return await handle_form_submission(request, func, params)
-
-
-def setup_multiple_function_routes(app, funcs: list[Callable], templates: Jinja2Templates, has_auth: bool):
-    """Setup routes for multiple functions mode.
-    
-    Args:
-        app: FastAPI application instance.
-        funcs: List of functions to wrap.
-        templates: Jinja2Templates instance.
-        has_auth: Whether authentication is enabled.
-    """
-    @app.get("/")
-    async def index(request: Request):
-        tools = [{
-            "name": f.__name__.replace('_', ' ').title(),
-            "path": f"/{f.__name__}"
-        } for f in funcs]
-        return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "tools": tools, "has_auth": has_auth}
-        )
-    
-    for func in funcs:
-        _register_function_routes(app, func, templates, has_auth)
-
-
-def setup_grouped_function_routes(app, grouped_funcs: dict[str, list[Callable]], templates: Jinja2Templates, has_auth: bool):
-    """Setup routes for grouped functions mode.
-    
-    Args:
-        app: FastAPI application instance.
-        grouped_funcs: Dictionary of {group_name: [functions]}.
-        templates: Jinja2Templates instance.
-        has_auth: Whether authentication is enabled.
-    """
-    @app.get("/")
-    async def index(request: Request):
-        groups = []
-        for group_name, funcs in grouped_funcs.items():
-            tools = [{
-                "name": f.__name__.replace('_', ' ').title(),
-                "path": f"/{f.__name__}"
-            } for f in funcs]
-            
-            groups.append({
-                "name": group_name,
-                "tools": tools
-            })
-        
-        return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "groups": groups, "has_auth": has_auth}
-        )
-
-    for funcs in grouped_funcs.values():
-        for func in funcs:
-            _register_function_routes(app, func, templates, has_auth)

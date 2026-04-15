@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ page_title }}{% endblock %}</title>
+    {% if favicon %}
+    <link rel="icon" href="{{ favicon }}" type="image/x-icon">
+    {% endif %}
+    
+    <link rel="stylesheet" href="/static/styles.css">
+    {% if css_vars %}
+    <style>
+        {% raw %}:root {{% endraw %}
+            {% for var_name, var_value in css_vars.items() %}
+            {{ var_name }}: {{ var_value }};
+            {% endfor %}
+        {% raw %}}{% endraw %}
+    </style>
+    {% endif %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% include 'theme-toggle.html' %}
+    
+    {% block navigation %}
+        {% if navigation_data %}
+        {% include 'navigation.html' %}
+        {% endif %}
+    {% endblock %}
+    
+    {% block content %}{% endblock %}
+    
+    <script src="/static/scripts.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

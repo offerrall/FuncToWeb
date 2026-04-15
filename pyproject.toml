@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "func-to-web"
-version = "0.9.14"
+version = "1.0.0"
 authors = [
     {name = "Beltrán Offerrall"}
 ]
@@ -12,12 +12,14 @@ description = "Transform any Python function into a web interface automatically"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "pytypeinput",
+    "pytypeinputweb",
     "fastapi",
     "uvicorn",
-    "pydantic",
     "jinja2",
     "python-multipart",
     "itsdangerous",
+    "aiofiles",
     "starlette<1.0.0",
 ]
 
@@ -29,4 +31,8 @@ Repository = "https://github.com/offerrall/FuncToWeb"
 where = ["."]
 
 [tool.setuptools.package-data]
-func_to_web = ["templates/*.html", "templates/static/*"]
+func_to_web = [
+    "templates/*.html",
+    "internal_static/**/*.css",
+    "internal_static/**/*.js"
+]

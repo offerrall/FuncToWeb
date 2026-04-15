@@ -1,0 +1,46 @@
+.theme-toggle {
+    position: fixed;
+    top: var(--functoweb-theme-toggle-top);
+    right: var(--functoweb-theme-toggle-right);
+    width: var(--functoweb-theme-toggle-size);
+    height: var(--functoweb-theme-toggle-size);
+    border: var(--functoweb-theme-toggle-border-width) solid var(--functoweb-surface-border);
+    background: var(--functoweb-surface-bg);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1002;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle:hover {
+    transform: scale(var(--functoweb-theme-toggle-hover-scale));
+    border-color: var(--functoweb-surface-focus);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-toggle:active {
+    transform: scale(1.02);
+}
+
+.theme-toggle svg {
+    width: var(--functoweb-theme-toggle-icon-size);
+    height: var(--functoweb-theme-toggle-icon-size);
+    fill: var(--functoweb-label-color);
+    stroke: var(--functoweb-label-color);
+    stroke-width: var(--functoweb-theme-toggle-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-icon {
+    display: none;
+}
+
+.theme-icon.active {
+    display: block;
+}

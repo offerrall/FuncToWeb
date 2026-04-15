@@ -1,0 +1,151 @@
+.functoweb-nav-link {
+    color: var(--functoweb-title-color);
+    text-decoration: none;
+    font-size: var(--functoweb-nav-link-font-size);
+    font-weight: var(--functoweb-nav-link-font-weight);
+    font-family: var(--functoweb-font-family);
+    padding: var(--functoweb-nav-link-padding);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 42px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.functoweb-nav-link:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-button-bg);
+}
+
+.functoweb-nav-link:active {
+    background: var(--functoweb-nav-link-active-bg);
+}
+
+.functoweb-nav-group {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.functoweb-nav-group-toggle {
+    width: 100%;
+    color: var(--functoweb-title-color);
+    background: transparent;
+    border: none;
+    font-size: var(--functoweb-nav-link-font-size);
+    font-weight: var(--functoweb-nav-link-font-weight);
+    font-family: var(--functoweb-font-family);
+    padding: var(--functoweb-nav-link-padding);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    height: 42px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.functoweb-nav-group-toggle:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-button-bg);
+}
+
+.functoweb-nav-group-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.functoweb-nav-arrow {
+    font-size: var(--functoweb-nav-arrow-size);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
+.functoweb-nav-group.active .functoweb-nav-arrow {
+    transform: rotate(180deg);
+}
+
+.functoweb-nav-group-content {
+    display: none;
+    flex-direction: column;
+    gap: var(--functoweb-sidebar-gap);
+    padding-left: var(--functoweb-nav-subgroup-padding-left);
+    margin-top: var(--functoweb-sidebar-gap);
+}
+
+.functoweb-nav-group.active > .functoweb-nav-group-content {
+    display: flex;
+}
+
+.functoweb-nav-subgroup {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.functoweb-nav-subgroup-toggle {
+    width: 100%;
+    color: var(--functoweb-description-color);
+    background: transparent;
+    border: none;
+    font-size: var(--functoweb-nav-group-font-size);
+    font-weight: var(--functoweb-nav-group-font-weight);
+    font-family: var(--functoweb-font-family);
+    padding: var(--functoweb-nav-group-padding);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    height: 38px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.functoweb-nav-subgroup-toggle:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+}
+
+.functoweb-nav-subarrow {
+    font-size: calc(var(--functoweb-nav-arrow-size) * 0.85);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
+.functoweb-nav-subgroup.active > .functoweb-nav-subgroup-toggle .functoweb-nav-subarrow {
+    transform: rotate(180deg);
+}
+
+.functoweb-nav-subgroup-content {
+    display: none;
+    flex-direction: column;
+    gap: var(--functoweb-sidebar-gap);
+    padding-left: var(--functoweb-nav-subgroup-padding-left);
+    margin-top: var(--functoweb-sidebar-gap);
+}
+
+.functoweb-nav-subgroup.active > .functoweb-nav-subgroup-content {
+    display: flex;
+}

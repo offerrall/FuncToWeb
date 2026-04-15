@@ -1,0 +1,76 @@
+.functoweb-group {
+    border: var(--functoweb-group-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-group-border-radius);
+    overflow: hidden;
+    background: var(--functoweb-surface-bg);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.functoweb-group:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.functoweb-group-header {
+    width: 100%;
+    padding: var(--functoweb-group-header-padding);
+    background: transparent;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: var(--functoweb-group-header-font-size);
+    font-weight: var(--functoweb-group-header-font-weight);
+    color: var(--functoweb-title-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    font-family: var(--functoweb-font-family);
+    letter-spacing: -0.01em;
+}
+
+.functoweb-group-header:hover {
+    background: var(--functoweb-surface-disabled-bg);
+}
+
+.functoweb-group-header:active {
+    background: var(--functoweb-surface-track-bg);
+}
+
+.functoweb-group-name {
+    flex: 1;
+}
+
+.functoweb-group-icon {
+    color: var(--functoweb-description-color);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: var(--functoweb-group-icon-size);
+}
+
+.functoweb-group-header.active .functoweb-group-icon {
+    transform: rotate(180deg);
+}
+
+.functoweb-group-content {
+    display: none;
+}
+
+.functoweb-group-content.active {
+    display: flex;
+    flex-direction: column;
+    gap: var(--functoweb-items-gap);
+    padding: var(--functoweb-group-content-padding);
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

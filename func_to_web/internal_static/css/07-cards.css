@@ -1,0 +1,47 @@
+.functoweb-items {
+    display: grid;
+    gap: var(--functoweb-items-gap);
+    margin-top: var(--functoweb-items-margin-top);
+}
+
+.functoweb-function-card {
+    display: block;
+    padding: var(--functoweb-card-padding);
+    background: var(--functoweb-surface-bg);
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-card-border-radius);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    font-family: var(--functoweb-font-family);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.functoweb-function-card:hover {
+    border-color: var(--functoweb-button-bg);
+    transform: translateY(var(--functoweb-card-hover-translate));
+    box-shadow: var(--functoweb-card-hover-shadow);
+}
+
+.functoweb-function-card:active {
+    transform: translateY(-1px);
+}
+
+.functoweb-function-card-title {
+    margin: 0;
+    color: var(--functoweb-title-color);
+    font-size: var(--functoweb-card-title-font-size);
+    font-weight: var(--functoweb-card-title-font-weight);
+    font-family: inherit;
+    letter-spacing: -0.01em;
+}
+
+.functoweb-function-card-description {
+    margin: var(--functoweb-card-description-margin-top) 0 0 0;
+    color: var(--functoweb-description-color);
+    font-size: var(--functoweb-card-description-font-size);
+    line-height: var(--functoweb-card-description-line-height);
+    font-family: inherit;
+    font-weight: 400;
+}

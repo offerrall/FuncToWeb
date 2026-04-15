@@ -1,0 +1,407 @@
+.functoweb-result-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.functoweb-result-block {
+    border-radius: var(--functoweb-card-border-radius);
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    overflow: hidden;
+    background: var(--functoweb-surface-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-result-error {
+    border-color: #e74c3c;
+}
+
+.functoweb-result-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 0.75rem;
+    color: #fff;
+}
+.functoweb-result-error .functoweb-result-label {
+    background: #e74c3c;
+}
+
+.functoweb-result-body {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+}
+
+.functoweb-result-text {
+    flex: 1;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--functoweb-font-family);
+    font-size: var(--functoweb-card-description-font-size);
+    line-height: var(--functoweb-card-description-line-height);
+    color: var(--functoweb-surface-text);
+}
+
+.functoweb-result-image {
+    position: relative;
+    justify-content: center;
+}
+
+.functoweb-result-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* ===== TABLE ===== */
+
+.functoweb-result-table {
+    position: relative;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+}
+
+.functoweb-table-wrapper {
+    overflow: auto;
+    max-height: 420px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--functoweb-surface-border) transparent;
+}
+
+.functoweb-table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.functoweb-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.functoweb-table-wrapper::-webkit-scrollbar-thumb {
+    background: var(--functoweb-surface-border);
+    border-radius: 3px;
+}
+
+.functoweb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--functoweb-surface-text);
+}
+
+.functoweb-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.functoweb-table th {
+    background: var(--functoweb-surface-track-bg);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--functoweb-description-color);
+    padding: 0.625rem 0.875rem;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--functoweb-surface-border);
+}
+
+.functoweb-table td {
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid var(--functoweb-surface-border);
+    white-space: nowrap;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.functoweb-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.functoweb-table tbody tr:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+}
+
+.functoweb-table tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--functoweb-surface-track-bg) 30%, transparent);
+}
+
+.functoweb-table tbody tr:nth-child(even):hover {
+    background: var(--functoweb-nav-link-hover-bg);
+}
+
+.functoweb-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--functoweb-surface-border);
+    justify-content: flex-end;
+}
+
+.functoweb-table-row-count {
+    font-size: 0.75rem;
+    color: var(--functoweb-description-color);
+    margin-right: auto;
+}
+
+/* ===== TABLE FULLSCREEN OVERLAY ===== */
+
+.functoweb-table-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--functoweb-overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+    padding: 2rem;
+}
+
+.functoweb-table-overlay-inner {
+    background: var(--functoweb-surface-bg);
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-container-border-radius);
+    box-shadow: var(--functoweb-container-shadow);
+    width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.functoweb-table-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--functoweb-surface-border);
+    flex-shrink: 0;
+}
+
+.functoweb-table-overlay-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--functoweb-title-color);
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-table-overlay-close {
+    background: transparent;
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    padding: 6px;
+    cursor: pointer;
+    color: var(--functoweb-description-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.functoweb-table-overlay-close:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+    border-color: var(--functoweb-title-color);
+}
+
+.functoweb-table-overlay-body {
+    overflow: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--functoweb-surface-border) transparent;
+}
+
+.functoweb-table-overlay-body .functoweb-table td {
+    white-space: normal;
+    max-width: none;
+}
+
+/* ===== END TABLE ===== */
+
+.functoweb-expand-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: var(--functoweb-surface-bg);
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    padding: 6px;
+    cursor: pointer;
+    color: var(--functoweb-description-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+
+.functoweb-result-image:hover .functoweb-expand-btn {
+    opacity: 1;
+}
+
+.functoweb-expand-btn:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+    border-color: var(--functoweb-title-color);
+}
+
+.functoweb-image-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--functoweb-overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+}
+
+.functoweb-image-overlay-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--functoweb-card-border-radius);
+    box-shadow: var(--functoweb-container-shadow);
+}
+
+.functoweb-copy-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    padding: 6px;
+    cursor: pointer;
+    color: var(--functoweb-description-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.functoweb-copy-btn:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+    border-color: var(--functoweb-title-color);
+}
+.functoweb-copy-btn.copied {
+    color: #2ecc71;
+    border-color: #2ecc71;
+}
+
+.functoweb-console {
+    border: var(--functoweb-card-border-width) solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-card-border-radius);
+    overflow: hidden;
+    background: var(--functoweb-surface-bg);
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-console-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--functoweb-description-color);
+    font-family: var(--functoweb-font-family);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.functoweb-console-toggle:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+}
+
+.functoweb-console-toggle svg {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.functoweb-console.open .functoweb-console-toggle svg {
+    transform: rotate(180deg);
+}
+
+.functoweb-console-count {
+    background: var(--functoweb-surface-track-bg);
+    color: var(--functoweb-description-color);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 9999px;
+    margin-left: auto;
+}
+
+.functoweb-console-content {
+    display: none;
+    border-top: 1px solid var(--functoweb-surface-border);
+}
+
+.functoweb-console.open .functoweb-console-content {
+    display: block;
+}
+
+.functoweb-console-log {
+    margin: 0;
+    padding: 0.75rem;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--functoweb-surface-text);
+    max-height: calc(1.6em * 5 + 1.5rem);
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    scrollbar-width: thin;
+    scrollbar-color: var(--functoweb-surface-border) transparent;
+}
+
+.functoweb-result-download,
+.functoweb-result-downloads {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.functoweb-download-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--functoweb-button-bg);
+    color: #fff;
+    border: none;
+    border-radius: var(--functoweb-nav-link-border-radius);
+    font-family: var(--functoweb-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.functoweb-download-btn:hover {
+    opacity: 0.85;
+}

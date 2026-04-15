@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.0] - 2026-04-15
+
+Biggest release so far. The library has been rewritten from the ground up — most existing code works without changes or with very minor ones.
+
+The biggest structural change is that FuncToWeb is now split into three independent libraries:
+
+- **[pytypeinput](https://github.com/offerrall/pytypeinput)** — Analyzes Python type hints and extracts UI metadata. No web dependency.
+- **[pytypeinputweb](https://github.com/offerrall/pytypeinputweb)** — Renders HTML forms from `pytypeinput` metadata. Use it in your own server.
+- **[func-to-web](https://github.com/offerrall/functoweb)** — The full stack.
+
+This opens up a lot of new possibilities — for example, using FuncToWeb as a support layer inside an existing web app, exposing individual utility functions without building a full tool. There are other interesting approaches worth exploring that the docs cover.
+
+**A full re-read of the documentation is recommended.**
+
+This is a **stable beta**. I'll be actively fixing issues and improving things over the coming days.
 
 ## [0.9.14] - 2026-04-01
 ### Fixed

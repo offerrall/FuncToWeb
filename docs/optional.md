@@ -1,63 +1,97 @@
 # Optional Types
 
-<div class="grid" markdown>
+Optional fields render with a toggle switch. When disabled, the field is hidden and your function receives `None`.
 
-<div markdown>
+## Basic Usage
+
+Use `Type | None` to make a field optional. The initial toggle state is decided automatically:
+
+- **Toggle ON** — field has a default value
+- **Toggle OFF** — field has no default value
 
 ```python
 from func_to_web import run
-from func_to_web.types import OptionalEnabled, OptionalDisabled, Email
 
-def create_user(
-    username: str,  # Required field
-
-    # Explicit control
-    email: Email | OptionalEnabled,  # Always starts enabled
-    phone: str | OptionalDisabled,  # Always starts disabled
-
-    # Automatic behavior (standard Python syntax)
-    age: int | None = None,  # Disabled (no default value)
-    city: str | None = "Madrid",  # Enabled (has default value)
-
-    # Explicit control with default
-    bio: str | OptionalDisabled = "Dev",  # Disabled despite default
+def basic(
+    name:  str | None = "Alice",  # Toggle starts ON (has default)
+    age:   int | None = None,     # Toggle starts OFF (None default)
+    email: str | None,            # Toggle starts OFF (no default)
 ):
-    result = f"Username: {username}"
-    if age:
-        result += f", Age: {age}"
-    if city:
-        result += f", City: {city}"
-    if email:
-        result += f", Email: {email}"
-    if phone:
-        result += f", Phone: {phone}"
-    if bio:
-        result += f", Bio: {bio}"
-    return result
+    return f"Name: {name}, Age: {age}, Email: {email}"
 
-run(create_user)
+run(basic)
 ```
 
-</div>
+![Basic Usage](images/optional1.jpg)
 
-<div markdown>
+## Explicit Control
 
-![Optional Parameters](images/optional.jpg)
+Use `OptionalEnabled` or `OptionalDisabled` to override the automatic behavior regardless of the default value:
 
-</div>
+```python
+from func_to_web import run
+from func_to_web.types import OptionalEnabled, OptionalDisabled
 
-</div>
+def explicit_control(
+    name:  str | OptionalEnabled,           # Toggle starts ON (no default)
+    bio:   str | OptionalDisabled = "Dev",  # Toggle starts OFF (despite having default)
+):
+    return f"Name: {name}, Bio: {bio}"
 
-## How It Works
+run(explicit_control)
+```
 
-- Optional fields display a **toggle switch** to enable/disable them
-- **Automatic mode** (`Type | None`): Enabled if has default value, disabled if no default
-- **Explicit mode** (`Type | OptionalEnabled/OptionalDisabled`): You control the initial state, overriding defaults
-- Disabled fields automatically send `None` to your function
-- Works with all field types and constraints (including lists!)
+> `OptionalEnabled` and `OptionalDisabled` are `None` at runtime — they only affect the initial toggle state in the UI.
 
-Note: OptionalEnabled/OptionalDisabled are None for type checking
+![Explicit Control](images/optional2.jpg)
 
-## Next Steps
+## Works with All Types
 
-- [Dropdowns](dropdowns.md) - Use dropdown menus for inputs
+```python
+from datetime import date
+from func_to_web import run
+from func_to_web.types import Color, Email, ImageFile
+
+def all_types(
+    count:   int         | None = None,
+    ratio:   float       | None = None,
+    flag:    bool        | None = None,
+    tag:     str         | None = None,
+    mail:    Email       | None = None,
+    color:   Color       | None = None,
+    photo:   ImageFile   | None = None,
+    day:     date        | None = None,
+):
+    return "All optional"
+
+run(all_types)
+```
+
+## Optional Lists
+
+```python
+from func_to_web import run
+
+def optional_list(tags: list[str] | None = None):
+    return f"Tags: {tags}"
+
+run(optional_list)
+```
+
+![Optional Lists](images/optional3.jpg)
+
+## Handling None in Your Function
+
+When a toggle is disabled, your function receives `None` — always check before using the value:
+
+```python
+from func_to_web import run
+
+def handling_none(age: int | None = None, name: str | None = "Alice"):
+    result = f"Name: {name or 'unknown'}"
+    if age is not None:
+        result += f", Age: {age}"
+    return result
+
+run(handling_none)
+```

@@ -1,0 +1,72 @@
+.functoweb-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--functoweb-form-gap);
+}
+
+.functoweb-submit {
+    margin-top: var(--functoweb-submit-margin-top);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.functoweb-submit-btn {
+    background: var(--functoweb-button-bg);
+    color: var(--functoweb-button-color);
+    border: none;
+    padding: var(--functoweb-button-padding);
+    border-radius: var(--functoweb-button-border-radius);
+    font-size: var(--functoweb-button-font-size);
+    font-weight: var(--functoweb-button-font-weight);
+    font-family: var(--functoweb-font-family);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.functoweb-submit-btn:hover {
+    background: var(--functoweb-button-bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.functoweb-submit-btn:active {
+    background: var(--functoweb-button-bg-active);
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.functoweb-submit-btn:disabled {
+    background: var(--functoweb-button-bg-disabled);
+    cursor: not-allowed;
+    opacity: var(--functoweb-button-disabled-opacity);
+    transform: none;
+}
+
+.functoweb-reset-btn {
+    background: transparent;
+    color: var(--functoweb-description-color);
+    border: 2px solid var(--functoweb-surface-border);
+    padding: var(--functoweb-button-padding);
+    border-radius: var(--functoweb-button-border-radius);
+    font-size: var(--functoweb-button-font-size);
+    font-weight: var(--functoweb-button-font-weight);
+    font-family: var(--functoweb-font-family);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.functoweb-reset-btn:hover {
+    background: var(--functoweb-nav-link-hover-bg);
+    color: var(--functoweb-title-color);
+    border-color: var(--functoweb-title-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.functoweb-reset-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}

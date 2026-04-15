@@ -53,24 +53,25 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Input Types:
-      - Basic Types: types.md
-      - File Types: files.md
+      - Numeric: numeric.md
+      - String: string.md
+      - Boolean: boolean.md
+      - Date & Time: datetime.md
+      - Colors: color.md
+      - Files: files.md
+      - Dropdown: dropdown.md
       - Lists: lists.md
-      - Optional Parameters: optional.md
-      - Dropdowns: dropdowns.md
-  - Types Constraints: constraints.md
+      - Optional: optional.md
+      - Params: params.md
+      - Composition: composition.md
   - Output Types:
-      - Images & Plots: images.md
-      - File Downloads: downloads.md
-      - Tables: tables.md
-      - Multiple Outputs: multiple-outputs.md
-  - Other Features:
-      - Function Descriptions: function-descriptions.md
-      - Multiple Functions: multiple.md
-      - Authentication: authentication.md
-      - Dark Mode: dark-mode.md
-      - Server Configuration: server-configuration.md
-  - API: api.md
+      - Output Types: outputs.md
+  - Features:
+      - Configuration: config.md
+      - Authentication: auth.md
+      - Multiple functions: multiple.md
+      - Prefill values: url_prefill.md
+      - Dark mode: dark_mode.md
 
 plugins:
   - minify:

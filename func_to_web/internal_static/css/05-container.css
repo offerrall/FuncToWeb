@@ -1,0 +1,34 @@
+.functoweb-container {
+    max-width: var(--functoweb-container-max-width);
+    width: calc(100% - (var(--functoweb-container-side-margin) * 2));
+    margin: var(--functoweb-container-margin);
+    padding: var(--functoweb-container-padding);
+    background: var(--functoweb-surface-bg);
+    border-radius: var(--functoweb-container-border-radius);
+    box-shadow: var(--functoweb-container-shadow);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: fit-content;
+    align-self: flex-start;
+}
+
+.functoweb-title {
+    margin-top: var(--functoweb-title-margin-top);
+    margin-bottom: var(--functoweb-title-margin-bottom);
+    color: var(--functoweb-title-color);
+    font-size: var(--functoweb-title-font-size);
+    font-weight: var(--functoweb-title-font-weight);
+    font-family: var(--functoweb-font-family);
+    letter-spacing: var(--functoweb-title-letter-spacing);
+    text-align: center;
+}
+
+.functoweb-description {
+    color: var(--functoweb-description-color);
+    margin-top: var(--functoweb-description-margin-top);
+    margin-bottom: var(--functoweb-description-margin-bottom);
+    line-height: var(--functoweb-description-line-height);
+    font-size: var(--functoweb-description-font-size);
+    font-family: var(--functoweb-font-family);
+    text-align: center;
+    font-weight: 400;
+}

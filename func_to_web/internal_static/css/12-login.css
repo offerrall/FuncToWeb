@@ -1,0 +1,104 @@
+.functoweb-login-body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--functoweb-bg);
+}
+
+.functoweb-login-container {
+    width: calc(100% - (var(--functoweb-container-side-margin) * 2));
+    max-width: 400px;
+    padding: var(--functoweb-container-padding);
+    background: var(--functoweb-surface-bg);
+    border-radius: var(--functoweb-container-border-radius);
+    box-shadow: var(--functoweb-container-shadow);
+}
+
+.functoweb-login-title {
+    margin-top: var(--functoweb-title-margin-top);
+    margin-bottom: var(--functoweb-title-margin-bottom);
+    color: var(--functoweb-title-color);
+    font-size: var(--functoweb-title-font-size);
+    font-weight: var(--functoweb-title-font-weight);
+    font-family: var(--functoweb-font-family);
+    letter-spacing: var(--functoweb-title-letter-spacing);
+    text-align: center;
+}
+
+.functoweb-login-error {
+    margin: 0 0 1rem 0;
+    padding: 0.75rem 1rem;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    color: #e74c3c;
+    font-size: 0.9375rem;
+    font-family: var(--functoweb-font-family);
+    text-align: center;
+}
+
+.functoweb-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--functoweb-form-gap);
+}
+
+.functoweb-login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.functoweb-login-field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--functoweb-label-color);
+    font-family: var(--functoweb-font-family);
+}
+
+.functoweb-login-field input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--functoweb-surface-bg);
+    border: 2px solid var(--functoweb-surface-border);
+    border-radius: var(--functoweb-nav-link-border-radius);
+    color: var(--functoweb-surface-text);
+    font-size: 1rem;
+    font-family: var(--functoweb-font-family);
+    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.functoweb-login-field input:focus {
+    outline: none;
+    border-color: var(--functoweb-surface-focus);
+}
+
+.functoweb-login-submit {
+    margin-top: 0.5rem;
+    width: 100%;
+    background: var(--functoweb-button-bg);
+    color: var(--functoweb-button-color);
+    border: none;
+    padding: var(--functoweb-button-padding);
+    border-radius: var(--functoweb-button-border-radius);
+    font-size: var(--functoweb-button-font-size);
+    font-weight: var(--functoweb-button-font-weight);
+    font-family: var(--functoweb-font-family);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.functoweb-login-submit:hover {
+    background: var(--functoweb-button-bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.functoweb-login-submit:active {
+    background: var(--functoweb-button-bg-active);
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}

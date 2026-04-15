@@ -1,0 +1,55 @@
+{% macro render_nav_children(children) %}
+    {% for child in children %}
+        {% if child.type == 'function' %}
+            {% if not child.hidden %}
+            <a href="{{ child.url }}" class="functoweb-nav-link">{{ child.name }}</a>
+            {% endif %}
+        {% else %}
+            <div class="functoweb-nav-subgroup">
+                <button class="functoweb-nav-subgroup-toggle" onclick="toggleSubgroup(this)">
+                    {{ child.name }}
+                    <span class="functoweb-nav-subarrow">▼</span>
+                </button>
+                <div class="functoweb-nav-subgroup-content">
+                    {{ render_nav_children(child.children) }}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+<nav class="functoweb-sidebar">
+    <div class="functoweb-sidebar-header">
+        <a href="/" class="functoweb-sidebar-close" aria-label="Ir a Home">
+            <span class="functoweb-sidebar-close-icon">◄</span>
+        </a>
+    </div>
+    
+    <div class="functoweb-sidebar-menu">
+        {% for item in navigation_data %}
+            {% if item.type == 'function' %}
+                {% if not item.hidden %}
+                <a href="{{ item.url }}" class="functoweb-nav-link">{{ item.name }}</a>
+                {% endif %}
+            {% else %}
+                <div class="functoweb-nav-group">
+                    <button class="functoweb-nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <span class="functoweb-nav-group-name">{{ item.name }}</span>
+                        <span class="functoweb-nav-arrow">▼</span>
+                    </button>
+                    <div class="functoweb-nav-group-content">
+                        {{ render_nav_children(item.children) }}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</nav>
+
+<button class="functoweb-sidebar-mobile-toggle" onclick="toggleSidebarMobile()" aria-label="Toggle menu">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<div class="functoweb-sidebar-overlay" onclick="closeSidebarMobile()"></div>

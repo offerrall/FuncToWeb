@@ -20,10 +20,9 @@ run(divide)
 
 Open `http://127.0.0.1:8000` → **Done!**
 
-- [Input Types](types.md) - Learn about supported input types
-- [Types Constraints](constraints.md) - Add input validation easily
-- [Output Types](images.md) - Return files, images, plots, tables...
-- [Other Features](function-descriptions.md) - Multiple functions, Authentication, server options...
+- [Input Types](numeric.md) - Learn about supported input types, validation and custom
+- [Output Types](outputs.md) - Return files, images, plots, tables...
+- [Other Features](config.md) - Multiple functions, Authentication, server options...
 
 </div>
 

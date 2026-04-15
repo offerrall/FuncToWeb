@@ -1,0 +1,16 @@
+body {
+    background: var(--functoweb-bg);
+    margin: 0;
+    padding: 0;
+    scrollbar-gutter: stable;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+body.has-sidebar {
+    display: flex;
+}
+
+body:not(.has-sidebar) .functoweb-main {
+    margin-left: 0;
+}

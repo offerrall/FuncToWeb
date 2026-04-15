@@ -1,113 +1,180 @@
 # Lists
 
-<div class="grid" markdown>
-
-<div markdown>
+Use `list[T]` for dynamic list inputs. Renders with add/remove buttons for each item.
 
 ## Basic Usage
-Create dynamic lists of any type with add/remove buttons.
 
 ```python
 from func_to_web import run
-from func_to_web.types import Color, Email
 
-def process_data(
-    # Basic type lists
-    numbers: list[int],                      # List of integers
-    colors: list[Color],                     # List of color pickers
-    names: list[str] = ["Alice", "Bob"],     # List with defaults
-):
-    return f"Processed {len(numbers)} numbers, {len(names)} names"
+def basic(names: list[str], scores: list[int]):
+    return f"Names: {names}, Scores: {scores}"
 
-run(process_data)
+run(basic)
 ```
 
-</div>
+![Basic Usage](images/list1.jpg)
 
-<div markdown>
+## Default Values
 
-![Dynamic Lists](images/lists_basic.jpg)
+```python
+from func_to_web import run
 
-</div>
+def defaults(tags: list[str] = ["python", "web"]):
+    return f"Tags: {tags}"
 
-</div>
+run(defaults)
+```
 
-<div class="grid" markdown>
+![Default Values](images/list2.jpg)
 
-<div markdown>
+## Supported Types
+
+Works with all input types:
+
+```python
+from datetime import date, time
+from func_to_web import run
+from func_to_web.types import Color, Email, ImageFile
+
+def supported_types(
+    numbers:  list[int],
+    decimals: list[float],
+    texts:    list[str],
+    flags:    list[bool],
+    dates:    list[date],
+    times:    list[time],
+    colors:   list[Color],
+    emails:   list[Email],
+    photos:   list[ImageFile],
+):
+    return "All received"
+
+run(supported_types)
+```
+
+## Item Constraints
+
+Add validation rules to each individual item:
+
+```python
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run
+
+def item_constraints(
+    scores:    list[Annotated[int,   Field(ge=0, le=100)]],
+    usernames: list[Annotated[str,   Field(min_length=3, max_length=20)]],
+    ratios:    list[Annotated[float, Field(ge=0.0, le=1.0)]],
+):
+    return f"Scores: {scores}"
+
+run(item_constraints)
+```
 
 ## List Constraints
 
+Control the minimum and maximum number of items in the list:
+
 ```python
-from func_to_web import run
 from typing import Annotated
 from pydantic import Field
+from func_to_web import run
 
-def rate_movies(
-    # Each rating 1-5, need 3-10 ratings total
+def list_constraints(
+    members: Annotated[list[str], Field(min_length=2, max_length=5)],
+    tags:    Annotated[list[str], Field(min_length=1)],
+):
+    return f"Members: {members}"
+
+run(list_constraints)
+```
+
+## Item + List Constraints Combined
+
+```python
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run
+
+def combined_constraints(
     ratings: Annotated[
         list[Annotated[int, Field(ge=1, le=5)]],
         Field(min_length=3, max_length=10)
-    ]
+    ],
 ):
     avg = sum(ratings) / len(ratings)
-    return f"Average rating: {avg:.1f} ⭐"
+    return f"Average: {avg:.1f}"
 
-run(rate_movies)
+run(combined_constraints)
 ```
 
-</div>
+![Item + List Constraints Combined](images/list3.jpg)
 
-<div markdown>
+## Item UI (Label, Description, Step, Slider...)
 
-![List Constraints](images/lists_constraints.jpg)
+UI metadata on the item applies to each individual element:
 
-</div>
+```python
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run
+from func_to_web.types import Label, Description, Slider, Step
 
-</div>
+def item_ui(
+    volumes: list[Annotated[int,   Field(ge=0, le=100), Slider(), Label("Volume"), Description("Per track")]],
+    offsets: list[Annotated[float, Step(0.5), Label("Offset")]],
+):
+    return f"Volumes: {volumes}"
 
-<div class="grid" markdown>
+run(item_ui)
+```
 
-<div markdown>
+![Item UI](images/list4.jpg)
 
-## File Lists
-Upload multiple files from different folders easily.
+## List-Level Label & Description
+
+`Label` and `Description` at the list level override the item ones and apply to the whole block:
+
+```python
+from typing import Annotated
+from pydantic import Field
+from func_to_web import run
+from func_to_web.types import Label, Description
+
+def list_label(
+    scores: Annotated[
+        list[Annotated[int, Field(ge=0, le=100), Label("Item Score")]],
+        Field(min_length=1, max_length=5),
+        Label("Score List"),
+        Description("Add between 1 and 5 scores"),
+    ],
+):
+    return f"Scores: {scores}"
+
+run(list_label)
+```
+
+> `Label("Score List")` and `Description("Add between 1 and 5 scores")` override `Label("Item Score")` for the block header.
+
+![List-Level Label & Description](images/list5.jpg)
+
+## Optional List
 
 ```python
 from func_to_web import run
-from func_to_web.types import ImageFile, DataFile
 
-def batch_process(
-    images: list[ImageFile],           # Multiple images
-    datasets: list[DataFile],          # Multiple CSV/Excel files
-):
-    return f"Processed {len(images)} images and {len(datasets)} datasets"
+def optional(tags: list[str] | None = None):
+    return f"Tags: {tags}"
 
-run(batch_process)
+run(optional)
 ```
 
-Click **"+"** button to add more files from other folders
+> For full control over the toggle's initial state (`OptionalEnabled` / `OptionalDisabled`), see [Optional Types](optional.md).
 
-</div>
+![Optional List](images/list6.jpg)
 
-<div markdown>
+## Limitations
 
-![File Lists](images/file_lists.jpg)
-
-</div>
-
-</div>
-
-## Key Features
-- **Dynamic add/remove buttons** for each list
-- **File uploads** support multiple files from different folders
-- Works with **all types**: `int`, `float`, `str`, `bool`, `date`, `time`, `Color`, `Email`, File Types
-- Default values: `list[str] = ["hello", "world"]`
-- All non-optional lists require at least 1 item
-- Not supported with `Literal`
-- Lists cannot be nested (e.g., `list[list[int]]` is not supported)
-
-## Next Steps
-
-- [Optional Types](optional.md) - Make parameters optional
-- [Dropdowns](dropdowns.md) - Use dropdown menus for inputs
+- Lists cannot be nested: `list[list[int]]` is not supported
+- All items in a list must be the same type

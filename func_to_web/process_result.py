@@ -1,170 +1,156 @@
 import io
 import base64
-from .types import FileResponse as UserFileResponse
-from .file_handler import save_returned_file
-from .check_return_is_table import detect_and_convert_table, is_homogeneous_list_of_dicts, is_homogeneous_list_of_tuples
+from .types import FileResponse, ActionTable
+from .core.return_file_handler import save_returned_file
+from .core.table import try_process_table
+from .core.utils import slugify
 
 
-def _process_file_response(file_response: UserFileResponse) -> tuple[str, str]:
-    """Process a single FileResponse and return (file_id, file_path).
-    
-    Args:
-        file_response: FileResponse instance with either data or path.
-        
-    Returns:
-        Tuple of (file_id, file_path) for the saved file.
-        
-    Raises:
-        ValueError: If file cannot be read or FileResponse is invalid.
-    """
-
-    if file_response.path is not None:
-        try:
-            with open(file_response.path, 'rb') as file:
-                file_data = file.read()
-        except FileNotFoundError:
-            raise ValueError(f"File not found: {file_response.path}")
-        except PermissionError:
-            raise ValueError(f"Permission denied reading file: {file_response.path}")
-        except Exception as e:
-            raise ValueError(f"Error reading file {file_response.path}: {str(e)}")
-        
-        return save_returned_file(file_data, file_response.filename)
-    
-    return save_returned_file(file_response.data, file_response.filename)
+def process_error(exc: Exception) -> dict:
+    """Return an error result from an exception."""
+    return {"type": "error", "data": str(exc)}
 
 
-def process_result(result):
-    """
-    Convert function result to appropriate display format.
-    """
-    # ===== PANDAS DATAFRAME =====
-    try:
-        import pandas as pd
-        if isinstance(result, pd.DataFrame):
-            headers = result.columns.tolist()
-            rows = [[str(cell) for cell in row] for row in result.values.tolist()]
-            return {
-                'type': 'table',
-                'headers': headers,
-                'rows': rows
-            }
-    except ImportError:
-        pass
-    
-    # ===== NUMPY 2D ARRAY =====
-    try:
-        import numpy as np
-        if isinstance(result, np.ndarray) and result.ndim == 2:
-            headers = [f"Column {i+1}" for i in range(result.shape[1])]
-            rows = [[str(cell) for cell in row] for row in result.tolist()]
-            return {
-                'type': 'table',
-                'headers': headers,
-                'rows': rows
-            }
-    except ImportError:
-        pass
-    
-    # ===== POLARS DATAFRAME =====
-    try:
-        import polars as pl
-        if isinstance(result, pl.DataFrame):
-            headers = result.columns
-            rows = [[str(cell) for cell in row] for row in result.rows()]
-            return {
-                'type': 'table',
-                'headers': headers,
-                'rows': rows
-            }
-    except ImportError:
-        pass
+def process_str(s: str) -> dict:
+    """Return a text result."""
+    return {"type": "text", "data": s}
 
-    # ===== TABLE DETECTION =====
-    table_result = detect_and_convert_table(result)
-    if table_result is not None:
-        return table_result
-    
-    # ===== TUPLE/LIST HANDLING =====
-    if isinstance(result, (tuple, list)):
-        # Empty tuple/list
-        if len(result) == 0:
-            return {'type': 'text', 'data': str(result)}
-        
-        # Check for nested tuples/lists that are NOT valid tables
-        for nested_item in result:
-            if isinstance(nested_item, (tuple, list)):
-                # If it's a valid table, allow it
-                if not (is_homogeneous_list_of_dicts(nested_item) or is_homogeneous_list_of_tuples(nested_item)):
-                    raise ValueError("Nested tuples/lists are not supported. Please flatten your return structure.")
-        
-        # Special case: list of FileResponse
-        if all(isinstance(f, UserFileResponse) for f in result):
-            files = []
-            for f in result:
-                file_id, file_path = _process_file_response(f)
-                files.append({
-                    'path': file_path,
-                    'filename': f.filename
-                })
-            return {
-                'type': 'downloads',
-                'files': files
-            }
-        
-        # General case: process each item recursively
-        outputs = []
-        for item in result:
-            outputs.append(process_result(item))
-        
-        return {
-            'type': 'multiple',
-            'outputs': outputs
-        }
-    
-    # ===== PIL IMAGE =====
+
+def process_pil_image(image) -> dict:
+    """Convert a PIL Image to a base64 PNG data URI."""
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    image.close()
+    buf.seek(0)
+    b64 = base64.b64encode(buf.read()).decode()
+    return {"type": "image", "data": f"data:image/png;base64,{b64}"}
+
+
+def process_matplotlib_figure(figure) -> dict:
+    """Convert a matplotlib Figure to a base64 PNG data URI."""
+    import matplotlib.pyplot as plt  # avoid hard dependency at import time
+
+    buf = io.BytesIO()
+    figure.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+    b64 = base64.b64encode(buf.read()).decode()
+    plt.close(figure)
+    return {"type": "image", "data": f"data:image/png;base64,{b64}"}
+
+
+def process_file_response(file_response: FileResponse) -> dict:
+    """Save a FileResponse and return a download descriptor."""
+    file_id, _ = save_returned_file(file_response)
+    return {
+        "type": "download",
+        "file_id": file_id,
+        "filename": file_response.filename,
+    }
+
+
+def process_file_response_list(items: list[FileResponse]) -> dict:
+    """Save multiple FileResponse objects and return a batch download descriptor."""
+    files = []
+    for f in items:
+        file_id, _ = save_returned_file(f)
+        files.append({"file_id": file_id, "filename": f.filename})
+    return {"type": "downloads", "files": files}
+
+
+def process_action_table(t: ActionTable) -> dict:
+    """Serialize an ActionTable into a navigable table descriptor."""
+    slug = slugify(t.action.__name__.replace("_", " "))
+    return {
+        "type": "action_table",
+        "headers": t.headers,
+        "rows": t.rows,
+        "action": f"/{slug}",
+    }
+
+
+def _is_pil_image(obj) -> bool:
+    """Check if object is a PIL Image (safe if PIL not installed)."""
     try:
         from PIL import Image
-        if isinstance(result, Image.Image):
-            buffer = io.BytesIO()
-            result.save(buffer, format='PNG')
-            buffer.seek(0)
-            img_base64 = base64.b64encode(buffer.read()).decode()
-            return {
-                'type': 'image',
-                'data': f'data:image/png;base64,{img_base64}'
-            }
+        return isinstance(obj, Image.Image)
     except ImportError:
-        pass
-    
-    # ===== MATPLOTLIB FIGURE =====
+        return False
+
+
+def _is_matplotlib_figure(obj) -> bool:
+    """Check if object is a matplotlib Figure (safe if matplotlib not installed)."""
     try:
-        import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
-        if isinstance(result, Figure):
-            buffer = io.BytesIO()
-            result.savefig(buffer, format='png', bbox_inches='tight')
-            buffer.seek(0)
-            img_base64 = base64.b64encode(buffer.read()).decode()
-            plt.close(result)
-            return {
-                'type': 'image',
-                'data': f'data:image/png;base64,{img_base64}'
-            }
+        return isinstance(obj, Figure)
     except ImportError:
-        pass
-    
-    # ===== SINGLE FILE =====
-    if isinstance(result, UserFileResponse):
-        file_id, file_path = _process_file_response(result)
-        return {
-            'type': 'download',
-            'path': file_path,
-            'filename': result.filename
-        }
-    
-    # ===== DEFAULT: TEXT =====
-    return {
-        'type': 'text',
-        'data': str(result)
-    }
+        return False
+
+
+def _process_single(result) -> dict:
+    """Serialize a single return value.
+
+    Order matters:
+    - None → "Done"
+    - list/tuple → recursive
+    - str → text
+    - ActionTable → action_table
+    - FileResponse → download
+    - PIL → image
+    - matplotlib → image
+    - table-like → table
+    - fallback → str()
+    """
+    if result is None:
+        return process_str("Done")
+
+    if isinstance(result, (tuple, list)):
+        return process_result(result)
+
+    if isinstance(result, str):
+        return process_str(result)
+
+    if isinstance(result, ActionTable):
+        return process_action_table(result)
+
+    if isinstance(result, FileResponse):
+        return process_file_response(result)
+
+    if _is_pil_image(result):
+        return process_pil_image(result)
+
+    if _is_matplotlib_figure(result):
+        return process_matplotlib_figure(result)
+
+    # Try structured table formats (list[dict], dataclasses, etc.)
+    table = try_process_table(result)
+    if table is not None:
+        return table
+
+    return process_str(str(result))
+
+
+def process_result(result) -> dict:
+    """Top-level dispatcher for function return values.
+
+    Handles sequences first, then falls back to single-value processing.
+    """
+    if isinstance(result, (tuple, list)):
+        if len(result) == 0:
+            return process_str("Done")
+
+        if all(isinstance(item, FileResponse) for item in result):
+            return process_file_response_list(list(result))
+
+        table = try_process_table(result)
+        if table is not None:
+            return table
+
+        items = [_process_single(item) for item in result if item is not None]
+
+        if len(items) == 1:
+            return items[0]
+
+        if len(items) > 1:
+            return {"type": "multiple", "data": items}
+
+    return _process_single(result)
