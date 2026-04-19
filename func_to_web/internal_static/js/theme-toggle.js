@@ -9,6 +9,35 @@
 })();
 
 (function() {
+    if (new URLSearchParams(location.search).get('__embed') !== '1') return;
+
+    function applyEmbed() {
+        document.querySelector('.theme-toggle')?.remove();
+        document.querySelector('.functoweb-sidebar')?.remove();
+        document.querySelector('.functoweb-sidebar-mobile-toggle')?.remove();
+        document.querySelector('.functoweb-sidebar-overlay')?.remove();
+
+        document.documentElement.style.setProperty('background', 'transparent', 'important');
+        document.body.style.setProperty('background', 'transparent', 'important');
+
+        const container = document.querySelector('.functoweb-container');
+        if (container) {
+            container.style.setProperty('max-width', 'none', 'important');
+            container.style.setProperty('background', 'transparent', 'important');
+            container.style.setProperty('box-shadow', 'none', 'important');
+            container.style.setProperty('border', 'none', 'important');
+            container.style.setProperty('padding', '0', 'important');
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyEmbed);
+    } else {
+        applyEmbed();
+    }
+})();
+
+(function() {
     'use strict';
     
     function getPreferredTheme() {
