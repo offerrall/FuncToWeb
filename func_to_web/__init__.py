@@ -4,4 +4,4 @@ from .models import FunctionMetadata, HiddenFunction
 from .core.utils import list_css_variables
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
