@@ -8,7 +8,7 @@ from .core.auth import setup_auth
 from .core.utils import print_beta_warning, create_pytypeinput_assets
 
 from .models import FunctionMetadata
-from .routes import setup_multi_items, setup_single_function, setup_download_route
+from .routes import setup_multi_items, setup_single_function, setup_download_route, setup_doc_route
 from . import call_function
 
 
@@ -84,6 +84,7 @@ def run(
     app = create_fastapi_app(root_path, fastapi_config)
 
     setup_download_route(app)
+    setup_doc_route(app, app_input)
 
     if app_input.single_function:
         setup_single_function(app, app_input)

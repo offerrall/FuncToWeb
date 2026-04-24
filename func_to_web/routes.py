@@ -2,9 +2,11 @@ import re
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse as FastAPIFileResponse, JSONResponse
+from fastapi.responses import PlainTextResponse
 
 from .builder import render_index
 from .models import FunctionMetadata, NormalizedInput
+from .core.docs import build_doc
 from .core.normalization import get_all_functions
 from .core.return_file_handler import get_returned_file
 from .route_handlers import create_handlers
@@ -86,3 +88,8 @@ def setup_download_route(app: FastAPI) -> None:
             filename=file_info["filename"],
             media_type="application/octet-stream",
         )
+
+def setup_doc_route(app: FastAPI, app_input: NormalizedInput) -> None:
+    @app.get("/doc", response_class=PlainTextResponse)
+    async def doc():
+        return build_doc(app_input)
