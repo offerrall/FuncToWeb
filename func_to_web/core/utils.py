@@ -51,9 +51,11 @@ def create_pytypeinput_assets() -> dict[str, Path]:
     return {'css': css_file, 'js': js_file}
 
 def print_beta_warning():
+    from .. import __version__
+
     """Print beta version warning message."""
     print("=" * 70)
-    print("FuncToWeb 1.0.0 - BETA VERSION")
+    print(f"FuncToWeb {__version__} BETA")
     print("=" * 70)
     print("This is a major rewrite and introduces breaking changes.")
     print()
