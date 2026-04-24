@@ -189,7 +189,7 @@ def dropdown(language: Literal["en", "es", "fr"]):
 run(dropdown)
 ```
 
-> For dynamic options and Enum dropdowns, see [Dropdowns](dropdowns.md).
+> For dynamic options and Enum dropdowns, see [Dropdowns](dropdown.md).
 
 ![Dropdown](images/string11.jpg)
 

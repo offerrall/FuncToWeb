@@ -71,6 +71,8 @@ nav:
       - Authentication: auth.md
       - Multiple functions: multiple.md
       - Prefill values: url_prefill.md
+      - AutoDoc for IA: api_doc.md
+      - Embed support: embed.md
       - Dark mode: dark_mode.md
 
 plugins:

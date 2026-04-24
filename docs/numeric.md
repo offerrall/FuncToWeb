@@ -148,7 +148,7 @@ def dropdown(
 run(dropdown)
 ```
 
-> For dynamic options and Enum dropdowns, see [Dropdowns](dropdowns.md).
+> For dynamic options and Enum dropdowns, see [Dropdowns](dropdown.md).
 
 ![Dropdown](images/numeric8.jpg)
 
