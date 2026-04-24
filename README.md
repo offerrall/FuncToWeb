@@ -71,6 +71,8 @@ Open `http://127.0.0.1:8000`.
 
 - Multiple functions with index page or collapsible groups — [docs](docs/multiple.md)
 - URL prefill — forms open prefilled from query params — [docs](docs/url_prefill.md)
+- Embed mode — drop any form into an existing site via `?__embed=1` — [docs](docs/embed.md)
+- Auto-generated API docs at `/doc` — call your endpoints from scripts or AI agents — [docs](docs/api_doc.md)
 - Real-time `print()` output in the browser — [docs](docs/outputs.md#print-output)
 - Username/password authentication — [docs](docs/auth.md)
 - Dark mode — [docs](docs/dark_mode.md)
@@ -157,10 +159,23 @@ run([edit_users, delete_users, create_user, HiddenFunction(delete_user), HiddenF
 
 ## Using Func To Web alongside your frontend
 
-Every function has its own URL with query param prefill.  
-That means any existing web app can embed a Func To Web function in an iframe — open a modal, pass the data via URL, let Func To Web handle the form and validation, close.
+Three building blocks let you plug FuncToWeb into anything you already have:
 
-This works best for self-contained operations: editing a record, uploading and processing files, generating a report, running a bulk action...
+- **URL prefill** — every function lives at its own URL and accepts query params, so you can deep-link to a form already filled in.
+- **Embed mode** — append `?__embed=1` and the page renders without sidebar, theme toggle or chrome, with a transparent background. Drop it in an `<iframe>` and it blends into the parent site.
+- **`/doc` endpoint** — every app exposes a plain-text, machine-readable doc listing every endpoint with its parameters, constraints, and a working `curl`. Scripts, agents and LLMs can call your functions without prior knowledge of the app.
+
+Together these turn each function into a self-contained, embeddable, scriptable operation: edit a record, upload and process files, generate a report, run a bulk action — from your own UI, from a CLI, or from an AI agent.
+
+## Call from code or AI agents
+
+Every app exposes a plain-text doc at `/doc` with all endpoints, parameters and a working curl example for each one:
+
+```bash
+curl http://127.0.0.1:8000/doc
+```
+
+Any HTTP client, script or LLM can read it and call your functions — no SDK, no protocol, just HTTP.
 
 ## Examples
 

@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.0.1] - 2026-04-25
+
+### Added
+- **`/doc` endpoint** — auto-generated, machine-readable API documentation
+  - Every app now exposes `GET /doc` returning a single plain-text document
+  - Lists all registered functions (visible and hidden) with their parameters,
+    constraints, choices, defaults, and a working `curl` example for each
+  - Parameters are emitted as JSON, making the doc directly parseable
+  - File parameters include an `upload_info` block describing the multipart
+    transport, field name, and whether multiple files are accepted
+  - Dynamic dropdowns (`Dropdown(func)`) are flagged with `"dynamic": true`
+    so consumers know the listed options are a snapshot, not an exhaustive set
+  - URLs in examples use a `<base_url>` placeholder, making the doc portable
+    across local, proxied and production deployments
+  - Designed to be consumed by humans, scripts, or AI agents calling the API
+    without prior knowledge of the app
+
+- **Embed mode for iframe integration** — append `?__embed=1` to any function URL
+  - Strips the sidebar, theme toggle, and outer chrome at runtime
+  - Forces a transparent background so the form blends into the parent page
+  - Removes the container's max-width, padding, shadow and border
+  - Lets you drop a FuncToWeb form into an existing web app via `<iframe>` with
+    no visual seams — combine with URL prefill (`?param=value`) for a fully
+    pre-configured embedded form
+
 ## [1.0.0] - 2026-04-15
 
 Biggest release so far. The library has been rewritten from the ground up — most existing code works without changes or with very minor ones.

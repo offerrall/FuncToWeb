@@ -15,12 +15,15 @@ host where this server is reachable. Replace it with the actual address you
 are using to reach this API (for example, http://127.0.0.1:8000 in local
 development, or https://your-domain.com in production).
 
+
+=== Making a request ===
+
 How to call any endpoint:
-- Method: POST
-- URL:    <base_url>/<function-slug>/submit
-- Body:   multipart/form-data
-- Send all non-file parameters as JSON inside a field named "values"
-- Send file parameters as separate multipart fields with the parameter name
+- Method:       POST
+- URL:          <base_url>/<function-slug>/submit
+- Body:         multipart/form-data
+- Non-file params: a single field named "values" containing a JSON object
+- File params:  one separate multipart field per file, named after the parameter
 
 Minimal example:
 
@@ -40,16 +43,119 @@ Example with multiple files (list parameter):
     -F 'photos=@./photo1.jpg' \\
     -F 'photos=@./photo2.jpg'
 
-Notes:
-- A "param_type" of "str" with "special_widget": "File" means it is a file
-  upload, not a string. Send it as a multipart field, not inside "values".
-- A "list": {} entry means the parameter accepts multiple values (or
-  multiple files for file parameters).
-- "choices.options" lists the only valid values for that parameter, unless
-  "choices.dynamic" is true. Dynamic options are a snapshot at doc-generation
-  time; the server will accept other values and the function is responsible
-  for validating them.
-- Defaults are shown when present; omit the parameter to use the default.
+
+=== Reading the parameters block ===
+
+Each endpoint lists its parameters as a JSON object. Each entry can include:
+
+- "param_type": Python type name ("str", "int", "float", "bool", "date", "time").
+- "default": value used when the parameter is omitted from "values".
+- "constraints": validation rules. Possible keys:
+    - "ge", "le", "gt", "lt": numeric bounds
+    - "min_length", "max_length": string or list length bounds
+    - "pattern": regex the value must match
+- "choices.options": valid values for the parameter (closed set).
+- "choices.dynamic": when true, the listed options are a snapshot at
+  doc-generation time. The server will accept other values; the function
+  is responsible for validating them.
+- "list": present when the parameter accepts an array of values.
+- "optional.enabled": present when the parameter is optional. Omit it from
+  "values" to send null.
+- "special_widget": "File" means the parameter is a file upload, not a
+  string. Send it as a separate multipart field, not inside "values".
+- "upload_info": for file parameters, describes how to send the file:
+    - "transport": always "multipart/form-data"
+    - "field_name": multipart field name to use
+    - "multiple": true if the field accepts more than one file
+- "item_ui" and "param_ui": purely cosmetic UI hints (placeholders, labels,
+  slider rendering, textarea rows). Safe to ignore for API calls.
+
+
+=== Reading the response ===
+
+Successful calls (HTTP 200) return a Server-Sent Events stream with these
+events, in order:
+
+  event: start
+  data: {}
+
+  event: print            (zero or more, only if the function uses print())
+  data: ["line 1", "line 2"]
+
+  event: result
+  data: { ...see below... }
+
+The "result" event always carries a JSON object with a "success" boolean.
+
+When "success" is true, the object also has a "type" field describing the
+shape of the result. These are all the possible shapes:
+
+  { "success": true, "type": "text",
+    "data": "..." }
+      → plain text. Also used for None (data is "Done") and any non-special
+        return value (cast with str()).
+
+  { "success": true, "type": "image",
+    "data": "data:image/png;base64,..." }
+      → a PIL Image or matplotlib Figure, encoded as a PNG data URI.
+
+  { "success": true, "type": "table",
+    "headers": ["col1", "col2", ...],
+    "rows": [["v1", "v2", ...], ...] }
+      → tabular data (list[dict], list[tuple], pandas/polars DataFrame,
+        numpy 2D array). All cells are strings.
+
+  { "success": true, "type": "action_table",
+    "headers": [...], "rows": [...],
+    "action": "/<other-slug>" }
+      → same as "table", with an extra "action" pointing to another endpoint.
+        In the web UI a row click navigates to that endpoint with the row
+        data as prefill. From an API client, treat it like a regular table:
+        read the rows, then call "action" yourself with the values you need.
+
+  { "success": true, "type": "download",
+    "file_id": "<32-hex>", "filename": "..." }
+      → a generated file. Fetch the bytes with:
+            GET <base_url>/download/<file_id>
+        Returned files are kept on disk for a limited time (default 1 hour),
+        then deleted. Download promptly.
+
+  { "success": true, "type": "downloads",
+    "files": [{"file_id": "...", "filename": "..."}, ...] }
+      → multiple generated files. Same fetch URL per file_id.
+
+  { "success": true, "type": "multiple",
+    "data": [<result object>, <result object>, ...] }
+      → the function returned a tuple/list mixing several result types.
+        Each item in "data" is one of the shapes above (text, image, table,
+        download...). None values are filtered out.
+
+When "success" is false:
+
+  { "success": false, "type": "error",
+    "data": "<error message>" }
+      → the function raised an exception. The message is exc's str().
+
+Other failure modes:
+
+- HTTP 422 (no SSE stream) — input validation failed before the function
+  ran. Body:
+        { "success": false, "errors": { "<param>": "<message>", ... } }
+  Inspect "errors" to know which fields to fix.
+
+- HTTP 400 (no SSE stream) — malformed request (e.g. invalid JSON in
+  "values"). Body:
+        { "success": false, "error": "<message>" }
+
+
+=== Notes ===
+
+- The "print" events are optional. If you don't care about progress output,
+  ignore them and read only the final "result" event.
+- Defaults are shown when present; omit a parameter from "values" to use
+  its default. For optional parameters, omitting them sends null.
+- Hidden endpoints (Hidden: true) are reachable from the API exactly like
+  visible ones. They are simply not listed in the web UI.
 
 === Endpoints ===
 """

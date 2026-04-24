@@ -22,6 +22,8 @@ Open `http://127.0.0.1:8000` → **Done!**
 
 - [Input Types](numeric.md) - Learn about supported input types, validation and custom
 - [Output Types](outputs.md) - Return files, images, plots, tables...
+- [API Endpoint](api_doc.md) - Auto-generated `/doc` for scripts and AI agents
+- [Embed Mode](embed.md) - Drop forms into existing sites via iframe
 - [Other Features](config.md) - Multiple functions, Authentication, server options...
 
 </div>
