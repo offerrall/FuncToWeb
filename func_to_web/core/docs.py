@@ -1,5 +1,4 @@
 import json
-import re
 
 from .normalization import get_all_functions
 from ..route_handlers import _analyze
@@ -7,36 +6,20 @@ from ..route_handlers import _analyze
 
 _INTRO = """=== FuncToWeb API ===
 
-This server exposes Python functions as HTTP endpoints. Each endpoint also
-has a web UI at the same URL, but you can call them directly from code.
-
-The URL prefixes shown in the examples (such as `<base_url>`) refer to the
-host where this server is reachable. Replace it with the actual address you
-are using to reach this API (for example, http://127.0.0.1:8000 in local
-development, or https://your-domain.com in production).
+Each Python function is exposed as a POST endpoint. UI and API share the
+same URL — this document only covers the API.
 
 
-=== Making a request ===
+=== Request format ===
 
-How to call any endpoint:
-- Method:       POST
-- URL:          <base_url>/<function-slug>/submit
-- Body:         multipart/form-data
-- Non-file params: a single field named "values" containing a JSON object
-- File params:  one separate multipart field per file, named after the parameter
+  POST <base_url>/<slug>/submit
+  Content-Type: multipart/form-data
 
-Minimal example:
+  - Non-file params:  one field "values" with a JSON object.
+  - File params:      one multipart field per param (name = param name).
+                      Repeat the field for list[File].
 
-  curl -X POST <base_url>/divide/submit \\
-    -F 'values={"a": 10, "b": 2}'
-
-Example with one file:
-
-  curl -X POST <base_url>/upload-gcode/submit \\
-    -F 'values={}' \\
-    -F 'file=@./model.gcode'
-
-Example with multiple files (list parameter):
+Example with mixed params:
 
   curl -X POST <base_url>/create-product/submit \\
     -F 'values={"name": "Widget", "price": 9.99}' \\
@@ -44,133 +27,90 @@ Example with multiple files (list parameter):
     -F 'photos=@./photo2.jpg'
 
 
-=== Reading the parameters block ===
+=== Parameter schema ===
 
-Each endpoint lists its parameters as a JSON object. Each entry can include:
+Each endpoint declares its parameters as a JSON object. Per-field keys:
 
-- "param_type": Python type name ("str", "int", "float", "bool", "date", "time").
-- "default": value used when the parameter is omitted from "values".
-- "constraints": validation rules. Possible keys:
-    - "ge", "le", "gt", "lt": numeric bounds
-    - "min_length", "max_length": string or list length bounds
-    - "pattern": regex the value must match
-- "choices.options": valid values for the parameter (closed set).
-- "choices.dynamic": when true, the listed options are a snapshot at
-  doc-generation time. The server will accept other values; the function
-  is responsible for validating them.
-- "list": present when the parameter accepts an array of values.
-- "optional.enabled": present when the parameter is optional. Omit it from
-  "values" to send null.
-- "special_widget": "File" means the parameter is a file upload, not a
-  string. Send it as a separate multipart field, not inside "values".
-- "upload_info": for file parameters, describes how to send the file:
-    - "transport": always "multipart/form-data"
-    - "field_name": multipart field name to use
-    - "multiple": true if the field accepts more than one file
-- "item_ui" and "param_ui": purely cosmetic UI hints (placeholders, labels,
-  slider rendering, textarea rows). Safe to ignore for API calls.
+  param_type     "str" | "int" | "float" | "bool" | "date" | "time"
+  default        value used when the field is omitted from "values"
+  constraints    { ge, le, gt, lt, min_length, max_length, pattern }
+  choices        { options: [...], dynamic?: true }
+                   - closed set when dynamic is absent
+                   - dynamic=true means the snapshot may be stale; the server
+                     accepts other values and the function validates them
+  list           present → param accepts an array
+  optional       present → param accepts null (omit it from "values")
+  special_widget "File" → send as multipart, not inside "values"
+  upload_info    { field_name, multiple } for File params
 
 
-=== Reading the response ===
+=== Response format ===
 
-Successful calls (HTTP 200) return a Server-Sent Events stream with these
-events, in order:
+HTTP 200 → Server-Sent Events stream:
 
   event: start
   data: {}
 
-  event: print            (zero or more, only if the function uses print())
-  data: ["line 1", "line 2"]
+  event: print           (zero or more, only if the function uses print())
+  data: ["line", ...]
 
   event: result
-  data: { ...see below... }
+  data: { ...see shapes below... }
 
-The "result" event always carries a JSON object with a "success" boolean.
+The "result" event always has "success" (bool). On success, "type" tells
+you which shape to expect:
 
-When "success" is true, the object also has a "type" field describing the
-shape of the result. These are all the possible shapes:
+  text          { success, type: "text",   data: "..." }
+  image         { success, type: "image",  data: "data:image/png;base64,..." }
+  table         { success, type: "table",  headers: [...], rows: [[...]] }
+  action_table  { success, type: "action_table", headers, rows,
+                  action: "/<slug>" }   ← treat as table from the API
+  download      { success, type: "download",  file_id, filename }
+                  Fetch with: GET <base_url>/download/<file_id>
+                  Files expire (default 1h).
+  downloads     { success, type: "downloads", files: [{file_id, filename}] }
+  multiple      { success, type: "multiple", data: [<shape>, <shape>, ...] }
+                  Mixed return values; each item is one of the shapes above.
 
-  { "success": true, "type": "text",
-    "data": "..." }
-      → plain text. Also used for None (data is "Done") and any non-special
-        return value (cast with str()).
+On failure inside the function:
 
-  { "success": true, "type": "image",
-    "data": "data:image/png;base64,..." }
-      → a PIL Image or matplotlib Figure, encoded as a PNG data URI.
+  error         { success: false, type: "error", data: "<message>" }
 
-  { "success": true, "type": "table",
-    "headers": ["col1", "col2", ...],
-    "rows": [["v1", "v2", ...], ...] }
-      → tabular data (list[dict], list[tuple], pandas/polars DataFrame,
-        numpy 2D array). All cells are strings.
 
-  { "success": true, "type": "action_table",
-    "headers": [...], "rows": [...],
-    "action": "/<other-slug>" }
-      → same as "table", with an extra "action" pointing to another endpoint.
-        In the web UI a row click navigates to that endpoint with the row
-        data as prefill. From an API client, treat it like a regular table:
-        read the rows, then call "action" yourself with the values you need.
+=== Other failure modes ===
 
-  { "success": true, "type": "download",
-    "file_id": "<32-hex>", "filename": "..." }
-      → a generated file. Fetch the bytes with:
-            GET <base_url>/download/<file_id>
-        Returned files are kept on disk for a limited time (default 1 hour),
-        then deleted. Download promptly.
+  HTTP 422   Input validation failed (no stream).
+             { success: false, errors: { "<param>": "<message>", ... } }
 
-  { "success": true, "type": "downloads",
-    "files": [{"file_id": "...", "filename": "..."}, ...] }
-      → multiple generated files. Same fetch URL per file_id.
-
-  { "success": true, "type": "multiple",
-    "data": [<result object>, <result object>, ...] }
-      → the function returned a tuple/list mixing several result types.
-        Each item in "data" is one of the shapes above (text, image, table,
-        download...). None values are filtered out.
-
-When "success" is false:
-
-  { "success": false, "type": "error",
-    "data": "<error message>" }
-      → the function raised an exception. The message is exc's str().
-
-Other failure modes:
-
-- HTTP 422 (no SSE stream) — input validation failed before the function
-  ran. Body:
-        { "success": false, "errors": { "<param>": "<message>", ... } }
-  Inspect "errors" to know which fields to fix.
-
-- HTTP 400 (no SSE stream) — malformed request (e.g. invalid JSON in
-  "values"). Body:
-        { "success": false, "error": "<message>" }
+  HTTP 400   Malformed request, e.g. invalid JSON in "values" (no stream).
+             { success: false, error: "<message>" }
 
 
 === Notes ===
 
-- The "print" events are optional. If you don't care about progress output,
-  ignore them and read only the final "result" event.
-- Defaults are shown when present; omit a parameter from "values" to use
-  its default. For optional parameters, omitting them sends null.
-- Hidden endpoints (Hidden: true) are reachable from the API exactly like
-  visible ones. They are simply not listed in the web UI.
+- Ignore "print" events if you only want the final result.
+- Omit optional params from "values" to send null.
+- Hidden endpoints work like visible ones; they're just not in the index.
+
 
 === Endpoints ===
 """
 
 
+# Keys to strip from each param dict before serializing —
+# they're cosmetic UI hints with no effect on the API call.
+_DROP_KEYS = {"item_ui", "param_ui", "name"}
+
+
 def build_doc(app_input) -> str:
     """Build the full API documentation as a single string."""
     if app_input.single_function:
-        all_funcs = [app_input.single_function]
+        funcs = [app_input.single_function]
     else:
-        all_funcs = get_all_functions(app_input.items)
+        funcs = get_all_functions(app_input.items)
 
     parts = [_INTRO]
-
-    for meta in all_funcs:
+    for meta in funcs:
         parts.append(_doc_for_function(meta))
 
     return "\n".join(parts)
@@ -180,14 +120,24 @@ def _doc_for_function(meta) -> str:
     """Build the documentation block for a single function."""
     params, _ = _analyze(meta.function)
 
+    header = (
+        f"\n--- /{meta.slug} ---\n"
+        f"Name: {meta.name}\n"
+    )
+    if meta.hidden:
+        header += "Hidden: true\n"
+    if meta.description:
+        header += f"Description: {meta.description}\n"
+
+    if not params:
+        return header + "Parameters: none\n"
+
     params_dict = {}
     for p in params:
-        d = p.to_dict()
-        d.pop("name", None)
+        d = {k: v for k, v in p.to_dict().items() if k not in _DROP_KEYS}
 
         if d.get("special_widget") == "File":
             d["upload_info"] = {
-                "transport": "multipart/form-data",
                 "field_name": p.name,
                 "multiple": "list" in d,
             }
@@ -197,70 +147,4 @@ def _doc_for_function(meta) -> str:
 
         params_dict[p.name] = d
 
-    params_json = json.dumps(params_dict, indent=2, default=str)
-
-    curl = _build_curl(meta.slug, params)
-
-    return (
-        f"\n--- /{meta.slug} ---\n"
-        f"Name: {meta.name}\n"
-        f"Hidden: {str(meta.hidden).lower()}\n"
-        f"Description: {meta.description}\n\n"
-        f"Parameters:\n{params_json}\n\n"
-        f"Example:\n{curl}\n"
-    )
-
-
-def _build_curl(slug: str, params) -> str:
-    """Build a minimal example curl command."""
-    values = {}
-    file_lines = []
-
-    for p in params:
-        d = p.to_dict()
-
-        if d.get("special_widget") == "File":
-            ext = _guess_extension(d.get("constraints", {}).get("pattern", ""))
-            file_lines.append(f"  -F '{p.name}=@./file.{ext}'")
-        else:
-            values[p.name] = _example_value(d)
-
-    lines = [f"curl -X POST <base_url>/{slug}/submit"]
-    lines.append(f"  -F 'values={json.dumps(values)}'")
-    lines.extend(file_lines)
-
-    return " \\\n".join(lines)
-
-
-def _example_value(d):
-    """Return a reasonable example value for a parameter."""
-    ptype = d.get("param_type", "str")
-
-    choices = d.get("choices")
-    if choices and choices.get("options"):
-        val = choices["options"][0]
-        return [val] if "list" in d else val
-
-    constraints = d.get("constraints", {})
-
-    if ptype == "int":
-        val = constraints.get("ge", constraints.get("gt", 0) + 1 if "gt" in constraints else 1)
-    elif ptype == "float":
-        val = constraints.get("ge", constraints.get("gt", 0) + 0.01 if "gt" in constraints else 1.0)
-    elif ptype == "bool":
-        val = True
-    elif ptype == "str":
-        min_len = constraints.get("min_length", 1)
-        val = "a" * max(min_len, 1) if min_len > 7 else "example"
-    else:
-        val = "example"
-
-    return [val] if "list" in d else val
-
-
-def _guess_extension(pattern: str) -> str:
-    """Extract the first valid extension from a file pattern."""
-    m = re.search(r"\(([\w|]+)\)", pattern)
-    if m:
-        return m.group(1).split("|")[0]
-    return "bin"
+    return header + "Parameters:\n" + json.dumps(params_dict, indent=2, default=str) + "\n"

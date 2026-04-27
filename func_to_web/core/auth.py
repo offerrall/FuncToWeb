@@ -21,7 +21,7 @@ def setup_auth(
 ) -> None:
     """Enable simple session-based authentication.
 
-    Protects all routes except /login, /auth, /logout and /static.
+    Protects all routes except /login, /auth, /logout, /static, /front and /assets.
     Unauthenticated requests are redirected to /login (or return 401 for JSON).
 
     Registers:
@@ -35,8 +35,12 @@ def setup_auth(
     async def auth_middleware(request: Request, call_next):
         path = request.url.path
 
-        # Allow public routes and static assets.
-        if path in ["/login", "/auth", "/logout"] or path.startswith("/static"):
+        if (
+            path in ["/login", "/auth", "/logout"]
+            or path.startswith("/static")
+            or path.startswith("/front")
+            or path.startswith("/assets")
+        ):
             return await call_next(request)
 
         # Require session for protected routes.

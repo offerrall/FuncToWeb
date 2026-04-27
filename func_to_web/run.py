@@ -29,6 +29,8 @@ def run(
     stream_prints: bool = True,
     root_path: str = "",
     fastapi_config: dict[str, Any] | None = None,
+    front_dir: str | Path | None = None,
+    assets_dir: str | Path | None = None,
     **uvicorn_kwargs
 ):
     """Run the web application server.
@@ -50,6 +52,8 @@ def run(
         stream_prints: If True, print() output is streamed to the client in real time.
         root_path: FastAPI root path for reverse proxy.
         fastapi_config: Additional FastAPI configuration.
+        front_dir: Optional directory served at /front (with html=True for SPA-style routing).
+        assets_dir: Optional directory served at /assets.
         **uvicorn_kwargs: Additional Uvicorn configuration.
     """
     print_beta_warning()
@@ -81,7 +85,7 @@ def run(
     if fastapi_config is None:
         fastapi_config = {}
 
-    app = create_fastapi_app(root_path, fastapi_config)
+    app = create_fastapi_app(root_path, fastapi_config, front_dir, assets_dir)
 
     setup_download_route(app)
     setup_doc_route(app, app_input)
