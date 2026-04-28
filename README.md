@@ -159,13 +159,15 @@ run([edit_users, delete_users, create_user, HiddenFunction(delete_user), HiddenF
 
 ## Using Func To Web alongside your frontend
 
-Three building blocks let you plug FuncToWeb into anything you already have:
+Five building blocks let you plug FuncToWeb into anything you already have:
 
 - **URL prefill** — every function lives at its own URL and accepts query params, so you can deep-link to a form already filled in.
 - **Embed mode** — append `?__embed=1` and the page renders without sidebar, theme toggle or chrome, with a transparent background. Drop it in an `<iframe>` and it blends into the parent site.
 - **`/doc` endpoint** — every app exposes a plain-text, machine-readable doc listing every endpoint with its parameters, constraints, and a working `curl`. Scripts, agents and LLMs can call your functions without prior knowledge of the app.
+- **`front_dir`** — pass `front_dir="./my-site"` to `run()` and the directory is served at `/front` with `html=True` (SPA-style routing). Drop your own static site, landing page, or built React/Vue/Svelte bundle next to your Python functions and FuncToWeb hosts both from the same process — no separate web server needed.
+- **`assets_dir`** — pass `assets_dir="./assets"` and the directory is served at `/assets`. Use it for images, fonts, downloads or any static files your frontend (or your forms) need to reference. Kept separate from `/front` so your app assets and your site are not tangled.
 
-Together these turn each function into a self-contained, embeddable, scriptable operation: edit a record, upload and process files, generate a report, run a bulk action — from your own UI, from a CLI, or from an AI agent.
+Together these turn each function into a self-contained, embeddable, scriptable operation — and let the same process serve a full custom frontend on top of it: edit a record, upload and process files, generate a report, run a bulk action — from your own UI, from a HTTP client, or from an LLM agent.
 
 ## Call from code or AI agents
 
@@ -244,6 +246,15 @@ run(merge_pdfs)
 More in [`examples/`](examples/) and [`examples/apps/`](examples/apps/).
 
 ---
+
+## Installation
+
+```bash
+pip install func-to-web              # Last tagged release from PyPI (recommended)
+pip install git+https://github.com/offerrall/FuncToWeb.git   # latest from GitHub (more features, but possibly unstable)
+
+if you find in the docs that a feature is only available in the GitHub version, install from there to use it. Otherwise, the PyPI version is recommended for stability and ease of installation.
+```
 
 ## Requirements
 

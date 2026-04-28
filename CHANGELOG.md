@@ -1,8 +1,14 @@
 # Changelog
 
-## [1.0.1] - 2026-04-25
+## [1.0.1] - 2026-04-28
 
 ### Added
+- **Custom frontend hosting via `front_dir` and `assets_dir`** — `run()` now accepts two new parameters to serve a custom frontend from the same process
+  - `front_dir`: directory mounted at `/front` with `html=True` for SPA-style routing — drop a static site, landing page, or built React/Vue/Svelte bundle next to your Python functions
+  - `assets_dir`: directory mounted at `/assets` for images, fonts, downloads or any static files referenced by your frontend or forms
+  - Both are excluded from the auth middleware so static content is reachable without login
+  - Lets a single FuncToWeb process host the form UI, the API and a full custom frontend — no separate web server needed
+
 - **`/doc` endpoint** — auto-generated, machine-readable API documentation
   - Every app now exposes `GET /doc` returning a single plain-text document
   - Lists all registered functions (visible and hidden) with their parameters,

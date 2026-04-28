@@ -4,10 +4,6 @@
 
 <div markdown>
 
-```bash
-pip install func-to-web
-```
-
 ```python
 from func_to_web import run
 
@@ -33,5 +29,12 @@ Open `http://127.0.0.1:8000` → **Done!**
 ![func-to-web Demo](images/quick.jpg)
 
 </div>
+
+```bash
+pip install func-to-web              # Last tagged release from PyPI (recommended)
+pip install git+https://github.com/offerrall/FuncToWeb.git   # latest from GitHub (more features, but possibly unstable)
+
+if you find in the docs that a feature is only available in the GitHub version, install from there to use it. Otherwise, the PyPI version is recommended for stability and ease of installation.
+```
 
 </div>
