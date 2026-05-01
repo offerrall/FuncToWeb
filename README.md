@@ -117,7 +117,7 @@ def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
 run(restart_service, auth={"admin": "your_password"})
 ```
 
-More in [`examples/`](examples/) — including a full [CRUD app in 70 lines](examples/14_recipes/simple_crud.py) using `Params` + `ActionTable`.
+More in [`examples/`](examples/) — including a full [CRUD app in 70 lines](examples/14_recipes/07_simple_crud.py) using `Params` + `ActionTable`.
 
 ## Install
 
