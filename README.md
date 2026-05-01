@@ -12,7 +12,7 @@ One typed Python function → form + iframe + HTTP endpoint, simultaneously. Thr
 
 - **Standalone** — internal tools, admin panels, scripts. The auto-generated UI is the app.
 - **Embedded** — drop forms into existing sites via `<iframe>` with URL prefill. "Export to PDF" buttons, CSV importers, modal editors.
-- **Backend for your own SPA** — mount your React/Vue/Svelte bundle alongside; call functions over HTTP or iframe them where it's faster. One process, no CORS, no separate deploy.
+- **Backend for your own SPA** — Drop your built bundle in front_dir= and static files in assets_dir= — served alongside your functions by the same process.
 
 Validation, file uploads, SSE streaming and downloads come wired in. You write the function; routes and forms are not your problem.
 
