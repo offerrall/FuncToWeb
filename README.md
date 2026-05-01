@@ -8,12 +8,9 @@
 
 ![func-to-web Demo](/docs/images/functoweb.jpg)
 
+Two use cases: **standalone utilities** (internal tools, admin panels, scripts) with no frontend, and **adding isolated Python features** to existing web apps (e.g. "Export to PDF" button, CSV importer). Write a typed function, embed via iframe or call over HTTP, and skip the routes, validation, and form code.
 
 ## Quick start
-
-<table>
-<tr>
-<td width="50%">
 
 ```bash
 pip install func-to-web
@@ -28,160 +25,51 @@ def divide(a: float, b: float):
 run(divide)
 ```
 
-Open `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:8000`. Done.
 
-</td>
-<td width="50%">
-
-![demo](/docs/images/quick.jpg)
-
-</td>
-</tr>
-</table>
+**Full docs with examples and screenshots:** [offerrall.github.io/FuncToWeb](https://offerrall.github.io/FuncToWeb)
 
 ## Inputs
 
-| Type | Widget | |
-|------|--------|-|
-| `int`, `float` | Number input with step buttons and optional slider | [docs](docs/numeric.md) |
-| `str`, `Email` | Text input, textarea, password, or email | [docs](docs/string.md) |
-| `bool` | Toggle switch | [docs](docs/boolean.md) |
-| `date`, `time` | Date and time pickers | [docs](docs/datetime.md) |
-| `Color` | Hex color picker | [docs](docs/color.md) |
-| `File`, `ImageFile`, `VideoFile`, `AudioFile`, `DataFile`, `TextFile`, `DocumentFile` | File upload with extension filter | [docs](docs/files.md) |
-| `Literal`, `Enum`, `Dropdown(func)` | Select / dropdown | [docs](docs/dropdown.md) |
-| `list[T]` | Dynamic list with add/remove buttons | [docs](docs/lists.md) |
-| `T \| None` | Any input with enable/disable toggle | [docs](docs/optional.md) |
-| `Params` | Reusable parameter groups | [docs](docs/params.md) |
-| `Annotated[T, ...]` | Compose constraints, labels, sliders, placeholders | [docs](docs/composition.md) |
+| Type | Widget | Docs |
+|------|--------|------|
+| `int`, `float` | Number / slider | [→](docs/numeric.md) |
+| `str`, `Email` | Text / textarea / password | [→](docs/string.md) |
+| `bool` | Toggle | [→](docs/boolean.md) |
+| `date`, `time` | Pickers | [→](docs/datetime.md) |
+| `Color` | Hex picker | [→](docs/color.md) |
+| `File`, `ImageFile`, `VideoFile`, ... | Upload | [→](docs/files.md) |
+| `Literal`, `Enum`, `Dropdown(func)` | Select | [→](docs/dropdown.md) |
+| `list[T]` | Dynamic list | [→](docs/lists.md) |
+| `T \| None` | Toggle + input | [→](docs/optional.md) |
+| `Params` | Reusable groups | [→](docs/params.md) |
+| `Annotated[T, ...]` | Constraints, labels, sliders | [→](docs/composition.md) |
 
 ## Outputs
 
-| Return type | Rendered as | |
-|-------------|-------------|-|
-| `str`, `int`, `float`, `None` | Text with copy button | [docs](docs/outputs.md#text) |
-| `PIL Image`, `Matplotlib Figure` | Inline image with expand button | [docs](docs/outputs.md#images) |
-| `FileResponse`, `list[FileResponse]` | Download button(s) | [docs](docs/outputs.md#file-downloads) |
-| `list[dict]`, `list[tuple]`, `DataFrame`, `ndarray` | Sortable, paginated table with CSV export | [docs](docs/outputs.md#tables) |
-| `ActionTable` | Clickable table → next function with prefill | [docs](docs/outputs.md#actiontable) |
-| `tuple` / `list` | Multiple outputs combined | [docs](docs/outputs.md#multiple-outputs) |
-| `print()` | Streamed to browser in real time | [docs](docs/outputs.md#print-output) |
+| Return type | Rendered as | Docs |
+|-------------|-------------|------|
+| `str`, `int`, `float`, `None` | Text + copy button | [→](docs/outputs.md#text) |
+| `PIL Image`, `Matplotlib Figure` | Inline image | [→](docs/outputs.md#images) |
+| `FileResponse` | Download button | [→](docs/outputs.md#file-downloads) |
+| `DataFrame`, `list[dict]`, ... | Sortable table + CSV | [→](docs/outputs.md#tables) |
+| `ActionTable` | Clickable rows → next function | [→](docs/outputs.md#actiontable) |
+| `tuple` / `list` | Multiple outputs | [→](docs/outputs.md#multiple-outputs) |
+| `print()` | Streamed live | [→](docs/outputs.md#print-output) |
 
 ## Features
 
-- Multiple functions with index page or collapsible groups — [docs](docs/multiple.md)
-- URL prefill — forms open prefilled from query params — [docs](docs/url_prefill.md)
-- Embed mode — drop any form into an existing site via `?__embed=1` — [docs](docs/embed.md)
-- Auto-generated API docs at `/doc` — call your endpoints from scripts or AI agents — [docs](docs/api_doc.md)
-- Real-time `print()` output in the browser — [docs](docs/outputs.md#print-output)
-- Username/password authentication — [docs](docs/auth.md)
-- Dark mode — [docs](docs/dark_mode.md)
-- Configurable host, port and path — [docs](docs/config.md)
-
-> Full documentation with examples and screenshots for every feature: **[offerrall.github.io/FuncToWeb](https://offerrall.github.io/FuncToWeb)**
-
-## ActionTable and Params
-**`Params`** groups typed parameters into a reusable class. Add a field once, it appears in every function that uses it.
-
-**`ActionTable`** turns a table into navigation — click a row and the next function opens with its form prefilled from that row's data. No routing, no state.
-
-The example below is a full CRUD user database in 70 lines:
-
-```python
-import json
-from pathlib import Path
-from typing import Annotated
-from pydantic import Field
-from func_to_web import run, ActionTable, HiddenFunction, Params, Email
-
-DB_FILE = Path("users.json")
-
-class UserData(Params):
-    name: Annotated[str, Field(min_length=2, max_length=50)]
-    email: Email
-    phone: Annotated[str, Field(pattern=r'^\+?[0-9]{9,15}$')]
-
-def _load() -> dict:
-    if not DB_FILE.exists():
-        return {}
-    return {int(k): v for k, v in json.loads(DB_FILE.read_text()).items()}
-
-def _save(db: dict):
-    DB_FILE.write_text(json.dumps(db, indent=2))
-
-def _check(db: dict, id: int):
-    if id not in db:
-        raise ValueError(f"User {id} not found")
-
-def _user_dict(uid: int, data: UserData) -> dict:
-    return {"id": uid, **vars(data)}
-
-def edit_users():
-    """Edit users"""
-    return ActionTable(data=_load, action=edit_user)
-
-def delete_users():
-    """Delete users"""
-    return ActionTable(data=_load, action=delete_user)
-
-def create_user(data: UserData):
-    """Create a new user"""
-    db = _load()
-    uid = max(db) + 1 if db else 1
-    db[uid] = _user_dict(uid, data)
-    _save(db)
-    return f"User {uid} created"
-
-def edit_user(id: int, data: UserData):
-    """Edit an existing user"""
-    db = _load()
-    _check(db, id)
-    db[id] = _user_dict(id, data)
-    _save(db)
-    return f"User {id} updated"
-
-def delete_user(id: int):
-    """Delete a user"""
-    db = _load()
-    _check(db, id)
-    del db[id]
-    _save(db)
-    return f"User {id} deleted"
-
-run([edit_users, delete_users, create_user, HiddenFunction(delete_user), HiddenFunction(edit_user)])
-```
-
-![Demo](/docs/images/crud_1.jpg)
-
-`UserData` is the single source of truth. Swap the JSON file for SQLAlchemy and you have a production-ready CRUD in a few more lines.
-
-> `ActionTable` is experimental. Simple types (str, int, float) work well. Files are not yet supported via row navigation.
-
-## Using Func To Web alongside your frontend
-
-Five building blocks let you plug FuncToWeb into anything you already have:
-
-- **URL prefill** — every function lives at its own URL and accepts query params, so you can deep-link to a form already filled in.
-- **Embed mode** — append `?__embed=1` and the page renders without sidebar, theme toggle or chrome, with a transparent background. Drop it in an `<iframe>` and it blends into the parent site.
-- **`/doc` endpoint** — every app exposes a plain-text, machine-readable doc listing every endpoint with its parameters, constraints, and a working `curl`. Scripts, agents and LLMs can call your functions without prior knowledge of the app.
-- **`front_dir`** — pass `front_dir="./my-site"` to `run()` and the directory is served at `/front` with `html=True` (SPA-style routing). Drop your own static site, landing page, or built React/Vue/Svelte bundle next to your Python functions and FuncToWeb hosts both from the same process — no separate web server needed.
-- **`assets_dir`** — pass `assets_dir="./assets"` and the directory is served at `/assets`. Use it for images, fonts, downloads or any static files your frontend (or your forms) need to reference. Kept separate from `/front` so your app assets and your site are not tangled.
-
-Together these turn each function into a self-contained, embeddable, scriptable operation — and let the same process serve a full custom frontend on top of it: edit a record, upload and process files, generate a report, run a bulk action — from your own UI, from a HTTP client, or from an LLM agent.
-
-## Call from code or AI agents
-
-Every app exposes a plain-text doc at `/doc` with all endpoints, parameters and a working curl example for each one:
-
-```bash
-curl http://127.0.0.1:8000/doc
-```
-
-Any HTTP client, script or LLM can read it and call your functions — no SDK, no protocol, just HTTP.
+- **Multiple functions** with index page or groups — [docs](docs/multiple.md)
+- **URL prefill** — open forms with values from query params — [docs](docs/url_prefill.md)
+- **Embed mode** — drop any form into your site via `?__embed=1` — [docs](docs/embed.md)
+- **Auto-generated API docs** at `/doc` for scripts and AI agents — [docs](docs/api_doc.md)
+- **Authentication** with username/password — [docs](docs/auth.md)
+- **Dark mode** — [docs](docs/dark_mode.md)
+- **Server config** — host, port, reverse proxy — [docs](docs/config.md)
 
 ## Examples
 
-### File transfer
+**File transfer**
 
 ```python
 from func_to_web import run, File
@@ -197,22 +85,7 @@ def upload_files(files: list[File]):
 run(upload_files)
 ```
 
-### Protected admin panel
-
-```python
-import subprocess
-from typing import Literal
-from func_to_web import run
-
-def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
-    subprocess.run(["sudo", "supervisorctl", "restart", service], check=True)
-    return f"{service} restarted."
-
-run(restart_service, auth={"admin": "your_password"})
-# Use HTTPS in production.
-```
-
-### QR code generator
+**QR code generator**
 
 ```python
 import qrcode
@@ -224,56 +97,33 @@ def make_qr(text: str):
 run(make_qr)
 ```
 
-### PDF merger
+**Protected admin panel**
 
 ```python
-from io import BytesIO
-from pypdf import PdfWriter
+import subprocess
+from typing import Literal
 from func_to_web import run
-from func_to_web.types import DocumentFile, FileResponse
 
-def merge_pdfs(files: list[DocumentFile]):
-    merger = PdfWriter()
-    for pdf in files:
-        merger.append(pdf)
-    output = BytesIO()
-    merger.write(output)
-    return FileResponse(data=output.getvalue(), filename="merged.pdf")
+def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
+    subprocess.run(["sudo", "supervisorctl", "restart", service], check=True)
+    return f"{service} restarted."
 
-run(merge_pdfs)
+run(restart_service, auth={"admin": "your_password"})
 ```
 
-More in [`examples/`](examples/) and [`examples/apps/`](examples/apps/).
+More in [`examples/`](examples/) and [`examples/apps/`](examples/apps/) — including a full [CRUD app in 70 lines](examples/apps/simple_crud.py) using `Params` + `ActionTable`.
 
----
-
-## Installation
+## Install
 
 ```bash
-pip install func-to-web              # Last tagged release from PyPI (recommended)
-pip install git+https://github.com/offerrall/FuncToWeb.git   # latest from GitHub (more features, but possibly unstable)
-
-if you find in the docs that a feature is only available in the GitHub version, install from there to use it. Otherwise, the PyPI version is recommended for stability and ease of installation.
+pip install func-to-web                                     # stable
+pip install git+https://github.com/offerrall/FuncToWeb.git  # latest
 ```
 
-## Requirements
+**Requirements:** Python 3.10+. Core deps installed automatically; Pillow, Matplotlib, Pandas, NumPy and Polars are optional.
 
-**External:**
-- Python 3.10+
-- FastAPI, Uvicorn, Jinja2, python-multipart, itsdangerous, aiofiles, starlette
+Built on [pytypeinput](https://github.com/offerrall/pytypeinput) and [pytypeinputweb](https://github.com/offerrall/pytypeinputweb), usable standalone for CLIs, Qt apps, etc.
 
-**Internal:**
-- [pytypeinput](https://github.com/offerrall/pytypeinput) — type analysis engine (2030+ tests). Powers Func To Web's type system and can be used standalone to build other interfaces — a CLI, a Qt app, or anything else.
-- [pytypeinputweb](https://github.com/offerrall/pytypeinputweb) — JS/CSS form renderer built on pytypeinput.
+Feedback, issues and contributions welcome — they keep the project moving.
 
-**Optional (for specific features):**
-- Pillow, Matplotlib, Pandas, NumPy, Polars
-
----
-
-
-400 stars and Awesome Python — didn't see that coming at all. Built this to scratch my own itch, so genuinely thanks.
-
-I want to keep making it better and I'd love to hear how you actually use it, what's missing, what's annoying. If there's demand I'll open a Discord, otherwise issues work fine. Any help — code, docs, bug reports — is very welcome.
-
-[MIT License](LICENSE) · Made by [Beltrán Offerrall](https://github.com/offerrall) · Contributions welcome
+[MIT License](LICENSE) · Made by [Beltrán Offerrall](https://github.com/offerrall)
