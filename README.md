@@ -8,7 +8,13 @@
 
 ![func-to-web Demo](/docs/images/functoweb.jpg)
 
-Two use cases: **standalone utilities** (internal tools, admin panels, scripts) with no frontend, and **adding isolated Python features** to existing web apps (e.g. "Export to PDF" button, CSV importer). Write a typed function, embed via iframe or call over HTTP, and skip the routes, validation, and form code.
+One typed Python function → form + iframe + HTTP endpoint, simultaneously. Three ways to use it:
+
+- **Standalone** — internal tools, admin panels, scripts. The auto-generated UI is the app.
+- **Embedded** — drop forms into existing sites via `<iframe>` with URL prefill. "Export to PDF" buttons, CSV importers, modal editors.
+- **Backend for your own SPA** — mount your React/Vue/Svelte bundle alongside; call functions over HTTP or iframe them where it's faster. One process, no CORS, no separate deploy.
+
+Validation, file uploads, SSE streaming and downloads come wired in. You write the function; routes and forms are not your problem.
 
 ## Quick start
 
@@ -111,7 +117,7 @@ def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
 run(restart_service, auth={"admin": "your_password"})
 ```
 
-More in [`examples/`](examples/) and [`examples/apps/`](examples/apps/) — including a full [CRUD app in 70 lines](examples/apps/simple_crud.py) using `Params` + `ActionTable`.
+More in [`examples/`](examples/) — including a full [CRUD app in 70 lines](examples/14_recipes/simple_crud.py) using `Params` + `ActionTable`.
 
 ## Install
 

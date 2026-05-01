@@ -2,15 +2,16 @@ import json
 from pathlib import Path
 from typing import Annotated
 from pydantic import Field
-from func_to_web import run, ActionTable, HiddenFunction, Params, Email
+from func_to_web import run, ActionTable, HiddenFunction, Params
+from func_to_web.types import Email
 
 DB_FILE = Path("users.json")
 
 
 class UserData(Params):
-    name: Annotated[str, Field(min_length=2, max_length=50)]
+    name:  Annotated[str, Field(min_length=2, max_length=50)]
     email: Email
-    phone: Annotated[str, Field(pattern=r'^\+?[0-9]{9,15}$')]
+    phone: Annotated[str, Field(pattern=r"^\+?[0-9]{9,15}$")]
 
 
 def _load() -> dict:
@@ -69,4 +70,10 @@ def delete_user(id: int):
     return f"User {id} deleted"
 
 
-run([edit_users, delete_users, create_user, HiddenFunction(delete_user), HiddenFunction(edit_user)])
+run([
+    edit_users,
+    delete_users,
+    create_user,
+    HiddenFunction(delete_user),
+    HiddenFunction(edit_user),
+])
