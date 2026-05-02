@@ -5,6 +5,8 @@
 ### Fixed
 - **`ActionTable` cell serialization for list / tuple / dict values** — non-scalar cells were being rendered with Python's `str()`, producing invalid output like `['34', 'aaa']` (single quotes, not parseable as JSON)
   - Now serialized with `json.dumps`, producing standard `["34","aaa"]`
+- **`ActionTable` row click sent `None` cells as the literal string `"None"` in the URL** — clicking a row produced URLs like `?tags=None`, which the prefill layer treated as a real value (activating optional toggles, failing to JSON-parse list fields)
+  - `None` is now preserved through serialization and the row-click handler omits the parameter entirely, matching the prefill contract (absent param == no value)
 
 ## [1.0.1] - 2026-04-28
 

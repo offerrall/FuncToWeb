@@ -41,9 +41,13 @@ class FileResponse(BaseModel):
 def _serialize_cell(value):
     """Serialize a cell for ActionTable.
 
+    None is preserved so the client can omit the URL parameter on row click
+    (per the prefill contract: absent param == no value).
     list/tuple/dict are JSON-encoded so they round-trip cleanly through URL
-    prefill on row click. Plain scalars use str() to keep the previous look.
+    prefill. Plain scalars use str() to keep the previous look.
     """
+    if value is None:
+        return None
     if isinstance(value, (list, tuple, dict)):
         try:
             return json.dumps(value, default=str, ensure_ascii=False)

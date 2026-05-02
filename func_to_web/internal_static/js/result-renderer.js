@@ -54,7 +54,7 @@
     }
 
     function tableToCsv(headers, rows) {
-        const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+        const escape = (v) => `"${(v == null ? "" : String(v)).replace(/"/g, '""')}"`;
         const lines = [headers.map(escape).join(",")];
         for (const row of rows) {
             lines.push(row.map(escape).join(","));
@@ -81,7 +81,7 @@
             const tr = document.createElement("tr");
             for (const cell of row) {
                 const td = document.createElement("td");
-                td.textContent = cell;
+                td.textContent = cell == null ? "" : cell;
                 tr.appendChild(td);
             }
             tbody.appendChild(tr);
@@ -112,7 +112,7 @@
             tr.dataset.rowIndex = i;
             for (const cell of row) {
                 const td = document.createElement("td");
-                td.textContent = cell;
+                td.textContent = cell == null ? "" : cell;
                 tr.appendChild(td);
             }
             tbody.appendChild(tr);
@@ -123,7 +123,11 @@
             if (!tr) return;
             const row = rows[parseInt(tr.dataset.rowIndex, 10)];
             const params = new URLSearchParams();
-            headers.forEach((h, i) => params.set(h, row[i]));
+            headers.forEach((h, i) => {
+                const v = row[i];
+                if (v == null) return;
+                params.set(h, v);
+            });
             window.location.href = `${action}?${params}`;
         });
 
