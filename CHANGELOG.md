@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2026-05-02
+
+### Fixed
+- **`ActionTable` cell serialization for list / tuple / dict values** — non-scalar cells were being rendered with Python's `str()`, producing invalid output like `['34', 'aaa']` (single quotes, not parseable as JSON)
+  - Now serialized with `json.dumps`, producing standard `["34","aaa"]`
+
 ## [1.0.1] - 2026-04-28
 
 ### Added

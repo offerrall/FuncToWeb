@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Annotated, Literal, Callable, Any
 from datetime import date, time
@@ -37,6 +38,20 @@ class FileResponse(BaseModel):
             self.filename = Path(self.path).name
         return self
     
+def _serialize_cell(value):
+    """Serialize a cell for ActionTable.
+
+    list/tuple/dict are JSON-encoded so they round-trip cleanly through URL
+    prefill on row click. Plain scalars use str() to keep the previous look.
+    """
+    if isinstance(value, (list, tuple, dict)):
+        try:
+            return json.dumps(value, default=str, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return str(value)
+    return str(value)
+
+
 @dataclass
 class ActionTable:
     """Clickable table that navigates to another function with row data as prefill.
@@ -91,11 +106,11 @@ class ActionTable:
         if isinstance(rows[0], dict):
             if self.headers is None:
                 self.headers = list(rows[0].keys())
-            self.rows = [[str(row[h]) for h in self.headers] for row in rows]
+            self.rows = [[_serialize_cell(row[h]) for h in self.headers] for row in rows]
         else:
             if self.headers is None:
                 raise ValueError("headers required when data is not dicts")
-            self.rows = [[str(c) for c in row] for row in rows]
+            self.rows = [[_serialize_cell(c) for c in row] for row in rows]
 
 class Params:
     """Base class for grouping function parameters.

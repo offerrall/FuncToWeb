@@ -1,4 +1,4 @@
-# Func To Web 1.0.1
+# Func To Web 1.0.2
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -30,6 +30,8 @@ def divide(a: float, b: float):
 
 run(divide)
 ```
+
+![divide demo](/docs/images/quick.jpg)
 
 Open `http://127.0.0.1:8000`. Done.
 

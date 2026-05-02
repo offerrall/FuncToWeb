@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+.claude/
 
 # DB files
 *.db
