@@ -20,7 +20,9 @@ If only one visible function exists, the index page is skipped and it opens dire
 
 ## Groups
 
-Pass a dictionary to organize functions into collapsible groups:
+Organize functions into collapsible groups by passing a list where each
+group is a dict with **exactly one key** (the group name) and a list as the
+value:
 
 ```python
 from func_to_web import run
@@ -30,11 +32,31 @@ def multiply(a: int, b: int): return a * b
 def upper(text: str): return text.upper()
 def lower(text: str): return text.lower()
 
-run({
-    "Math": [add, multiply],
-    "Text": [upper, lower],
-})
+run([
+    {"Math": [add, multiply]},
+    {"Text": [upper, lower]},
+])
 ```
+
+Groups can be **nested** and freely mixed with plain functions at any level:
+
+```python
+run([
+    standalone_func,
+    {"Math": [
+        add,
+        multiply,
+        {"Trig": [sin, cos]},   # nested subgroup
+    ]},
+    {"Text": [upper, lower]},
+])
+```
+
+Group names are slugified and prefixed onto each function's URL, so
+`add` inside `{"Math": [...]}` is reachable at `/math/add`, and `sin`
+inside `{"Math": [{"Trig": [sin]}]}` at `/math/trig/sin`. Functions placed
+at the top level keep their plain `/<slug>` URL. Duplicate URLs raise a
+clear error at startup.
 
 ## Custom Name & Description
 
