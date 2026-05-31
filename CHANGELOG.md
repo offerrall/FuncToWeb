@@ -7,6 +7,8 @@
   - Now serialized with `json.dumps`, producing standard `["34","aaa"]`
 - **`ActionTable` row click sent `None` cells as the literal string `"None"` in the URL** — clicking a row produced URLs like `?tags=None`, which the prefill layer treated as a real value (activating optional toggles, failing to JSON-parse list fields)
   - `None` is now preserved through serialization and the row-click handler omits the parameter entirely, matching the prefill contract (absent param == no value)
+### Changed
+- **Default `limit_max_requests` raised from 1000 to 10000** — the previous limit recycled the Uvicorn worker too aggressively for apps serving many static assets per page (e.g. image grids), causing the process to restart mid-session
 
 ## [1.0.1] - 2026-04-28
 
