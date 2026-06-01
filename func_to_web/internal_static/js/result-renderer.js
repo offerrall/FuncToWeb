@@ -128,6 +128,9 @@
                 if (v == null) return;
                 params.set(h, v);
             });
+            if (new URLSearchParams(location.search).get('__embed') === '1') {
+                params.set('__embed', '1');
+            }
             window.location.href = `${action}?${params}`;
         });
 

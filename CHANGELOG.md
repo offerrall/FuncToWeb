@@ -7,6 +7,8 @@
   - Now serialized with `json.dumps`, producing standard `["34","aaa"]`
 - **`ActionTable` row click sent `None` cells as the literal string `"None"` in the URL** — clicking a row produced URLs like `?tags=None`, which the prefill layer treated as a real value (activating optional toggles, failing to JSON-parse list fields)
   - `None` is now preserved through serialization and the row-click handler omits the parameter entirely, matching the prefill contract (absent param == no value)
+- **`ActionTable` row click dropped embed mode when redirecting to another function** — clicking a row in an embedded form (`?__embed=1`) navigated to the target function without the embed flag, so the destination rendered with full chrome (sidebar, theme toggle, opaque background) inside the iframe
+  - The row-click handler now detects `__embed=1` on the current page and propagates it to the redirect URL, keeping the whole action chain embedded
 ### Changed
 - **Default `limit_max_requests` raised from 1000 to 10000** — the previous limit recycled the Uvicorn worker too aggressively for apps serving many static assets per page (e.g. image grids), causing the process to restart mid-session
 
