@@ -2,6 +2,17 @@
 
 ## [1.6.0] - 2026-06-05
 
+## [1.6.0] - 2026-06-06
+
+### Security 
+
+(by https://github.com/Dr1985)
+- Fixed a path traversal vulnerability in file uploads. The original
+  filename from the multipart request was joined into the save path
+  without sanitization, allowing `../` sequences to escape `uploads_dir`
+  and write files to arbitrary locations. Filenames are now reduced to
+  their final path component. Thanks to the reporter for the catch.
+
 ### Fixed
 - **The package no longer ships unrelated top-level folders** — `setuptools` was
   discovering every directory that looked like a package, so `pip install
