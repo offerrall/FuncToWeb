@@ -15,6 +15,12 @@ async def save_uploaded_file(
     original_name = getattr(uploaded_file, 'filename', None) or 'file'
     if not original_name.strip():
         original_name = 'file'
+    # Sanitize: strip any directory components (e.g. "../../../etc/passwd")
+    # to prevent path traversal attacks. Also reject bare "." and "..".
+    sanitized = Path(original_name).name
+    if sanitized in (".", "..") or not sanitized.strip():
+        sanitized = 'file'
+    original_name = sanitized
 
     folder_path = uploads_dir / uuid.uuid4().hex
     folder_path.mkdir(parents=True, exist_ok=True)
