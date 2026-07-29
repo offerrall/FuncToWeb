@@ -1,47 +1,47 @@
-# FuncToWeb — Examples
+# FuncToWeb examples
 
-Auto-generated examples covering every feature of FuncToWeb.
+[`docs/`](../docs/index.md) is the technical reference; this folder is the
+hands-on part. Each file is a runnable program that teaches **a single
+capability** and nothing else.
 
-## Install
+A **runnable program** is a file with an `if __name__ == "__main__":` guard,
+and that is what the count in the main README means. There are 80 of them
+across the 11 folders, which is every `.py` file here: nothing in the
+collection is a module that only exists to be imported.
 
-```bash
-pip install func-to-web
-```
-
-Some examples need optional dependencies:
-
-```bash
-pip install pillow matplotlib pandas numpy qrcode pypdf
-```
-
-## Run any example
+## Running
 
 ```bash
-python 01_basics/01_hello.py
+python examples/basic/hello.py
 ```
 
-Then open http://127.0.0.1:8000
+Each example serves at <http://127.0.0.1:8000> and blocks until `Ctrl+C`. The
+clients in `examples/http/` exit on their own.
 
-## Folder index
+## Folders
 
-- **`01_basics/`** — Minimal examples of the basic input types: str, int, float, bool, date, time, Color, Email.
-- **`02_strings/`** — String input variants: constraints, placeholder, password, textarea, custom pattern message.
-- **`03_numeric/`** — Numeric input variants: constraints, step, slider, slider without value label.
-- **`04_dropdowns/`** — Dropdowns: Literal, Enum, dynamic (runtime), and dynamic with manual validation.
-- **`05_optional/`** — Optional fields with toggle: automatic, explicit (OptionalEnabled/Disabled), and across all types.
-- **`06_lists/`** — Dynamic lists: basic, defaults, item constraints, list constraints, combined, list-level labels.
-- **`07_files/`** — File uploads: basic, all file types, lists, size limit, persisting uploads.
-- **`08_outputs/`** — Output renderers: text, PIL image, plot, table, downloads, multiple outputs, print streaming, errors.
-- **`09_composition/`** — Reusable types via Annotated: shared types, layered constraints, lists+optional combos.
-- **`10_params/`** — Reusable parameter groups via the Params class.
-- **`11_multiple/`** — Multiple functions: list.
-- **`12_config/`** — Host/port, reverse proxy, custom CSS, and serving a static frontend.
-- **`13_recipes/`** — End-to-end recipes: QR generator, PDF merger, file transfer, CSV analyzer, image resize, admin panel.
+| Folder | What it teaches | Documentation |
+| --- | --- | --- |
+| [`basic/`](basic/) | `run()`, parameters, `WebFunction`, `WebFunctions`, space title, `page_of()` | [getting-started](../docs/getting-started.md), [web-function](../docs/web-function.md) |
+| [`types/`](types/) | scalars, `date`, `time`, enums, optionals, lists, unions, dataclasses | [types](../docs/types.md) |
+| [`validation/`](validation/) | `Min`, `Max`, `MultipleOf`, `Choices`, `Pattern`, `Slider`, `Rows`, `IsPassword`, `Color`, `Email`… | [types](../docs/types.md) |
+| [`forms/`](forms/) | `OpenForm`, hidden fields and prefill via the URL | [prefill](../docs/prefill.md), [open-form](../docs/open-form.md) |
+| [`files/`](files/) | `IsPathFile`, extensions, sizes, lists, references, storage on arrival, `max_upload_bytes`, expiry, storage location | [files](../docs/files.md) |
+| [`outputs/`](outputs/) | text, multiple outputs, errors and `Download` | [outputs](../docs/outputs.md) |
+| [`outputs_optional/`](outputs_optional/) | images and tables with optional dependencies | [outputs](../docs/outputs.md) |
+| [`streaming/`](streaming/) | live `print()`, progress and `capture_prints` | [streaming](../docs/streaming.md) |
+| [`fastapi/`](fastapi/) | `router_of()`, prefixes, your own routes, iframes and `sdk.js` | [router](../docs/router.md), [sdk](../docs/sdk.md) |
+| [`themes/`](themes/) | `system`, `light` and `dark` in `run()` and `router_of()` | [static-assets](../docs/static-assets.md) |
+| [`http/`](http/) | `/invoke`, `/invoke-stream`, `/upload` and `/doc` from a client | [http](../docs/http.md), [api-docs](../docs/api-docs.md) |
 
-## Tip
+## Dependencies
 
-Every running app exposes a machine-readable API description at `/doc`:
+Everything works with `pip install func-to-web`, except
+[`outputs_optional/`](outputs_optional/README.md), where each subfolder
+declares its own (`pillow`, `matplotlib`, `pandas`, `polars`, `numpy`). None
+of them is required by the library.
 
-```bash
-curl http://127.0.0.1:8000/doc
-```
+The examples use fictional data, never access the Internet and write only to
+the system temporary directories, with one deliberate exception:
+[`files/storage_dir.py`](files/storage_dir.py) points `uploads_dir` at a
+`storage/` folder beside itself, because where the files land is its lesson.

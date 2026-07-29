@@ -1,6 +1,178 @@
 # Changelog
 
-## [1.6.0] - 2026-06-05
+## [2.0.0] - 2026-07-29
+
+2.0 is not one more release: it is a different library built on the same idea.
+Your function, its type hints, its dataclasses and its docstring still work.
+What changes is how constraints are declared, how files travel, how results are
+returned and which URLs the server serves. The two layers underneath were
+rewritten — `pytypeinput` and `pytypeinputweb` give way to
+[`pytypehint`](https://github.com/offerrall/pytypehint) and `pytypehintweb` —
+and **pydantic goes with them: it is no longer involved at all**. The minimum
+Python version rises from 3.10 to 3.11.
+
+**A full read of [`docs/migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md)
+is recommended before upgrading.** It covers every case below with the exact
+error each one produces, and ends with the ordered update steps.
+
+**From this version on, expect far fewer changes.** The redesign is done: the
+API surface, the transport and the storage contract are what they are meant to
+be. What comes next are releases dedicated to security, to polishing what is
+already there, and to adding things that fit inside the current design — not to
+rewriting it again.
+
+### Added
+- **Nested structures with no depth limit** — nested dataclasses, lists of
+  lists, and unions of several real types with their metadata declared per
+  branch (`Annotated[int, Min(0)] | str`); over HTTP an ambiguous branch is
+  discriminated with `$type`. The function receives fully built Python values.
+- **Defaults are no longer shared between calls** — they are validated when the
+  `WebFunction` is built and rematerialized on every execution, so a mutable
+  default is never carried from one call to the next.
+- **`OpenForm`** — a function can return the data that **another** function's
+  form opens with, marking its return annotation. Chaining two tools no longer
+  needs a frontend.
+- **Prefill from Python, and `page_of()`** — a page can open with real Python
+  values already in place and with selected fields hidden. `page_of()` renders
+  the complete HTML of one opening without mounting any route.
+- **Input files are uploaded once and reused** — raw bytes go to `POST /upload`
+  with an `X-File-Reference` header, and every later call sends that reference
+  as an ordinary string. Re-running with a different parameter never moves the
+  file again, and a reference can travel in a prefill so the form opens with the
+  file already set.
+- **A storage life cycle with two states** — an upload is published as *pending*
+  and the first execution or prefill that resolves it promotes it: what is
+  promoted is permanent, what nobody ever claims expires after `pending_ttl`.
+  Returned files expire after `returns_ttl`. Both default to one hour, and both
+  accept an `int`, a `timedelta` or `None`.
+- **`uploads_dir` and `returns_dir` are resolved when the router is built** —
+  made absolute, created and checked there, so a directory this process cannot
+  write to fails at build time instead of on the first request. Both can also be
+  set from outside the code with `FUNCTOWEB_UPLOADS_DIR` and
+  `FUNCTOWEB_RETURNS_DIR`; the argument wins over the variable.
+- **Per-field file limits** — `IsPathFile(min_size=…, max_size=…)` bounds the
+  file of *that* field, checked in the browser before uploading and again in the
+  core before the function runs.
+- **`POST /{slug}/invoke-stream`** — streaming has a route of its own: `start`,
+  zero or more `print` events and one `result` with the same envelope as
+  `/invoke`. `/invoke` never streams.
+- **`theme="system" | "light" | "dark"`** — chosen by whoever mounts the space
+  and stamped on the initial HTML, so the page does not flicker.
+- **`sdk.js` as a static asset of the space** — `call`, `callStream` and
+  `openModal` for your own frontend, with no build step and no URL to assemble.
+- **`GET /static/{path}` with `ETag`** — subdirectories included, revalidated
+  with `If-None-Match` and answered with `304`.
+- **`MultipleOf` is actually validated** — 1.6 accepted `Field(multiple_of=n)`
+  and silently discarded it.
+- **`Extra(key, value)`** — a namespaced storage slot on a field, kept in the
+  schema and interpreted by nobody, for wrappers that need to annotate a field.
+
+### Changed
+- **`create_app()` → `router_of()`, which returns an `APIRouter`** — the prefix
+  belongs to `include_router()`, and every URL the space emits is relative, so a
+  router works under any prefix. `root_path` is gone with the problem it solved.
+- **`FunctionMetadata` → `WebFunction`**, with the callable positional and named
+  `fn`. `__name__` is used as is for both the name and the slug, so `name=` no
+  longer changes the URL and `slug=` is there for that. `doc`, `static`, `upload`
+  and `returns` are reserved.
+- **Every function lives at `/{slug}/`, even when it is the only one** — there is
+  no special route for a single function; `/{slug}` answers `307`. The index at
+  `/` is added by `run()` and not by `router_of()`.
+- **`POST /submit` multipart → `POST /{slug}/invoke` with JSON** — one key per
+  parameter: ISO dates, an enum by its member name, a nested dataclass, a file as
+  its reference. `GET /download/{file_id}` becomes `GET /returns/{reference}`.
+- **The response envelope no longer carries `success`** — a result is
+  `200 {"result": {…}}`, a contract violation is `422 {"error": "…"}` and an
+  exception raised by the function is `500 {"error": "ZeroDivisionError: …"}`
+  instead of arriving inside the stream with `200`. The per-field error map is
+  gone: `error` is a string.
+- **Constraints are atoms, not pydantic** — `Field(ge=)`/`Field(le=)` become
+  `Min`/`Max` (with `exclusive=True` for the strict bounds), `Field(pattern=)`
+  becomes `Pattern`, `Field(min_length=)`/`max_length` become `Min`/`Max` on the
+  string or on the list. A `Field` left in a signature fails when the
+  `WebFunction` is built.
+- **`func_to_web.types` no longer exists** — everything is imported from
+  `func_to_web`.
+- **`Pattern` is a `fullmatch` over a portable subset of RegExp** — `\d`, `\w`,
+  `\s`, `\b` and the unescaped dot are rejected when building the `WebFunction`,
+  and an unanchored pattern no longer accepts partial matches.
+- **`Params` → a plain `@dataclass`** — `frozen=True` is no longer required, it
+  can nest others and be optional, and its fields are no longer flattened into
+  the form, so names no longer collide. `__post_init__` is still where
+  cross-field validation goes, and its `ValueError` still surfaces as a `422`.
+- **Downloads are declared, not detected** — the return annotation carries
+  `Download` and the value merely satisfies it (a `Path`, a `str` with a path or
+  `bytes`). Three cases that `FileResponse` used to decide at runtime are now
+  rejected when the `WebFunction` is built: a fixed name for more than one file,
+  `bytes` with no filename, and a return mixing `Download` with `OpenForm`.
+- **Only three values are tables** — a pandas `DataFrame`, a polars `DataFrame`
+  and a 2D numpy array. A `list[dict]` or a `list[tuple]` is no longer guessed
+  into a table: it is flattened recursively into one text output per value.
+- **A `None` inside a collection emits its own `"Done"`** — 1.6 skipped it, so
+  `["one", None, "two"]` goes from two outputs to three.
+- **Uploaded files are no longer deleted when the function finishes** — 1.6 used
+  `uploads_dir/<uuid>/<name>` and removed that folder; in 2.0 what an execution
+  received stays, which is what makes a reference reusable.
+- **Storage is one policy per process, not one per router** — the first router
+  with file fields settles `uploads_dir` and `pending_ttl` (and the first with a
+  `Download`, `returns_dir` and `returns_ttl`) for every space mounted beside it.
+  A later router asking for a different one gets a `UserWarning` saying it was
+  ignored, instead of being left guessing.
+- **`host` defaults to `127.0.0.1`** instead of `0.0.0.0`: the loopback
+  interface only, unless you say otherwise.
+- **`run()` renames most of its arguments and they are keyword-only** —
+  `func`→`fns`, `app_title`→`title`, `stream_prints`→`capture_prints`,
+  `max_file_size`→`max_upload_bytes`, `fastapi_config`→`fastapi_kwargs`, and the
+  loose Uvicorn keys are grouped into `uvicorn_kwargs={…}`. Four reserved keys
+  raise `TypeError`: `title` in `fastapi_kwargs`, and `host`, `port` and `app` in
+  `uvicorn_kwargs`.
+- **`capture_prints` is decided per space and per function** — `WebFunction(f,
+  capture_prints=…)` overrides the space, and output is captured by default.
+- **An `Enum` travels by member name only** — 1.6 accepted the name or the
+  value over HTTP.
+- **An empty `str` and an empty `list` are now accepted** — 1.6 rejected both
+  with `422`. Require them explicitly with `Min(1)`.
+- **`/docs`, `/redoc` and `/openapi.json` are enabled again** in the application
+  built by `run()`; turn them off with
+  `fastapi_kwargs={"docs_url": None, "redoc_url": None, "openapi_url": None}`.
+- **`workers` and `reload` are no longer validated by `run()`** — the key
+  reaches `uvicorn.run()`, which explains that an import string is required.
+
+### Removed
+- **pydantic** — no longer a dependency, and no longer involved in any part of
+  the pipeline.
+- **`Dropdown(fn)`** — there are no dynamic options; a field with runtime
+  options has to be redesigned by hand with fixed ones.
+- **The file aliases** (`ImageFile`, `TextFile`, `AudioFile`, `DataFile`,
+  `VideoFile`, `DocumentFile`, `File`) — a file field is a `str` annotated with
+  `IsPathFile(extensions=…)`; the migration guide lists the exact extensions
+  each alias carried.
+- **`OptionalEnabled` and `OptionalDisabled`** — replaced by
+  `Annotated[X | None, OptionalToggle(True | False)]`.
+- **`FileResponse`** — superseded by `Download` in the return annotation.
+- **`css_vars`, `favicon` and `list_css_variables`** — appearance is controlled
+  by `theme=`; the `--pth-*` tokens exist but no public API reaches them.
+- **`root_path`** — every URL is relative, so there is nothing to prefix.
+- **`?__embed=1`** — every page is complete and embeddable as it is, with no
+  headers that block embedding; the cosmetic stripping has no equivalent.
+- **A `float` `Literal` and `Slider` on a `float`** — the first is replaced by
+  `Annotated[float, Choices(values=(…))]`, and the second either becomes an
+  `int` field or drops the slider.
+
+### Documentation
+- **The documentation was rewritten around the new library** — one page per
+  area ([`run`](docs/run.md), [`router`](docs/router.md),
+  [`types`](docs/types.md), [`files`](docs/files.md),
+  [`outputs`](docs/outputs.md), [`prefill`](docs/prefill.md),
+  [`open-form`](docs/open-form.md), [`streaming`](docs/streaming.md),
+  [`http`](docs/http.md), [`sdk`](docs/sdk.md)), plus
+  [`limitations`](docs/limitations.md) and [`security`](docs/security.md)
+  stating what the library does not do.
+- **A complete migration guide** —
+  [`migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md), with equivalence
+  tables per area, the confirmed pitfalls and the ordered update steps.
+- **The examples collection was rebuilt** — 80 runnable programs across 11
+  folders, each file teaching a single capability and running as it is.
 
 ## [1.6.0] - 2026-06-06
 

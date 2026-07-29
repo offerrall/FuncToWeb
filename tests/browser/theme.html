@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web theme checks</title></head>
+<body>
+<!--
+  Which palette the served page actually paints, resolved by a real cascade.
+
+  The Python suite can prove the attribute is written into the markup and that
+  the stylesheets declare the right tokens; only a browser resolves them.
+  Specificity, the prefers-color-scheme media query and the used value of
+  background-color exist nowhere else.
+
+  The system preference is forced from the command line, so automatic mode can
+  be checked both ways:
+
+    --blink-settings=preferredColorScheme=0   system is dark
+    --blink-settings=preferredColorScheme=1   system is light
+
+  No colour is written down here. Two probe roots are injected into the very
+  page under test, one forced light and one forced dark, and every expectation
+  is stated against the values those probes take from the same stylesheet. The
+  only exception is the success colour of an output mark, which is an ftw-level
+  token no .pth-root probe inherits; it is named, because naming it is the only
+  way to prove it switches at all.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_theme.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    BASE, check, equal, note, openPage, run, runToResult,
+} from "./harness.js";
+
+const EXPECTED = {
+    system_light: { attribute: null, mode: "light", systemDark: false },
+    system_dark: { attribute: null, mode: "dark", systemDark: true },
+    forced_light: { attribute: "light", mode: "light", systemDark: true },
+    forced_dark: { attribute: "dark", mode: "dark", systemDark: false },
+};
+
+const SUCCESS = { light: "rgb(22, 163, 74)", dark: "rgb(74, 222, 128)" };
+
+function channels(colour) {
+    return colour.replace(/[^\d,.]/g, "").split(",").slice(0, 3).map(Number);
+}
+
+function luminance(colour) {
+    const [red, green, blue] = channels(colour);
+
+    return (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+}
+
+function probe(page, theme) {
+    const element = page.doc.createElement("div");
+
+    element.className = "pth-root";
+    element.setAttribute("data-pth-theme", theme);
+    element.style.padding = "1px";
+
+    const control = page.doc.createElement("input");
+    control.type = "text";
+    control.className = "pth-str-probe";
+
+    const field = page.doc.createElement("div");
+    field.className = "pth-str";
+    field.append(control);
+    element.append(field);
+    page.doc.body.append(element);
+
+    return {
+        surface: page.win.getComputedStyle(element).backgroundColor,
+        input: page.win.getComputedStyle(control).backgroundColor,
+    };
+}
+
+async function verifyTheme(name) {
+    const wanted = EXPECTED[name];
+    const page = await openPage("paint/");
+    const style = (element) => page.win.getComputedStyle(element);
+
+    equal("the system preference is the one the run forced",
+          page.win.matchMedia("(prefers-color-scheme: dark)").matches,
+          wanted.systemDark);
+
+    equal("the html element carries the theme the router was given",
+          page.doc.documentElement.getAttribute("data-pth-theme"),
+          wanted.attribute);
+
+    const served = await (await fetch(`${BASE}paint/`)).text();
+    const opening = served.slice(served.indexOf("<html"),
+                                 served.indexOf(">", served.indexOf("<html")) + 1);
+
+    equal("the attribute is served in the markup, not added later",
+          opening,
+          wanted.attribute === null
+              ? "<html>"
+              : `<html data-pth-theme="${wanted.attribute}">`);
+    check("nothing runs before it",
+          served.indexOf("<html") < served.indexOf("<script")
+          && served.indexOf("<html") < served.indexOf("<link"),
+          `html at ${served.indexOf("<html")}, `
+          + `link at ${served.indexOf("<link")}, `
+          + `script at ${served.indexOf("<script")}`);
+
+    const light = probe(page, "light");
+    const dark = probe(page, "dark");
+
+    check("the two palettes really differ",
+          light.surface !== dark.surface && light.input !== dark.input,
+          `${light.surface} / ${dark.surface}`);
+    check("the dark palette is the darker one",
+          luminance(dark.surface) < luminance(light.surface),
+          `${luminance(dark.surface)} < ${luminance(light.surface)}`);
+
+    const reference = wanted.mode === "dark" ? dark : light;
+
+    equal("the page paints the whole surface in its theme",
+          style(page.doc.body).backgroundColor, reference.surface);
+    equal("and tells the browser which scheme its controls live in",
+          style(page.doc.documentElement).colorScheme, wanted.mode);
+
+    const control = page.doc.querySelector("#fields input");
+
+    equal("a widget is painted in the same theme",
+          style(control).backgroundColor, reference.input);
+    equal("and takes its own colour-scheme",
+          style(control).colorScheme, wanted.mode);
+
+    const modal = page.doc.querySelector(".ftw-upload");
+    modal.hidden = false;
+
+    equal("the upload dialog is painted in the same theme",
+          style(page.doc.querySelector(".ftw-upload-dialog")).backgroundColor,
+          reference.input);
+    equal("and so is its close button",
+          style(page.doc.querySelector(".ftw-upload-close")).backgroundColor,
+          reference.input);
+
+    modal.hidden = true;
+
+    const output = await runToResult(page);
+
+    equal("an output is painted in the same theme",
+          style(output).backgroundColor, reference.input);
+    equal("its success mark takes the themed success colour",
+          style(output.querySelector(".ftw-output-mark")).color,
+          SUCCESS[wanted.mode]);
+    check("its text is legible against its own surface",
+          Math.abs(luminance(style(output.querySelector(".ftw-output-value"))
+              .color) - luminance(reference.input)) > 0.4,
+          `${style(output.querySelector(".ftw-output-value")).color} on `
+          + `${reference.input}`);
+
+    note(`surface ${style(page.doc.body).backgroundColor}, `
+         + `light probe ${light.surface}, dark probe ${dark.surface}`);
+}
+
+await run({
+    system_light: () => verifyTheme("system_light"),
+    system_dark: () => verifyTheme("system_dark"),
+    forced_light: () => verifyTheme("forced_light"),
+    forced_dark: () => verifyTheme("forced_dark"),
+});
+</script>
+</body>
+</html>

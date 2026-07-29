@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web file checks</title></head>
+<body>
+<!--
+  File fields, with genuine File objects, in a real browser.
+
+  A File cannot be forged: input.files is a read-only FileList, and the only
+  way to fill it is a DataTransfer, which exists only in a browser. That is
+  what makes this page worth its Chrome run — the size and the extension of a
+  pick, the name shown back, and whether anything is queued for upload, are
+  all decided from real File objects here.
+
+  Two lenses, as in form.html: the served page in an iframe for what the user
+  and the network see (the modal, the POST to ../upload, the answer), and a
+  form compiled here from the plan that page embeds for uploads(), isReady()
+  and hasError(), which have no DOM projection.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_files.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    awaitRequests, check, compiledForm, equal, fieldOf, fieldNamed,
+    fileInputOf, note, openPage, pick, requested, run, runToResult,
+    sizedFile, textFile, waitFor,
+} from "./harness.js";
+
+const STORED = new URLSearchParams(location.search).get("stored");
+
+const PREFILL = `take-one/?prefill=${
+    encodeURIComponent(JSON.stringify({ document: STORED }))}`;
+
+function names(root) {
+    return [...root.querySelectorAll(".pth-file-name")]
+        .map((element) => element.textContent);
+}
+
+function message(root, name) {
+    return fieldOf(root, name).querySelector(".pth-file-message");
+}
+
+function refused(form, host, name, expected) {
+    const shown = message(host, name);
+
+    check(`${name} is marked as an error`,
+          fieldNamed(form, name).widget.hasError() === true);
+    check(`${name} is not ready`,
+          fieldNamed(form, name).widget.isReady() === false);
+    check("the message is shown to the user", shown.hidden === false);
+    check("it says what is wrong", shown.textContent.startsWith(expected),
+          shown.textContent);
+    equal("nothing is queued for upload", form.uploads().length, 0);
+    check("the form as a whole is not ready", form.isReady() === false);
+}
+
+function outputText(doc) {
+    const value = doc.querySelector("#result .ftw-output-text .ftw-output-value");
+
+    return value === null ? null : value.textContent;
+}
+
+const onlyUploads = (entry) =>
+    new URL(entry.name).pathname.endsWith("/upload");
+
+function uploadRequests(win) {
+    return requested(win, "/upload").filter(onlyUploads)
+        .map((entry) => [entry.name, entry.responseStatus]);
+}
+
+await run({
+
+    async valid() {
+        const { form, host } = await compiledForm("take-one/");
+
+        const input = fileInputOf(host, "document");
+
+        equal("the field offers only its extensions",
+              input.getAttribute("accept"), ".txt");
+
+        pick(input, [textFile(window, "note.txt", "hello")]);
+
+        check("an accepted file leaves no error",
+              fieldNamed(form, "document").widget.hasError() === false);
+        check("the field is ready", form.isReady() === true);
+        equal("the chosen name is shown back", names(host), ["note.txt"]);
+        check("no message is shown",
+              message(host, "document").hidden === true);
+
+        const uploads = form.uploads();
+
+        equal("exactly one upload is pending", uploads.length, 1);
+        equal("it carries the real File", uploads[0].file.name, "note.txt");
+        equal("of the real size", uploads[0].file.size, 5);
+
+        const reference = form.read().document;
+
+        check("read() carries a minted reference, not the local name",
+              typeof reference === "string" && reference !== "note.txt"
+              && reference.endsWith(".txt"), reference);
+        equal("the reference is the one that will be uploaded",
+              uploads[0].reference, reference);
+    },
+
+    async min_size() {
+        const { form, host } = await compiledForm("take-bounded/");
+
+        pick(fileInputOf(host, "document"),
+             [sizedFile(window, "tiny.txt", 10)]);
+
+        refused(form, host, "document", "File is too small");
+    },
+
+    async max_size() {
+        const { form, host } = await compiledForm("take-bounded/");
+
+        pick(fileInputOf(host, "document"),
+             [sizedFile(window, "huge.txt", 400)]);
+
+        refused(form, host, "document", "File is too large");
+    },
+
+    async extension() {
+        const { form, host } = await compiledForm("take-one/");
+
+        pick(fileInputOf(host, "document"),
+             [textFile(window, "note.pdf", "hello")]);
+
+        refused(form, host, "document", "Not an accepted file type");
+    },
+
+    async multiple() {
+        const { form, host } = await compiledForm("take-many/");
+
+        const input = fileInputOf(host, "documents");
+
+        check("a list of files becomes one multiple picker",
+              input.multiple === true);
+
+        pick(input, [textFile(window, "one.txt", "a"),
+                     textFile(window, "two.txt", "bb")]);
+
+        equal("both names are shown", names(host), ["one.txt", "two.txt"]);
+        equal("both are queued for upload", form.uploads().length, 2);
+        equal("in the order they were picked",
+              form.uploads().map((upload) => upload.file.name),
+              ["one.txt", "two.txt"]);
+
+        const read = form.read().documents;
+
+        equal("read() carries one reference per file", read.length, 2);
+        check("each reference is distinct", read[0] !== read[1]);
+        check("the form is ready", form.isReady() === true);
+    },
+
+    async nested() {
+        const { form, host } = await compiledForm("take-nested/");
+
+        const group = fieldOf(host, "item");
+
+        check("the file lives inside the group",
+              group.querySelector(".pth-group .pth-file") !== null);
+
+        pick(fileInputOf(group, "document"),
+             [textFile(window, "deep.txt", "hello")]);
+
+        equal("a pick one level down is found as an upload",
+              form.uploads().length, 1);
+        equal("with its real name", form.uploads()[0].file.name, "deep.txt");
+
+        const read = form.read().item;
+
+        check("read() keeps the shape of the dataclass",
+              typeof read === "object" && "document" in read && "tag" in read,
+              JSON.stringify(read));
+        equal("the sibling keeps its default", read.tag, "t");
+        equal("the reference is the pending one",
+              read.document, form.uploads()[0].reference);
+        check("the form is ready", form.isReady() === true);
+    },
+
+    async rows() {
+        const { form, host } = await compiledForm("take-rows/");
+
+        const list = fieldOf(host, "rows").querySelector(".pth-list");
+
+        equal("the list opens empty", form.read().rows, []);
+
+        list.querySelector(".pth-list-add").click();
+        list.querySelector(".pth-list-add").click();
+
+        const items = [...list.querySelectorAll(".pth-list-item")];
+
+        equal("two rows are added", items.length, 2);
+
+        pick(fileInputOf(items[0], "document"),
+             [textFile(window, "first.txt", "a")]);
+        pick(fileInputOf(items[1], "document"),
+             [textFile(window, "second.txt", "bb")]);
+
+        equal("a pick two levels down is found as an upload",
+              form.uploads().map((upload) => upload.file.name),
+              ["first.txt", "second.txt"]);
+
+        const read = form.read().rows;
+
+        equal("read() keeps one object per row", read.length, 2);
+        equal("each row carries its own reference",
+              read.map((row) => row.document),
+              form.uploads().map((upload) => upload.reference));
+        check("the form is ready", form.isReady() === true);
+    },
+
+    async prefilled() {
+        const { form, host } = await compiledForm(PREFILL);
+
+        const current = host.querySelector(".pth-file-current-label");
+
+        check("the stored file is shown as the current one",
+              current !== null && current.textContent.includes(STORED),
+              current === null ? "no current label" : current.textContent);
+        check("no local file is listed", names(host).length === 0);
+        equal("a reference asks for no upload", form.uploads().length, 0);
+        check("a referenced field is ready", form.isReady() === true);
+        check("and is not in error",
+              fieldNamed(form, "document").widget.hasError() === false);
+
+        const page = await openPage(PREFILL);
+        const output = await runToResult(page);
+
+        equal("the run answers with the stored content",
+              outputText(page.doc), "stored bytes");
+        check("it is a text output",
+              output.classList.contains("ftw-output-text"));
+        equal("nothing was uploaded", uploadRequests(page.win), []);
+    },
+
+    async replace() {
+        const page = await openPage(PREFILL);
+
+        page.doc.querySelector(".pth-file-current-replace").click();
+
+        const input = page.doc.querySelector(".pth-file-input");
+
+        check("the picker comes back", input.closest(".pth-file-row").hidden
+              === false);
+        check("a restore button is offered",
+              page.doc.querySelector(".pth-file-restore").hidden === false);
+
+        pick(input, [textFile(page.win, "fresh.txt", "fresh bytes")]);
+
+        equal("the local pick replaces the current file",
+              [...page.doc.querySelectorAll(".pth-file-name")]
+                  .map((element) => element.textContent),
+              ["fresh.txt"]);
+        equal("nothing of the reference is shown any more",
+              page.doc.querySelectorAll(".pth-file-current-label").length, 0);
+
+        await runToResult(page);
+        await awaitRequests(page.win, "/upload", 1, onlyUploads);
+
+        const uploads = uploadRequests(page.win);
+
+        equal("the replacement was uploaded", uploads.length, 1);
+        equal("and accepted", uploads[0][1], 200);
+        equal("the function received the new bytes",
+              outputText(page.doc), "fresh bytes");
+    },
+
+    async upload_flow() {
+        const page = await openPage("take-one/");
+
+        pick(page.doc.querySelector(".pth-file-input"),
+             [textFile(page.win, "note.txt", "uploaded bytes")]);
+
+        const modal = page.doc.querySelector(".ftw-upload");
+        const shown = [];
+        const observer = new page.win.MutationObserver(
+            () => shown.push(modal.hidden));
+
+        observer.observe(modal, { attributes: true,
+                                  attributeFilter: ["hidden"] });
+
+        check("the upload modal starts hidden", modal.hidden === true);
+
+        await runToResult(page);
+
+        observer.disconnect();
+
+        check("the modal was shown while uploading", shown.includes(false),
+              JSON.stringify(shown));
+        check("and hidden again afterwards", modal.hidden === true);
+        check("no upload error was reported",
+              modal.querySelector(".ftw-upload-error").hidden === true);
+
+        await awaitRequests(page.win, "/upload", 1, onlyUploads);
+
+        const uploads = uploadRequests(page.win);
+
+        equal("exactly one file was uploaded", uploads.length, 1);
+        equal("and the server accepted it", uploads[0][1], 200);
+        check("the upload went to the router, not to the page",
+              uploads[0][0].endsWith("/upload"), uploads[0][0]);
+        equal("the function read what was uploaded",
+              outputText(page.doc), "uploaded bytes");
+
+        note(`upload requests: ${JSON.stringify(uploads)}`);
+    },
+
+    async refused_never_uploads() {
+        const page = await openPage("take-one/");
+
+        pick(page.doc.querySelector(".pth-file-input"),
+             [textFile(page.win, "note.pdf", "hello")]);
+
+        page.doc.getElementById("submit").click();
+
+        const shown = await waitFor(
+            "the refusal", () => page.doc.querySelector(
+                "#result .ftw-output-error"));
+
+        check("the submit refuses a file of the wrong type",
+              shown !== null && shown.textContent.includes("document"),
+              shown === null ? "" : shown.textContent);
+        equal("nothing was uploaded", uploadRequests(page.win), []);
+        equal("nothing was run", requested(page.win, "invoke-stream").length, 0);
+    },
+
+});
+</script>
+</body>
+</html>

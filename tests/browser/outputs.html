@@ -1,0 +1,409 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web output checks</title></head>
+<body>
+<!--
+  What the page draws once the server has answered.
+
+  Everything here is the real thing: a real space of functions, the real
+  invoke-stream, and output.js building real elements in a real layout engine.
+  That is what buys the checks a fake DOM cannot make — that an image really
+  decodes to its pixels, that an icon's mask-image resolves to a file next to
+  the stylesheet and that the file answers 200, and that a text output stays
+  text even when its value is markup.
+
+  One case is different: `invalid`. The server of this library cannot emit an
+  output its own client refuses, so that case is served by a stub route the
+  test registers ahead of the router, and it exercises the client guard only.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_outputs.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    BASE, awaitRequests, check, equal, note, openPage, outputKinds,
+    requested, resultText, run, runToResult, waitFor,
+} from "./harness.js";
+
+const HOSTILE = '<img src=x onerror="document.title=\'pwned\'">';
+
+function valueOf(doc, variant) {
+    const value = doc.querySelector(
+        `#result .ftw-output-${variant} .ftw-output-value`);
+
+    return value === null ? null : value.textContent;
+}
+
+function iconsOf(doc) {
+    return [...doc.querySelectorAll(".ftw-icon")];
+}
+
+function maskOf(win, element) {
+    const style = win.getComputedStyle(element);
+
+    return style.maskImage === "none" || style.maskImage === ""
+        ? style.webkitMaskImage
+        : style.maskImage;
+}
+
+function iconRequests(win) {
+    return requested(win, "/static/icons/")
+        .map((entry) => [entry.name.split("/").pop(), entry.responseStatus]);
+}
+
+async function checkIconsOf(page, expected) {
+    const icons = iconsOf(page.doc);
+
+    check(`${expected.join(" ")}: some icon is drawn`, icons.length > 0);
+    check("every icon is hidden from assistive technology",
+          icons.every((icon) => icon.getAttribute("aria-hidden") === "true"));
+
+    for (const icon of icons) {
+        const mask = maskOf(page.win, icon);
+
+        check(`${icon.className} resolves its mask to a file`,
+              mask.includes("/static/icons/") && !mask.includes("data:"),
+              mask);
+    }
+
+    for (const name of expected) {
+        await awaitRequests(page.win, `/static/icons/${name}`, 1);
+    }
+
+    const answered = iconRequests(page.win);
+
+    for (const name of expected) {
+        const entry = answered.find((each) => each[0] === name);
+
+        check(`${name} was fetched`, entry !== undefined,
+              JSON.stringify(answered));
+
+        if (entry !== undefined) {
+            equal(`${name} answered 200`, entry[1], 200);
+        }
+    }
+
+    equal("no icon request failed",
+          answered.filter((entry) => entry[1] !== 200), []);
+}
+
+await run({
+
+    async text() {
+        const page = await openPage("as-text/");
+        const output = await runToResult(page);
+
+        equal("a str answer becomes one text output",
+              outputKinds(page.doc), ["ftw-output ftw-output-text"]);
+        equal("carrying the returned value",
+              valueOf(page.doc, "text"), "plain answer");
+        check("the value is rendered in a pre",
+              output.querySelector(".ftw-output-value").tagName === "PRE");
+        check("it is marked as a success",
+              output.querySelector(".ftw-output-mark.ftw-icon-check") !== null);
+        check("it offers a copy action",
+              output.querySelector(".ftw-actions .ftw-action") !== null);
+        equal("the copy action names itself",
+              output.querySelector(".ftw-action").title, "Copy to clipboard");
+    },
+
+    async escaping() {
+        const page = await openPage("as-hostile/");
+
+        await runToResult(page);
+
+        equal("the markup is shown as the text it is",
+              valueOf(page.doc, "text"), HOSTILE);
+        equal("no element was built from it",
+              page.doc.getElementById("result").querySelectorAll("img").length,
+              0);
+        equal("nothing at all was injected into the page",
+              page.doc.querySelectorAll("img").length, 0);
+        check("no injected handler ever ran", page.doc.title !== "pwned",
+              page.doc.title);
+        equal("the value lives in a text node",
+              page.doc.querySelector("#result .ftw-output-value").children
+                  .length, 0);
+    },
+
+    async error() {
+        const page = await openPage("as-error/");
+        const output = await runToResult(page);
+
+        equal("a raising function becomes one error output",
+              outputKinds(page.doc), ["ftw-output ftw-output-error"]);
+        equal("naming the exception and its message",
+              valueOf(page.doc, "error"), "RuntimeError: something broke");
+        check("it is marked with the alert glyph",
+              output.querySelector(".ftw-output-mark.ftw-icon-alert") !== null);
+        check("nothing is offered to copy",
+              output.querySelector(".ftw-actions") === null);
+        check("the submit is usable again", await waitFor(
+            "the submit to be freed",
+            () => page.doc.getElementById("submit").disabled === false) === true);
+    },
+
+    async running() {
+        const page = await openPage("as-slow/");
+
+        let running = null;
+        let mask = "";
+
+        const observer = new page.win.MutationObserver(() => {
+            const found = page.doc.querySelector("#result .ftw-output-running");
+
+            if (found !== null && running === null) {
+                running = found.querySelector(".ftw-output-value").textContent;
+                mask = maskOf(page.win,
+                              found.querySelector(".ftw-output-mark"));
+            }
+        });
+
+        observer.observe(page.doc.getElementById("result"),
+                         { childList: true, subtree: true });
+
+        await runToResult(page);
+        observer.disconnect();
+
+        equal("a running block is shown while the function works",
+              running, "Running…");
+        check("marked with the clock glyph",
+              mask.includes("/static/icons/clock.svg"), mask);
+        equal("and replaced by the answer when it lands",
+              outputKinds(page.doc), ["ftw-output ftw-output-text"]);
+        equal("which is the returned value",
+              valueOf(page.doc, "text"), "late answer");
+    },
+
+    async stdout() {
+        const page = await openPage("as-printing/");
+
+        await runToResult(page);
+
+        equal("what was printed is kept beside the answer",
+              outputKinds(page.doc),
+              ["ftw-output ftw-output-stdout", "ftw-output ftw-output-text"]);
+        equal("holding every printed line",
+              valueOf(page.doc, "stdout"), "line 0\nline 1\nline 2\n");
+        equal("and the returned value",
+              valueOf(page.doc, "text"), "printed answer");
+    },
+
+    async table() {
+        const page = await openPage("as-table/");
+        const output = await runToResult(page);
+
+        equal("a dataframe becomes one table output",
+              outputKinds(page.doc), ["ftw-output ftw-output-table"]);
+        equal("its columns become the header row",
+              [...output.querySelectorAll("thead th")]
+                  .map((cell) => cell.textContent),
+              ["name", "score"]);
+        equal("its rows become body rows",
+              [...output.querySelectorAll("tbody tr")]
+                  .map((line) => [...line.querySelectorAll("td")]
+                      .map((cell) => cell.textContent)),
+              [["ada", "10"], ["alan", "20"]]);
+        check("the table can scroll on its own",
+              output.querySelector(".ftw-output-grid") !== null);
+        equal("it offers copy and download",
+              output.querySelectorAll(".ftw-actions .ftw-action").length, 2);
+    },
+
+    async image() {
+        const page = await openPage("as-image/");
+        const output = await runToResult(page);
+
+        equal("an image becomes one image output",
+              outputKinds(page.doc), ["ftw-output ftw-output-image"]);
+
+        const image = output.querySelector("img.ftw-output-img");
+
+        check("carried as a PNG data URI",
+              image.src.startsWith("data:image/png;base64,"),
+              image.src.slice(0, 40));
+
+        await waitFor("the image to decode",
+                      () => image.complete && image.naturalWidth > 0);
+
+        equal("that the browser really decodes",
+              [image.naturalWidth, image.naturalHeight], [8, 4]);
+        equal("the image is decorative for a screen reader",
+              image.getAttribute("alt"), "");
+        equal("it offers copy and download",
+              output.querySelectorAll(".ftw-actions .ftw-action").length, 2);
+    },
+
+    async download() {
+        const page = await openPage("as-download/");
+        const output = await runToResult(page);
+
+        equal("a Download becomes one download output",
+              outputKinds(page.doc), ["ftw-output ftw-output-download"]);
+
+        const link = output.querySelector("a.ftw-download");
+
+        equal("the link offers the declared filename",
+              link.getAttribute("download"), "out.txt");
+        equal("its name is the filename", link.textContent, "out.txt");
+        check("it points relative to the page, not to the host",
+              link.getAttribute("href").startsWith("../returns/"),
+              link.getAttribute("href"));
+
+        const answer = await fetch(link.href);
+
+        equal("and it really resolves", answer.status, 200);
+        equal("to the bytes the function returned",
+              await answer.text(), "payload");
+    },
+
+    async form() {
+        const page = await openPage("as-form/");
+
+        let href = null;
+        let name = null;
+
+        const observer = new page.win.MutationObserver(() => {
+            const found = page.doc.querySelector("#result .ftw-output-form");
+
+            if (found !== null && href === null) {
+                href = found.querySelector("a.ftw-download")
+                    .getAttribute("href");
+                name = found.querySelector("span:not(.ftw-icon)").textContent;
+            }
+        });
+
+        observer.observe(page.doc.getElementById("result"),
+                         { childList: true, subtree: true });
+
+        page.doc.getElementById("submit").click();
+
+        await waitFor("the form output", () => href !== null);
+        observer.disconnect();
+
+        check("the opening is announced", name === "Opening the form…", name);
+        check("through a link relative to the page",
+              href.startsWith("../edit/?"), href);
+
+        await waitFor("the browser to follow it",
+                      () => page.frame.contentDocument.title === "Edit"
+                         && page.frame.contentDocument.querySelector(
+                             "#fields .pth-field") !== null);
+
+        const landed = page.frame.contentDocument;
+
+        equal("the target form really opens", landed.title, "Edit");
+        equal("prefilled with what was returned",
+              [...landed.querySelectorAll("#fields .pth-label")]
+                  .map((label) => label.textContent),
+              ["name"]);
+        equal("and the hidden parameter is not shown",
+              landed.querySelector("#fields input").value, "chosen");
+    },
+
+    async several() {
+        const page = await openPage("as-several/");
+
+        await runToResult(page);
+
+        equal("a list of values becomes one output each",
+              outputKinds(page.doc),
+              ["ftw-output ftw-output-text", "ftw-output ftw-output-text"]);
+        equal("in the order the function returned them",
+              [...page.doc.querySelectorAll("#result .ftw-output-value")]
+                  .map((value) => value.textContent),
+              ["first answer", "second answer"]);
+    },
+
+    async invalid() {
+        const page = await openPage("as-broken/");
+
+        await runToResult(page);
+
+        equal("an output the client cannot render becomes an error",
+              outputKinds(page.doc), ["ftw-output ftw-output-error"]);
+        equal("saying so plainly",
+              valueOf(page.doc, "error"), "Invalid server response");
+    },
+
+    async icons() {
+        const text = await openPage("as-text/");
+        await runToResult(text);
+        await checkIconsOf(text, ["check.svg", "copy.svg"]);
+
+        const failed = await openPage("as-error/");
+        await runToResult(failed);
+        await checkIconsOf(failed, ["alert.svg"]);
+
+        const stored = await openPage("as-download/");
+        await runToResult(stored);
+        await checkIconsOf(stored, ["download.svg"]);
+
+        check("the icons are fetched next to the stylesheet",
+              iconRequests(text.win).length > 0
+              && requested(text.win, "/static/icons/")
+                  .every((entry) => entry.name.startsWith(
+                      new URL("static/icons/", BASE).href)));
+    },
+
+    async accessibility() {
+        const page = await openPage("as-table/");
+
+        equal("the upload dialog is a modal dialog",
+              [page.doc.querySelector(".ftw-upload-dialog")
+                  .getAttribute("role"),
+               page.doc.querySelector(".ftw-upload-dialog")
+                   .getAttribute("aria-modal")],
+              ["dialog", "true"]);
+        equal("named by its own title",
+              page.doc.querySelector(".ftw-upload-dialog")
+                  .getAttribute("aria-labelledby"),
+              "ftw-upload-title");
+        equal("its progress is announced politely",
+              page.doc.querySelector(".ftw-upload-percent")
+                  .getAttribute("aria-live"),
+              "polite");
+        equal("and its failure assertively",
+              page.doc.querySelector(".ftw-upload-error")
+                  .getAttribute("aria-live"),
+              "assertive");
+
+        const message = page.doc.querySelector(".pth-int-message, "
+                                               + ".pth-str-message");
+
+        equal("a field message is a live status",
+              [message.getAttribute("role"), message.getAttribute("aria-live")],
+              ["status", "polite"]);
+
+        const label = page.doc.querySelector(".pth-label");
+
+        check("every label names its own control",
+              label.htmlFor !== ""
+              && page.doc.getElementById(label.htmlFor) !== null,
+              label.htmlFor);
+
+        await runToResult(page);
+
+        equal("every glyph of an output is hidden from screen readers",
+              iconsOf(page.doc)
+                  .filter((icon) => icon.getAttribute("aria-hidden") !== "true"),
+              []);
+        check("every action button carries a title",
+              [...page.doc.querySelectorAll(".ftw-action")]
+                  .every((button) => button.title !== ""));
+
+        note("#result aria-live: "
+             + JSON.stringify(page.doc.getElementById("result")
+                 .getAttribute("aria-live")));
+        note("outputs on screen: " + resultText(page.doc).slice(0, 60));
+    },
+
+});
+</script>
+</body>
+</html>

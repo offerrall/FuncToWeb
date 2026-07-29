@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web prefix checks</title></head>
+<body>
+<!--
+  The same space, mounted deep under a prefix, opened by a real browser.
+
+  Every URL the page ships is relative: the stylesheets and the module graph
+  hang off ../static/, the run posts to invoke-stream, the upload posts to
+  ../upload and a returned file hangs off ../returns/. Python can assert the
+  strings; only a browser resolves them against the document URL and actually
+  goes and fetches them. That is the whole point of this page, and the reason
+  it repeats what the other pages already cover: here the answers have to
+  arrive through /tools/anidado.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_prefix.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    BASE, awaitRequests, check, equal, failedResources, note, openPage,
+    pick, requested, run, runToResult, textFile, typeInto,
+} from "./harness.js";
+
+const PREFIX = new URL(BASE).pathname;
+
+function outputText(doc) {
+    const value = doc.querySelector("#result .ftw-output-text .ftw-output-value");
+
+    return value === null ? null : value.textContent;
+}
+
+await run({
+
+    async page() {
+        const { doc } = await openPage("add/");
+
+        equal("the page is served under the prefix",
+              new URL(doc.location.href).pathname, `${PREFIX}add/`);
+        equal("with its own title", doc.title, "Add");
+        equal("and every parameter mounted",
+              [...doc.querySelectorAll("#fields .pth-label")]
+                  .map((label) => label.textContent),
+              ["a", "b"]);
+        check("the submit is there",
+              doc.getElementById("submit") !== null);
+    },
+
+    async assets() {
+        const { win } = await openPage("add/");
+
+        equal("no request of the page failed", failedResources(win), []);
+
+        const names = requested(win, "/static/").map((entry) => entry.name);
+
+        check("some assets were really fetched", names.length > 5,
+              String(names.length));
+        equal("and every one of them resolved inside the prefix",
+              names.filter((name) => !new URL(name).pathname
+                  .startsWith(`${PREFIX}static/`)),
+              []);
+
+        const answered = requested(win, PREFIX)
+            .map((entry) => entry.responseStatus);
+
+        equal("every answer was a success",
+              answered.filter((status) => status !== 200 && status !== 0), []);
+
+        note(`assets under ${PREFIX}static/: ${names.length}`);
+    },
+
+    async submit() {
+        const page = await openPage("add/");
+
+        typeInto(page.doc, "a", "40");
+        typeInto(page.doc, "b", "2");
+
+        await runToResult(page);
+
+        equal("the run answers through the prefix",
+              outputText(page.doc), "42");
+
+        const runs = await awaitRequests(page.win, "invoke-stream", 1);
+
+        equal("and it really went to the prefixed endpoint",
+              runs.map((entry) => new URL(entry.name).pathname),
+              [`${PREFIX}add/invoke-stream`]);
+    },
+
+    async upload() {
+        const page = await openPage("take-one/");
+
+        pick(page.doc.querySelector(".pth-file-input"),
+             [textFile(page.win, "note.txt", "prefixed bytes")]);
+
+        await runToResult(page);
+
+        const uploads = await awaitRequests(
+            page.win, "/upload", 1,
+            (entry) => new URL(entry.name).pathname.endsWith("/upload"));
+
+        equal("the upload went to the prefixed endpoint",
+              uploads.map((entry) => new URL(entry.name).pathname),
+              [`${PREFIX}upload`]);
+        equal("and the server accepted it", uploads[0].responseStatus, 200);
+        equal("the function read what was uploaded",
+              outputText(page.doc), "prefixed bytes");
+    },
+
+    async download() {
+        const page = await openPage("pack/");
+        const output = await runToResult(page);
+
+        const link = output.querySelector("a.ftw-download");
+
+        check("the link is written relative to the page",
+              link.getAttribute("href").startsWith("../returns/"),
+              link.getAttribute("href"));
+        equal("and resolves inside the prefix",
+              new URL(link.href).pathname.startsWith(`${PREFIX}returns/`),
+              true);
+
+        const answer = await fetch(link.href);
+
+        equal("the stored file is really served there", answer.status, 200);
+        equal("with the bytes the function returned",
+              await answer.text(), "xxx");
+    },
+
+    async outside() {
+        const root = new URL("/", BASE).href;
+
+        equal("nothing of the space answers at the site root",
+              (await fetch(`${root}add/`)).status, 404);
+        equal("not even its static assets",
+              (await fetch(`${root}static/page.css`)).status, 404);
+        equal("while the prefixed asset does answer",
+              (await fetch(`${BASE}static/page.css`)).status, 200);
+    },
+
+});
+</script>
+</body>
+</html>

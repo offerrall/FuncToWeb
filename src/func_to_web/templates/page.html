@@ -1,0 +1,36 @@
+<!doctype html>
+<html__THEME__>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+__META__
+<link rel="stylesheet" href="../static/widgets.css">
+<link rel="stylesheet" href="../static/page.css">
+
+<body class="pth-root">
+
+<header>
+    <h1>__TITLE__</h1>
+    __DESCRIPTION__
+</header>
+
+<div id="fields"></div>
+<button id="submit" type="button">Submit</button>
+<div id="result"></div>
+
+<div class="ftw-upload" hidden>
+    <div class="ftw-upload-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="ftw-upload-title">
+        <p class="ftw-upload-title" id="ftw-upload-title">Uploading files</p>
+        <p class="ftw-upload-name"></p>
+        <progress class="ftw-upload-bar" max="100" value="0"></progress>
+        <p class="ftw-upload-percent" aria-live="polite">0%</p>
+        <p class="ftw-upload-count"></p>
+        <p class="ftw-upload-error" aria-live="assertive" hidden></p>
+        <button class="ftw-upload-close" type="button" hidden>Close</button>
+    </div>
+</div>
+
+<script id="functoweb-plan" type="application/json">PLAN_JSON</script>
+<script id="functoweb-hidden" type="application/json">HIDDEN_JSON</script>
+<script type="module" src="../static/page.js"></script>

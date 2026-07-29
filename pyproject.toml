@@ -1,37 +1,106 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "func-to-web"
-version = "1.6.0"
-authors = [
-    {name = "Beltrán Offerrall"}
-]
-description = "Transform any Python function into a web interface automatically"
+description = "Expose typed Python functions as web interfaces."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Beltrán Offerrall" }]
+keywords = ["web", "forms", "type-hints", "ui"]
+dynamic = ["version"]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+
 dependencies = [
-    "pytypeinput==1.0.2",     # type system: input types (Color, Email, File...) + validation from type hints
-    "pytypeinputweb==1.0.3",  # frontend assets: the pti-form web component, CSS/JS bundles and CSS variables
-    "fastapi",                # web framework: builds the app, routes and request handling
-    "uvicorn",                # ASGI server that run() uses to serve the app
-    "jinja2",                 # renders the HTML templates (templates/*.html)
-    "python-multipart",       # lets FastAPI parse multipart/form-data (form submits and file uploads)
-    "starlette<1.0.0",        # FastAPI's ASGI toolkit, used directly for UploadFile; pinned <1.0.0 for compatibility
+    "pytypehint==0.0.7",
+    "pytypehintweb==0.0.4",
+    "fastapi==0.121.1",
+    "uvicorn==0.38.0",
+    "platformdirs==4.5.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "httpx",
+    "build",
+    "twine",
+]
+test-outputs = [
+    "pandas",
+    "polars",
+    "numpy",
+    "pillow",
+    "matplotlib",
+]
+# Development only: it never reaches the runtime dependencies of the package.
+# The browser itself is not a Python package; after installing this extra run
+# `python -m playwright install chromium` once. Without it the tests of
+# tests/e2e skip themselves instead of failing.
+test-browser = [
+    "playwright",
 ]
 
 [project.urls]
 Homepage = "https://github.com/offerrall/FuncToWeb"
-Repository = "https://github.com/offerrall/FuncToWeb"
+Source = "https://github.com/offerrall/FuncToWeb"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+filterwarnings = ["error"]
+markers = [
+    "browser: needs a real headless browser",
+    "package: builds or installs the distribution",
+    "slow: takes noticeably longer than a unit test",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["func_to_web"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+# pytypehintweb ships py.typed but leaves decode() unannotated; excluding it
+# keeps every other strict check on our own calls.
+untyped_calls_exclude = ["pytypehintweb"]
+
+[tool.setuptools.dynamic]
+# config.py, not __init__.py: there the version is a literal assignment, so
+# setuptools reads it from the AST instead of importing the package —which at
+# build time cannot import its own runtime dependencies.
+version = { attr = "func_to_web.config.__version__" }
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["func_to_web*"]
+where = ["src"]
 
 [tool.setuptools.package-data]
 func_to_web = [
-    "templates/*.html",
-    "internal_static/**/*.css",
-    "internal_static/**/*.js"
+    "py.typed",
+    "static/*.js",
+    "static/*.css",
+    # A subdirectory is not swept in by static/*: the icons page.css masks would
+    # ship as 404s without this line.
+    "static/icons/*.svg",
 ]
+"func_to_web.templates" = ["*.html"]

@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web streaming checks</title></head>
+<body>
+<!--
+  What the page does while the function is still running.
+
+  Everything here is timing, so nothing here sleeps. A MutationObserver on
+  #result records every state the result area passes through, and a second one
+  on the submit button records every value its disabled attribute takes; both
+  are read after the run, so no check depends on catching a moment. The waits
+  end on an observable condition (see hold() in harness.js), never on a clock.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_streaming.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    check, equal, note, openPage, outputKinds, run, waitFor,
+} from "./harness.js";
+
+function stdoutOf(doc) {
+    return doc.querySelector("#result .ftw-output-stdout .ftw-output-value");
+}
+
+function textOf(doc) {
+    const value = doc.querySelector("#result .ftw-output-text .ftw-output-value");
+
+    return value === null ? null : value.textContent;
+}
+
+function watch(page) {
+    const result = page.doc.getElementById("result");
+    const submit = page.doc.getElementById("submit");
+
+    const state = {
+        snapshots: [],
+        nodes: new Set(),
+        running: [],
+        disabled: [],
+    };
+
+    const outputs = new page.win.MutationObserver(() => {
+        const pre = stdoutOf(page.doc);
+
+        if (pre !== null) {
+            state.nodes.add(pre);
+
+            const text = pre.textContent;
+
+            if (state.snapshots[state.snapshots.length - 1] !== text) {
+                state.snapshots.push(text);
+            }
+        }
+
+        const running = result.querySelector(".ftw-output-running");
+
+        if (running !== null) {
+            state.running.push(
+                running.querySelector(".ftw-output-value").textContent);
+        }
+    });
+
+    const button = new page.win.MutationObserver(
+        () => state.disabled.push(submit.disabled));
+
+    outputs.observe(result, { childList: true, subtree: true,
+                              characterData: true });
+    button.observe(submit, { attributes: true,
+                             attributeFilter: ["disabled"] });
+
+    return {
+        state,
+        stop() {
+            outputs.disconnect();
+            button.disconnect();
+        },
+    };
+}
+
+async function narrate(page, until) {
+    const watcher = watch(page);
+
+    page.doc.getElementById("submit").click();
+
+    await waitFor("the run to settle", () => until(page.doc));
+
+    // The result lands while the stream is still being drained: page.js only
+    // frees the submit in the finally that follows. Stopping the watcher here
+    // would record [true] and lose the release that this file asserts.
+    await waitFor("the submit to be freed",
+                  () => page.doc.getElementById("submit").disabled === false);
+
+    watcher.stop();
+
+    return watcher.state;
+}
+
+const settled = (doc) => doc.querySelector(
+    "#result .ftw-output-text, #result .ftw-output-error") !== null;
+
+await run({
+
+    async running() {
+        const page = await openPage("narrate/");
+        const state = await narrate(page, settled);
+
+        check("a running block is shown while the function works",
+              state.running.length > 0);
+        equal("saying so", state.running[0], "Running…");
+        equal("and it is gone once the answer lands",
+              page.doc.querySelectorAll("#result .ftw-output-running").length,
+              0);
+    },
+
+    async progressive() {
+        const page = await openPage("narrate/");
+        const state = await narrate(page, settled);
+
+        check("the printed text arrived in several instalments",
+              state.snapshots.length >= 3, JSON.stringify(state.snapshots));
+        equal("all of them written into a single pre", state.nodes.size, 1);
+        check("the same node all along",
+              [...state.nodes][0] === stdoutOf(page.doc));
+
+        const growing = state.snapshots.every(
+            (text, index) => index === 0
+                || (text.startsWith(state.snapshots[index - 1])
+                    && text.length > state.snapshots[index - 1].length));
+
+        check("each instalment extends the previous one, never rewrites it",
+              growing, JSON.stringify(state.snapshots));
+        equal("ending with everything the function printed",
+              stdoutOf(page.doc).textContent,
+              "step 0\nstep 1\nstep 2\nstep 3\n");
+
+        note(`instalments: ${JSON.stringify(state.snapshots)}`);
+    },
+
+    async final() {
+        const page = await openPage("narrate/");
+
+        await narrate(page, settled);
+
+        equal("the answer is the returned value",
+              textOf(page.doc), "narrated");
+        equal("shown as a text output",
+              page.doc.querySelectorAll("#result .ftw-output-text").length, 1);
+    },
+
+    async kept() {
+        const page = await openPage("narrate/");
+
+        await narrate(page, settled);
+
+        equal("what was printed stays beside the answer",
+              outputKinds(page.doc),
+              ["ftw-output ftw-output-stdout", "ftw-output ftw-output-text"]);
+        equal("with every line still there",
+              stdoutOf(page.doc).textContent,
+              "step 0\nstep 1\nstep 2\nstep 3\n");
+        equal("and the answer after it", textOf(page.doc), "narrated");
+    },
+
+    async blocked() {
+        const page = await openPage("narrate/");
+        const submit = page.doc.getElementById("submit");
+
+        check("the submit starts usable", submit.disabled === false);
+
+        const state = await narrate(page, settled);
+
+        equal("it is blocked while the function runs and freed after",
+              state.disabled, [true, false]);
+        check("and it is usable again now", submit.disabled === false);
+    },
+
+    async unicode() {
+        const page = await openPage("narrate-unicode/");
+
+        await narrate(page, settled);
+
+        equal("what was printed keeps every character",
+              stdoutOf(page.doc).textContent,
+              "acción · 漢字 · 🎉\nlínea 2\n");
+        equal("and so does the answer", textOf(page.doc), "hecho ✓");
+    },
+
+    async failing() {
+        const page = await openPage("narrate-then-fail/");
+        const state = await narrate(page, settled);
+
+        equal("what was printed before the failure is kept",
+              outputKinds(page.doc),
+              ["ftw-output ftw-output-stdout", "ftw-output ftw-output-error"]);
+        equal("with its lines intact",
+              stdoutOf(page.doc).textContent, "before the fall\n");
+        equal("and the failure shown as an error",
+              page.doc.querySelector(
+                  "#result .ftw-output-error .ftw-output-value").textContent,
+              "RuntimeError: it broke");
+        equal("the submit was blocked and freed all the same",
+              state.disabled, [true, false]);
+    },
+
+});
+</script>
+</body>
+</html>

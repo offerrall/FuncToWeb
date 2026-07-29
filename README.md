@@ -1,22 +1,17 @@
-# Func To Web
+# FuncToWeb 2.0.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
-[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
+[![License](https://img.shields.io/pypi/l/func-to-web.svg)](LICENSE)
 
-> Type hints → Web UI. Turn Python functions into web apps — standalone or mounted inside yours.
+> Write the function once. The form, the validation, the HTTP API and the
+> documentation are the same definition, so they cannot drift apart.
 
-![func-to-web Demo](/docs/images/functoweb.jpg)
+Write a function with its **type hints**. From that signature FuncToWeb derives
+the **form**, the **validation**, the **execution endpoint** and the
+**published contract**, so you never write any of the four separately.
 
-One typed Python function → form + iframe + HTTP endpoint, simultaneously. It's a library, not a framework: it composes with what you already have.
-
-- **Standalone** — `run(func)`. Internal tools, admin panels, scripts. The auto-generated UI is the app.
-- **Mounted** — `create_app(funcs)` returns a plain FastAPI app. Mount it under any prefix of your existing app; every URL adapts automatically.
-- **Embedded** — drop forms into existing sites via `<iframe>` with URL prefill. "Export to PDF" buttons, CSV importers, modal editors.
-
-Validation, file uploads, SSE streaming, downloads, custom widgets and outputs via return types and Annotated metadata — all built-in. Auto-generated API docs at /doc for scripts and AI agents: write a function, get a UI and an API for free.
-
-## Quick start
+## First example
 
 ```bash
 pip install func-to-web
@@ -25,169 +20,384 @@ pip install func-to-web
 ```python
 from func_to_web import run
 
-def divide(a: float, b: float):
-    return a / b
+
+def divide(a: float, b: float) -> float:
+    return a / b  # Any exception becomes a clean error in the page and the API
+
 
 run(divide)
 ```
 
-![divide demo](/docs/images/quick.jpg)
+![The divide form with its result](docs/images/divide.png)
 
-Open `http://127.0.0.1:8000`. Done.
+With `run(divide)` you already have a web app at <http://127.0.0.1:8000>.
 
-## Mount it inside your FastAPI app
+→ [getting-started.md](docs/getting-started.md), [run.md](docs/run.md)
+
+## The same function is an API
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"a": 10, "b": 2}' \
+  http://127.0.0.1:8000/divide/invoke
+
+# {"result": {"type": "text", "value": "5.0"}}
+```
+
+The form and the endpoint are the same definition, so an error comes out just as
+clean over HTTP: `b = 0` answers
+`{"error": "ZeroDivisionError: float division by zero"}`.
+
+→ [http.md](docs/http.md)
+
+## Documented for humans and agents
+
+`GET /doc` is the published contract of the space, in plain text.
+
+```text
+=== FuncToWeb ===
+
+Every path is relative to the prefix this router is mounted on; replace
+<base_url> with it.
+
+Functions:
+  /divide
+
+=== Calling ===
+...
+=== Plans ===
+
+--- /divide ---
+```
+
+`Calling` explains the request and the envelope; `Plans` carries the complete
+contract of every function, with its types, defaults and constraints. An agent
+connecting to a mounted space reads it and learns how to call each function.
+
+→ [api-docs.md](docs/api-docs.md)
+
+## FastAPI integration
+
+`router_of()` returns an `APIRouter`; the host application keeps control of
+authentication, routes, frontend and deployment.
 
 ```python
 from fastapi import FastAPI
-from func_to_web import create_app
 
-def add(a: int, b: int):
-    return a + b
+from func_to_web import router_of
 
-host = FastAPI()
-host.mount("/tools", create_app(add))
+
+app = FastAPI()
+app.include_router(router_of([divide]), prefix="/tools")
 ```
 
-```bash
-uvicorn app:host
+Everything lives under `/tools/`: the routes are relative to the mounted
+prefix, so any prefix works.
+
+→ [router.md](docs/router.md), [web-function.md](docs/web-function.md)
+
+## Your own frontend
+
+The space serves `sdk.js`, a handful of plain functions for the parts every
+frontend would have to write itself: calling, uploading, streaming, and opening
+a function's page in an iframe or a modal.
+
+```javascript
+import { call, openModal } from "/tools/static/sdk.js";
+
+const outputs = await call("/tools/divide", {a: 10, b: 2});
+
+outputs[0].value;   // "5.0"
+
+openModal("/tools/divide", {prefill: {a: 10}});
 ```
 
-Open `http://127.0.0.1:8000/tools/`. Forms, validation, downloads — everything works under the prefix, zero configuration. Serving by import string also unlocks `--workers` and `--reload`.
+There is no URL to assemble, no envelope to unwrap and no build step: it is a
+static asset, and every function takes the URL it works on.
 
-## A function is a feature of your site
+→ [sdk.md](docs/sdk.md)
 
-Mounted, every function is also an embeddable form. Write the function:
+## How it works
+
+Your code does not change: no base classes, no decorators, no registration, no
+models to declare. FuncToWeb reads the signature and builds a separate
+representation from it.
 
 ```python
-def edit_user(id: int, name: str, email: Email):
-    db.update(id, name, email)
-    return "Updated"
+from dataclasses import dataclass
+from typing import Annotated
+
+from func_to_web import Choices, Description, Label, Max, Min, Placeholder
+
+
+@dataclass
+class Order:
+    product: Annotated[str, Label("Product"), Placeholder("Premium tuna")]
+    quantity: Annotated[
+        int,
+        Description("Units included in the order."),
+        Min(1),
+        Max(100),
+    ]
+    priority: Annotated[
+        str,
+        Label("Priority"),
+        Choices(values=("normal", "urgent")),
+    ] = "normal"
+
+
+def create_order(order: Order) -> str:
+    """Create a readable summary of an order."""
+    return f"{order.quantity} × {order.product} ({order.priority})"
 ```
 
-Embed it, prefilled, from any page of your site:
+![The create_order form with its priority dropdown open](docs/images/order.png)
 
-```html
-<iframe src="/tools/edit-user?__embed=1&id=42&name=Alice"></iframe>
+`Label`, `Min` and `Choices` are annotations on ordinary types: `Annotated` adds
+context without touching them, so `product` is still a `str` and `quantity` an
+`int`. Constraints such as `Min`, `Max` or `Choices` narrow what is accepted;
+presentation metadata such as `Label`, `Description` or `Placeholder` only
+changes how a field looks, and nothing is required. The form, the validation and
+`/doc` all come out of that single definition, so the contract lives in one
+place instead of being duplicated across the interface, the server and the
+documentation.
+
+```text
+Python function
+      ↓
+    schema        types, constraints, defaults, arguments
+      ↓
+     plan         web representation of the contract
+      ├── web interface
+      ├── HTTP API
+      └── /doc
 ```
 
-That iframe is the complete feature: the form is generated from the type hints, rendered fresh on each open (live `Dropdown(func)` choices included), validated server-side on `/submit` — the form is a view, the endpoint is what validates. No form code in your frontend, no schema duplication. An embedded form document is a few kB; the shared CSS/JS bundle is cacheable.
+## How it compares
 
-To call functions without UI, every endpoint is a plain `POST /<slug>/submit` returning an SSE stream — the full protocol is documented at `/doc`, readable by scripts and AI agents.
+Gradio and Streamlit are built for demos and data apps, each with its own UI
+model and its own server, and your code knows it: the function is wrapped in
+an interface object, or the script becomes the app. FuncToWeb never touches
+your code — no base classes, no decorators, no registration — so the same
+function is imported, tested and called exactly as if the library were not
+there. And it is built for internal tools mounted inside an existing FastAPI
+application: they run under the host's authentication and routing, the
+contract is strict and typed, and execution is an ordinary HTTP call. Where
+the tool has to live, and whether your functions may know about it, usually
+decides the choice.
 
-## Inputs
+## Capabilities
 
-| Type | Widget | Docs |
-|------|--------|------|
-| `int`, `float` | Number / slider | [→](docs/inputs/numeric.md) |
-| `str`, `Email` | Text / textarea / password | [→](docs/inputs/string.md) |
-| `bool` | Toggle | [→](docs/inputs/boolean.md) |
-| `date`, `time` | Pickers | [→](docs/inputs/datetime.md) |
-| `Color` | Hex picker | [→](docs/inputs/color.md) |
-| `File`, `ImageFile`, `VideoFile`, ... | Upload | [→](docs/inputs/files.md) |
-| `Literal`, `Enum`, `Dropdown(func)` | Select | [→](docs/inputs/dropdown.md) |
-| `list[T]` | Dynamic list | [→](docs/inputs/lists.md) |
-| `T \| None` | Toggle + input | [→](docs/inputs/optional.md) |
-| `Params` | Reusable groups | [→](docs/inputs/params.md) |
-| `Annotated[T, ...]` | Type Composition, Constraints, labels, sliders | [→](docs/inputs/composition.md) |
+FuncToWeb is designed for internal tools, whether you are building new ones or
+extending what existing ones already do. It is listed in
+[Awesome Python](https://github.com/vinta/awesome-python#admin-panels), in the
+admin panels section.
 
-## Outputs
+* **Strict, recursive validation** — every item of a list, every field of a
+  nested dataclass; the function receives fully built Python values.
+  → [types.md](docs/types.md)
+* **Reusable file references** — one upload, many executions: a file travels as
+  a reference that stays valid in later calls. → [files.md](docs/files.md)
+* **`print()` streaming** — the web interface shows what the function prints
+  while it runs. → [streaming.md](docs/streaming.md)
+* **Rematerialized defaults** — validated at compile time and rebuilt on every
+  execution, so a mutable default is never shared between calls, without the
+  classic Python trap. → [types.md](docs/types.md#defaults)
 
-| Return type | Rendered as | Docs |
-|-------------|-------------|------|
-| `str`, `int`, `float`, `None` | Text + copy button | [→](docs/outputs/index.md#text) |
-| `PIL Image`, `Matplotlib Figure` | Inline image | [→](docs/outputs/index.md#images) |
-| `FileResponse` | Download button | [→](docs/outputs/index.md#file-downloads) |
-| `DataFrame`, `list[dict]`, ... | Table| [→](docs/outputs/index.md#tables) |
-| `tuple` / `list` | Multiple outputs | [→](docs/outputs/index.md#multiple-outputs) |
-| `print()` | Streamed live | [→](docs/outputs/index.md#print-output) |
+The rest comes with it: complete forms with dataclasses, lists, unions,
+optionals, defaults, enums, dates, colors and files
+([types.md](docs/types.md)); pages that open
+[prefilled](docs/prefill.md), with selected fields hidden; results as text,
+images, tables and [downloads](docs/outputs.md); execution over HTTP with
+`POST /{slug}/invoke`, one request and one response ([http.md](docs/http.md));
+a full [embeddable page](docs/sdk.md#embedding-a-function-page) per function;
+and a [light, dark or system theme](docs/router.md#theme) applied in the initial
+HTML, so the page does not flicker.
 
-## Features
+## Moving between forms
 
-- **`create_app()`** — get a mountable FastAPI app, serve by import string (workers, reload) — [docs](docs/features/configuration.md)
-- **Multiple functions** with an index page — [docs](docs/features/multiple-functions.md)
-- **URL prefill** — open forms with values from query params — [docs](docs/features/url-prefill.md)
-- **Embed mode** — drop any form into your site via `?__embed=1` — [docs](docs/features/embed.md)
-- **Auto-generated API docs** at `/doc` for scripts and AI agents — [docs](docs/features/api-docs.md)
-- **Server config** — host, port, reverse proxy — [docs](docs/features/configuration.md)
+A function can return the data that **another** function in the space opens
+with, by marking its return value with `OpenForm`:
 
-**Full docs with examples and screenshots:** [`docs/`](docs/index.md) — one page per feature, browsable right here on GitHub.
+```python
+from pathlib import Path
+from typing import Annotated
+
+from PIL import Image
+
+from func_to_web import Download, IsPathFile, OpenForm, run
+
+ImagePath = Annotated[
+    str,
+    IsPathFile(extensions=(".png", ".jpg", ".jpeg")),
+]
+
+
+def resize_image(
+    image: ImagePath,
+    width: int,
+    height: int,
+) -> tuple[Image.Image, Annotated[Path, Download()]]:
+    output = Path(image).with_name("resized.png")
+
+    with Image.open(image) as source:
+        resized = source.resize((width, height))
+
+    resized.save(output)
+
+    return resized, output
+
+
+def choose_image(
+    image: ImagePath,
+) -> Annotated[
+    dict,
+    OpenForm(resize_image, hidden=("image",)),
+]:
+    with Image.open(image) as source:
+        width, height = source.size
+
+    return {"image": image, "width": width, "height": height}
+
+
+run([choose_image, resize_image])
+```
+
+![The resize_image form opened prefilled, with the resized image and its download](docs/images/resizeimage.png)
+
+`choose_image` reads the uploaded image size and opens `resize_image` with its
+current width and height already filled in. The image stays attached as hidden
+context, so it is not uploaded again. The result shows the resized image and
+offers the same file as a download.
+
+`resize_image` is defined first because `OpenForm` takes the target function
+itself, and that name has to exist when `choose_image` is defined.
+
+→ [open-form.md](docs/open-form.md)
+
+## Receiving files
+
+```python
+from typing import Annotated
+
+from func_to_web import IsPathFile, Label, Min, run
+
+AnyFile = Annotated[str, IsPathFile()]
+
+Dropped = Annotated[list[AnyFile], Min(1), Label("Files to send")]
+
+
+def send(files: Dropped) -> str:
+    """Receive any number of files sent to this machine."""
+    return f"{len(files)} file(s) received"
+
+
+run(send, title="LocalSend")
+```
+
+![The send form with four chosen files and the result](docs/images/localsend.png)
+
+Every file is stored before the function runs, so `files` arrives as paths to
+files already on disk: a function that accepts files and does nothing else is
+a working file drop.
+
+They travel as references, never as server paths, and a reference is
+immutable — store one and reuse it in later calls without uploading again. An
+upload no execution ever uses expires; what your code received stays.
+
+→ [files.md](docs/files.md), [`local_send.py`](examples/files/local_send.py)
 
 ## Examples
 
-**File transfer**
+The examples are probably the best way to learn the library.
+[`examples/`](examples/README.md) contains 80 runnable programs in 11 folders.
+Each file teaches **a single capability**: you can read it in one sitting and
+run it as it is.
 
 ```python
-from func_to_web import run, File
-import shutil, os
+"""A progress bar is nothing more than one print per finished step."""
 
-downloads = os.path.expanduser("~/Downloads")
+import time
+from typing import Annotated
 
-def upload_files(files: list[File]):
-    for f in files:
-        shutil.move(f, downloads)
-    return "Done."
+from func_to_web import Max, Min, run
 
-run(upload_files)
+STEP_SECONDS = 0.2
+
+
+def convert(files: Annotated[int, Min(1), Max(8)] = 5) -> str:
+    """Report the progress of a slow job while it advances."""
+    print(f"converting {files} file(s)")
+
+    for index in range(1, files + 1):
+        time.sleep(STEP_SECONDS)
+        percent = index * 100 // files
+        print(f"[{percent:3d}%] file {index} of {files}")
+
+    return f"{files} file(s) converted"
+
+
+if __name__ == "__main__":
+    run(convert, title="Progress")
 ```
 
-**QR code generator**
+![The convert form showing the printed lines while it runs](docs/images/printsse.png)
+
+That is the entire file
+[`examples/streaming/progress.py`](examples/streaming/progress.py). There is no
+progress API: `print()` is the API, and the interface shows the lines while the
+function runs. The other folders follow the same pattern (types, validation,
+files, outputs, `OpenForm`, themes, FastAPI and HTTP clients).
+
+The whole set is about 3,700 lines, so it fits inside the context window of a
+general-purpose AI: you can hand over the complete collection, or a single
+folder for a specific task.
+
+## Layers
+
+```text
+pytypehint      types, validation, defaults, argument construction
+    ↓
+pytypehintweb   web plan, browser widgets and transport
+    ↓
+FuncToWeb       routes, execution, integration and documentation
+```
+
+FuncToWeb does not redefine the type language and does not duplicate the
+validation; it re-exports the pieces of both, so you never have to import from
+the lower layers:
 
 ```python
-import qrcode
-from func_to_web import run
-
-def make_qr(text: str):
-    return qrcode.make(text).get_image()
-
-run(make_qr)
+from func_to_web import Choices, Description, Label, Max, Min, Pattern
 ```
 
-**Admin panel**
-
-```python
-import subprocess
-from typing import Literal
-from func_to_web import run
-
-def restart_service(service: Literal['nginx', 'gunicorn', 'celery']):
-    subprocess.run(["sudo", "supervisorctl", "restart", service], check=True)
-    return f"{service} restarted."
-
-# Deploy sensitive tools behind a reverse proxy with auth (e.g. Nginx
-# basic auth) — see docs/features/configuration.md.
-run(restart_service)
-```
-
-More in [`examples/`](examples/).
-
-## Install
+The complete catalog of widgets, with the annotation that generates each
+control:
 
 ```bash
-pip install func-to-web                                     # stable
-pip install git+https://github.com/offerrall/FuncToWeb.git  # latest
+pip install "pytypehintweb[demo]"
+pytypehintweb-demo
 ```
 
-**Requirements:** Python 3.10+. Core deps installed automatically; Pillow, Matplotlib, Pandas, NumPy and Polars are optional.
+![The widget catalog, grouped by type, with the cases of each one](docs/images/pytypehintweb-demo.png)
 
-## Stability
+→ [architecture.md](docs/architecture.md)
 
-FuncToWeb is in its fast-iteration phase, and that's deliberate. Until 2.0.0
-the priority is getting the design right, not preserving it: features that
-turn out to have a better home in another layer get removed, APIs get
-reshaped, and minor releases can break things. Every breaking change is
-explicit — documented in the [CHANGELOG](CHANGELOG.md) with the reasoning and
-the migration path, never silent.
+## Documentation
 
-If you depend on it today, **pin your version** (e.g. `func-to-web==1.6.0`) and
-read the changelog before upgrading.
+[docs/index.md](docs/index.md) is the complete index, organized by what you
+want to do, and the technical reference for everything the examples show in
+practice.
 
-**The 2.0.0 commitment:** from 2.0.0 onwards, FuncToWeb adopts semantic
-versioning for real — breaking changes only in major releases, with
-deprecation warnings beforehand. The churn now is what buys a stable, small
-API later.
+## Status
 
-Built on [pytypeinput](https://github.com/offerrall/pytypeinput) and [pytypeinputweb](https://github.com/offerrall/pytypeinputweb), usable standalone for CLIs, Qt apps, etc.
+2.0.0 is a stable release: the public API is the one described in
+[`docs/`](docs/index.md), and the known limitations are listed in
+[limitations.md](docs/limitations.md).
 
-Feedback, issues and contributions welcome — they keep the project moving.
+If you are coming from 1.6, the migration guide is in
+[migration-1.6-to-2.0.md](docs/migration-1.6-to-2.0.md).
+
+## License
 
 [MIT License](LICENSE) · Made by [Beltrán Offerrall](https://github.com/offerrall)

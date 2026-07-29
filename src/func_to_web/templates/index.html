@@ -1,0 +1,209 @@
+<!doctype html>
+<html__THEME__>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="__PREFIX__/static/widgets.css">
+<style>
+
+    :root {
+        --ftw-color-scheme-light: light;
+        --ftw-color-scheme-dark: dark;
+    }
+
+    :root:not([data-pth-theme]) {
+        --ftw-color-scheme: var(--ftw-color-scheme-light);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-pth-theme]) {
+            --ftw-color-scheme: var(--ftw-color-scheme-dark);
+        }
+    }
+
+    :root[data-pth-theme="light"] {
+        --ftw-color-scheme: var(--ftw-color-scheme-light);
+    }
+
+    :root[data-pth-theme="dark"] {
+        --ftw-color-scheme: var(--ftw-color-scheme-dark);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { color-scheme: var(--ftw-color-scheme); }
+
+    body {
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        font-size: var(--pth-font-size-base);
+    }
+
+    nav {
+        flex: 0 0 16rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 1rem;
+        background: var(--pth-surface);
+        border-right: var(--pth-border-width-thin) solid var(--pth-input-border);
+    }
+
+    .links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: var(--pth-input-border) transparent;
+    }
+
+    h1 {
+        margin: 0 0 0.75rem;
+        padding: 0 0.6rem;
+        flex-shrink: 0;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: var(--pth-font-weight-semibold);
+        letter-spacing: var(--pth-letter-spacing-label);
+        color: var(--pth-label-color);
+    }
+
+    a {
+        display: block;
+        padding: 0.5rem 0.6rem;
+        border: var(--pth-border-width-thin) solid transparent;
+        border-radius: var(--pth-radius-small);
+        color: inherit;
+        text-decoration: none;
+        transition: var(--pth-transition-base);
+    }
+
+    a:hover {
+        background: var(--pth-neutral-hover);
+    }
+
+    a.active {
+        color: var(--pth-input-focus);
+        border-color: var(--pth-input-focus);
+    }
+
+    a:focus-visible {
+        outline: var(--pth-focus-width) solid var(--pth-focus-color);
+        outline-offset: var(--pth-focus-offset);
+    }
+
+    a strong {
+        display: block;
+        font-size: var(--pth-font-size-label);
+        font-weight: var(--pth-font-weight-semibold);
+    }
+
+    a span {
+        display: block;
+        margin-top: 0.125rem;
+        font-size: var(--pth-font-size-small);
+        color: var(--pth-description-color);
+    }
+
+    .doc { margin-top: auto; }
+
+    main {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        min-width: 0;
+        padding: 2rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    iframe {
+        width: 100%;
+        max-width: 640px;
+        border: 0;
+        background: transparent;
+    }
+
+    @media (max-width: 44rem) {
+        body {
+            flex-direction: column;
+            height: auto;
+            min-height: 100vh;
+            overflow: visible;
+        }
+
+        nav {
+            flex: none;
+            padding: 0.75rem;
+            border-right: 0;
+            border-bottom: var(--pth-border-width-thin) solid var(--pth-input-border);
+        }
+
+        h1 { margin-bottom: 0.5rem; padding: 0; }
+
+        .links {
+            flex-direction: row;
+            gap: 0.5rem;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 0.25rem;
+        }
+
+        .links a {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        a span { display: none; }
+
+        .doc { margin-top: 0; }
+
+        main { padding: 1rem; }
+        iframe { min-height: 70vh; }
+    }
+</style>
+
+<body class="pth-root">
+
+<nav>
+    <h1>__TITLE__</h1>
+    <div class="links">
+        __ITEMS__
+        <a class="doc" href="__PREFIX__/doc" target="_blank" rel="noreferrer">
+            <strong>/doc</strong><span>plain text contract</span>
+        </a>
+    </div>
+</nav>
+<main>
+    <iframe id="view" title="Selected function"></iframe>
+</main>
+
+<script type="module">
+const view = document.getElementById("view");
+const links = [...document.querySelectorAll("a[data-slug]")];
+
+if (links.length === 1) document.querySelector("nav").remove();
+
+function show(slug) {
+    const link = links.find((l) => l.dataset.slug === slug) ?? links[0];
+
+    for (const other of links) other.classList.toggle("active", other === link);
+
+    link.scrollIntoView({ block: "nearest", inline: "nearest" });
+
+    const src = `__PREFIX__/${link.dataset.slug}/`;
+
+    const frame = view.contentWindow;
+
+    if (frame === null) view.src = src;
+    else if (!frame.location.href.endsWith(src)) frame.location.replace(src);
+}
+
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script>

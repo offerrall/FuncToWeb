@@ -1,31 +1,58 @@
-# FuncToWeb — Documentation
+# FuncToWeb 2.0 documentation
 
-Type hints → Web UI. One page per feature. Start from the
-[project README](../README.md) for the overview, or jump straight in:
+Technical reference for the project. For an overview, see the
+[README](../README.md); for hands-on use, see
+[`examples/`](../examples/README.md), one capability per file.
 
-## Inputs
+## Start here
 
-- [Numeric](inputs/numeric.md)
-- [String](inputs/string.md)
-- [Boolean](inputs/boolean.md)
-- [Date & Time](inputs/datetime.md)
-- [Colors](inputs/color.md)
-- [Files](inputs/files.md)
-- [Dropdown](inputs/dropdown.md)
-- [Lists](inputs/lists.md)
-- [Optional](inputs/optional.md)
-- [Params](inputs/params.md)
-- [Composition](inputs/composition.md)
+* [Getting started](getting-started.md) — install, write your first function
+  and run it.
+* [`run()`](run.md) — the standalone application and the space index.
+* [`router_of()`](router.md) — mounting the router in an existing FastAPI host
+  application.
 
-## Outputs
+## Inputs and forms
 
-- [Output types](outputs/index.md) — text, images, plots, tables, files, multiple outputs
+* [Types and validation](types.md) — constraints, dataclasses, lists, unions,
+  optionals and defaults.
+* [Prefill and hidden parameters](prefill.md) — open a form with initial
+  values, from Python or from the URL.
+* [Files](files.md) — uploads, reusable file references and the size limit.
+* [`WebFunction`](web-function.md) — the name, description and slug of a
+  function; prepared spaces.
 
-## Features
+## Execution and results
 
-- [Configuration](features/configuration.md) — host, port, reverse proxy, `create_app()`
-- [Multiple functions](features/multiple-functions.md) — index page listing your functions
-- [URL prefill](features/url-prefill.md) — open forms with values from query params
-- [API docs for AI](features/api-docs.md) — auto-generated `/doc` for scripts and agents
-- [Embed mode](features/embed.md) — drop forms into existing sites via iframe
-- [Dark mode](features/dark-mode.md)
+* [Execution over HTTP](http.md) — `/invoke`, the request body, the envelope
+  and the status codes.
+* [Streaming](streaming.md) — `/invoke-stream`, SSE events and `print()`
+  capture.
+* [Outputs](outputs.md) — text, images, tables and downloads with `Download`.
+* [`OpenForm`](open-form.md) — open another function's form with the return
+  value as prefill.
+
+## Integration
+
+* [`/doc`](api-docs.md) — the published contract that a client or an agent
+  consumes.
+* [`sdk.js`](sdk.md) — the helpers that call a space from your own frontend,
+  and how to embed a function's page in another site.
+* [Static assets](static-assets.md) — `/static`, the icons, the theme and how
+  they are cached.
+* [Security](security.md) — what FuncToWeb covers and what belongs to the host
+  application.
+
+## Internals
+
+* [Architecture](architecture.md) — the layers and what each one solves.
+* [Limitations](limitations.md) — the known limits, in a single list.
+* [Migrating from 1.6 to 2.0](migration-1.6-to-2.0.md) — what changes, a table
+  of equivalences by area, and the upgrade steps.
+
+## Design notes
+
+The pages above say what each thing is: the signature, the values, the errors
+and one example. The reasoning behind each of those decisions lives apart, in
+[`design/`](design/index.md) — for whoever contributes to FuncToWeb, and for the
+curious. Nothing there is needed in order to use the library.

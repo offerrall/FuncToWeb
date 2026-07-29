@@ -1,0 +1,416 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web form checks</title></head>
+<body>
+<!--
+  The served form, driven in a real browser.
+
+  This page is opened by tests/browser/test_form.py through the `verify`
+  fixture, which serves it from the very application under test. Because the
+  harness and the application share an origin, an iframe of a served page can
+  be read and driven from here, which is the only way to reach the page the
+  library actually ships: page.js keeps its compiled form in module scope, so
+  nothing on the page is reachable from a global.
+
+  Two lenses are used on purpose:
+
+    * the real page, in an iframe, for everything observable from outside —
+      what is mounted, what is requested, what the submit does, what appears
+      in #result;
+    * a form compiled here from the plan the server embedded in that same
+      page, for read(), uploads(), isReady() and hasError(), which have no
+      DOM projection.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_form.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    awaitRequests, check, chooseOption, compiledForm, controlOf, equal,
+    failedResources, fieldOf, fieldNamed, note, openPage, requested,
+    resultText, run, runToResult, setValue, typeInto, waitFor,
+} from "./harness.js";
+
+const FIELDS = ["where", "tags", "title", "count", "ratio", "when", "at",
+                "flag", "priority", "nickname", "who", "token"];
+
+function outputJson(doc) {
+    const value = doc.querySelector("#result .ftw-output-text .ftw-output-value");
+
+    return value === null ? null : JSON.parse(value.textContent);
+}
+
+await run({
+
+    async page() {
+        const { doc } = await openPage("echo/");
+
+        equal("the page carries the titled function name", doc.title, "Echo");
+        equal("the header repeats it",
+              doc.querySelector("header h1").textContent, "Echo");
+        equal("the docstring becomes the description",
+              doc.querySelector("header p").textContent,
+              "Echoes everything it receives.");
+
+        check("the body is the widget root",
+              doc.body.classList.contains("pth-root"));
+
+        const mounted = [...doc.querySelectorAll("#fields .pth-field")];
+
+        check("every widget is mounted inside .pth-root",
+              mounted.length > 0
+              && mounted.every((field) => field.closest(".pth-root") === doc.body));
+
+        equal("every parameter gets a top level field",
+              [...doc.getElementById("fields").children]
+                  .map((field) => field.querySelector(".pth-label").textContent),
+              FIELDS);
+
+        const submit = doc.getElementById("submit");
+
+        check("the submit button exists", submit !== null);
+        equal("it is a plain button", submit.type, "button");
+        equal("it reads Submit", submit.textContent, "Submit");
+        check("it starts enabled", submit.disabled === false);
+
+        equal("nothing is shown as a result yet",
+              doc.getElementById("result").children.length, 0);
+
+        check("the scalar kinds are all mounted",
+              [".pth-str", ".pth-int", ".pth-float", ".pth-date", ".pth-time",
+               ".pth-bool", ".pth-choice-input", ".pth-choice", ".pth-list",
+               ".pth-group"]
+                  .every((selector) => doc.querySelector(selector) !== null),
+              [".pth-str", ".pth-int", ".pth-float", ".pth-date", ".pth-time",
+               ".pth-bool", ".pth-choice-input", ".pth-choice", ".pth-list",
+               ".pth-group"]
+                  .filter((selector) => doc.querySelector(selector) === null)
+                  .join(" "));
+    },
+
+    async assets() {
+        const { doc, win } = await openPage("echo/");
+
+        const failed = failedResources(win);
+
+        equal("no request of the page failed", failed, []);
+
+        const names = requested(win, "/static/").map((entry) => entry.name);
+
+        check("the page really pulled its stylesheets",
+              names.some((name) => name.endsWith("/static/page.css"))
+              && names.some((name) => name.endsWith("/static/widgets.css")));
+        check("the page really pulled its module graph",
+              names.some((name) => name.endsWith("/static/page.js"))
+              && names.some((name) => name.endsWith("/static/form.js"))
+              && names.some((name) => name.endsWith("/static/output.js"))
+              && names.some((name) => name.endsWith("/static/upload.js")));
+
+        check("every asset is asked for relative to the page",
+              names.every((name) => name.startsWith(
+                  new URL("../static/", doc.location.href).href)));
+
+        equal("no asset resolved above the mount point",
+              names.filter((name) => !name.includes("/static/")), []);
+    },
+
+    async read_scalars() {
+        const { form, host } = await compiledForm("echo/");
+
+        typeInto(host, "title", "hello");
+        typeInto(host, "count", "7");
+        typeInto(host, "ratio", "1.25");
+        typeInto(host, "when", "2027-01-15");
+        typeInto(host, "at", "10:15:00");
+        setValue(controlOf(host, "flag"), true);
+        chooseOption(controlOf(host, "priority"), "HIGH");
+
+        const read = form.read();
+
+        equal("a string reads back as a string", read.title, "hello");
+        equal("an integer reads back as a number", read.count, 7);
+        equal("a float reads back as a number", read.ratio, 1.25);
+        equal("a date reads back in ISO form", read.when, "2027-01-15");
+        equal("a time reads back with seconds", read.at, "10:15:00");
+        equal("a boolean reads back as a boolean", read.flag, true);
+        equal("an enum reads back by member name", read.priority, "HIGH");
+
+        check("the form is ready with valid values", form.isReady() === true);
+        check("no field is in error", form.hasError() === false);
+    },
+
+    async read_optional() {
+        const { form, host } = await compiledForm("echo/");
+
+        const toggle = fieldOf(host, "nickname")
+            .querySelector(".pth-toggle");
+
+        check("an optional field carries a toggle", toggle !== null);
+        check("the toggle starts off for a None default",
+              toggle.checked === false);
+        equal("a disabled optional reads null", form.read().nickname, null);
+
+        setValue(toggle, true);
+        typeInto(host, "nickname", "Ada");
+
+        equal("an enabled optional reads its value",
+              form.read().nickname, "Ada");
+
+        setValue(toggle, false);
+
+        equal("switching it off returns to null", form.read().nickname, null);
+    },
+
+    async read_union() {
+        const { form, host } = await compiledForm("echo/");
+
+        const union = fieldOf(host, "who").querySelector(".pth-choice");
+        const position = union.querySelector(".pth-mode-position");
+        const previous = union.querySelector(".pth-mode-previous");
+        const next = union.querySelector(".pth-mode-next");
+
+        equal("the union opens on the branch of its default",
+              position.textContent, "Mode 2 of 2");
+        equal("it reads the default of that branch", form.read().who, 0);
+
+        previous.click();
+
+        equal("the previous branch is reachable",
+              position.textContent, "Mode 1 of 2");
+
+        const active = union.querySelector(".pth-mode-content input");
+        setValue(active, "abc");
+
+        equal("a str branch transports a string", form.read().who, "abc");
+        check("previous is disabled at the first branch",
+              previous.disabled === true);
+
+        next.click();
+
+        equal("the next branch is reachable again",
+              position.textContent, "Mode 2 of 2");
+        setValue(union.querySelector(".pth-mode-content input"), "12");
+
+        equal("an int branch transports a number", form.read().who, 12);
+        check("next is disabled at the last branch", next.disabled === true);
+    },
+
+    async read_list() {
+        const { form, host } = await compiledForm("echo/");
+
+        const list = fieldOf(host, "tags").querySelector(".pth-list");
+        const add = list.querySelector(".pth-list-add");
+
+        equal("a list without a default opens empty", form.read().tags, []);
+
+        add.click();
+        add.click();
+
+        const rows = [...list.querySelectorAll(".pth-list-item")];
+
+        equal("adding twice creates two rows", rows.length, 2);
+
+        setValue(rows[0].querySelector("input"), "x");
+        setValue(rows[1].querySelector("input"), "y");
+
+        equal("a list reads its rows in order", form.read().tags, ["x", "y"]);
+
+        rows[0].querySelector(".pth-list-remove").click();
+
+        equal("removing a row drops it from read()",
+              form.read().tags, ["y"]);
+    },
+
+    async read_nested() {
+        const { form, host } = await compiledForm("echo/");
+
+        const group = fieldOf(host, "where");
+
+        check("a dataclass becomes a group",
+              group.querySelector(".pth-group") !== null);
+        equal("its members become fields of their own",
+              [...group.querySelectorAll(".pth-group > .pth-field")]
+                  .map((field) => field.querySelector(".pth-label").textContent),
+              ["street", "city"]);
+        equal("it reads its defaults as an object",
+              form.read().where, { street: "Main", city: "Madrid" });
+
+        typeInto(group, "street", "Gran Via");
+        typeInto(group, "city", "Bilbao");
+
+        equal("it reads the values typed into its members",
+              form.read().where, { street: "Gran Via", city: "Bilbao" });
+    },
+
+    async invalid() {
+        const { form, host } = await compiledForm("echo/");
+
+        typeInto(host, "title", "ab");
+
+        check("a value under the minimum length breaks the form",
+              form.isReady() === false);
+        check("the offending field reports the error",
+              fieldNamed(form, "title").widget.hasError() === true);
+
+        form.showErrors();
+
+        const message = fieldOf(host, "title")
+            .querySelector(".pth-str-message");
+
+        check("the message is shown", message.hidden === false);
+        equal("it names the constraint", message.textContent,
+              "Must contain at least 3 characters");
+        equal("the control is marked invalid for assistive tech",
+              fieldOf(host, "title").querySelector("input")
+                  .getAttribute("aria-invalid"), "true");
+
+        const page = await openPage("echo/");
+
+        typeInto(page.doc, "title", "ab");
+        page.doc.getElementById("submit").click();
+
+        const shown = await waitFor(
+            "the refusal to be shown",
+            () => page.doc.querySelector("#result .ftw-output-error"));
+
+        check("the submit refuses and says what to fix",
+              shown !== null && shown.textContent.includes("Fix: title"),
+              shown === null ? "" : shown.textContent);
+        equal("nothing was sent to the server",
+              requested(page.win, "invoke-stream").length, 0);
+    },
+
+    async hidden() {
+        const query = `hidden=${encodeURIComponent('["token"]')}`;
+        const { doc, win } = await openPage(`echo/?${query}`);
+
+        equal("the hidden parameter is not mounted",
+              [...doc.getElementById("fields").children]
+                  .map((field) => field.querySelector(".pth-label").textContent),
+              FIELDS.filter((name) => name !== "token"));
+
+        check("no label on the page names it",
+              [...doc.querySelectorAll(".pth-label")]
+                  .every((label) => label.textContent !== "token"));
+        check("nothing of it is shown to the user",
+              !doc.getElementById("fields").textContent.includes("token"));
+        check("no input holds its value",
+              [...doc.querySelectorAll("input")]
+                  .every((input) => input.value !== "secret"));
+
+        doc.getElementById("submit").click();
+
+        await waitFor("the run to answer",
+                      () => doc.querySelector("#result .ftw-output-text"));
+
+        equal("the hidden value still travels with read()",
+              outputJson(doc).token, "secret");
+        equal("the run really went through the server",
+              (await awaitRequests(win, "invoke-stream", 1)).length, 1);
+    },
+
+    async prefill() {
+        const prefill = JSON.stringify({
+            title: "Prefilled",
+            count: 42,
+            nickname: "Ada",
+            where: { street: "Alcala", city: "Sevilla" },
+        });
+        const { doc } = await openPage(
+            `echo/?prefill=${encodeURIComponent(prefill)}`);
+
+        equal("a prefilled string reaches its input",
+              controlOf(doc, "title").value, "Prefilled");
+        equal("a prefilled integer reaches its input",
+              controlOf(doc, "count").value, "42");
+        equal("a prefilled optional switches its toggle on",
+              fieldOf(doc, "nickname").querySelector(".pth-toggle").checked,
+              true);
+        equal("and fills the value behind it",
+              controlOf(doc, "nickname").value, "Ada");
+
+        const group = fieldOf(doc, "where");
+
+        equal("a prefilled dataclass fills every member",
+              [controlOf(group, "street").value, controlOf(group, "city").value],
+              ["Alcala", "Sevilla"]);
+
+        equal("what was not prefilled keeps its own default",
+              controlOf(doc, "ratio").value, "0.5");
+    },
+
+    async submit() {
+        const page = await openPage("echo/");
+
+        typeInto(page.doc, "title", "hello");
+        typeInto(page.doc, "count", "7");
+        chooseOption(controlOf(page.doc, "priority"), "HIGH");
+
+        const output = await runToResult(page);
+
+        check("an output appears", output !== null);
+        check("it is a text output",
+              output.classList.contains("ftw-output-text"));
+
+        const answer = outputJson(page.doc);
+
+        equal("the typed values reached the function",
+              [answer.title, answer.count, answer.priority],
+              ["hello", 7, "HIGH"]);
+        equal("the untouched defaults reached it too",
+              [answer.ratio, answer.when, answer.at, answer.flag,
+               answer.nickname, answer.tags, answer.where],
+              [0.5, "2026-08-01", "09:30:00", false, null, [],
+               ["Main", "Madrid"]]);
+
+        check("the output carries its success mark",
+              output.querySelector(".ftw-output-mark.ftw-icon-check") !== null);
+        check("and an action to copy it",
+              output.querySelector(".ftw-actions .ftw-action") !== null);
+        check("the submit is enabled again", await waitFor(
+            "the submit to be freed",
+            () => page.doc.getElementById("submit").disabled === false) === true);
+    },
+
+    async rerun() {
+        const page = await openPage("echo/");
+
+        typeInto(page.doc, "title", "first");
+        await runToResult(page);
+
+        equal("the first run leaves one output",
+              page.doc.getElementById("result").children.length, 1);
+        equal("holding the first answer", outputJson(page.doc).title, "first");
+
+        typeInto(page.doc, "title", "second");
+        page.doc.getElementById("submit").click();
+
+        await waitFor("the second answer", () => {
+            const answer = page.doc.querySelector(
+                "#result .ftw-output-text .ftw-output-value");
+            return answer !== null && answer.textContent.includes("second");
+        });
+
+        equal("the second run replaces the first",
+              page.doc.getElementById("result").children.length, 1);
+        equal("and shows only the new answer",
+              outputJson(page.doc).title, "second");
+        check("nothing of the first answer is left",
+              !resultText(page.doc).includes("first"));
+        equal("both runs reached the server",
+              (await awaitRequests(page.win, "invoke-stream", 2)).length, 2);
+
+        note("outputs on screen: "
+             + [...page.doc.getElementById("result").children]
+                 .map((element) => element.className).join(", "));
+    },
+
+});
+</script>
+</body>
+</html>
