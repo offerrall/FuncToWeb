@@ -363,6 +363,11 @@ pytypehintweb   web plan, browser widgets and transport
 FuncToWeb       routes, execution, integration and documentation
 ```
 
+[`pytypehint`](https://github.com/offerrall/pytypehint) compiles the signature
+into the contract of types, constraints and defaults;
+[`pytypehintweb`](https://github.com/offerrall/pytypehintweb) turns that contract
+into the plan the browser consumes, with its widgets and transport.
+
 FuncToWeb does not redefine the type language and does not duplicate the
 validation; it re-exports the pieces of both, so you never have to import from
 the lower layers:
@@ -372,7 +377,8 @@ from func_to_web import Choices, Description, Label, Max, Min, Pattern
 ```
 
 The complete catalog of widgets, with the annotation that generates each
-control:
+control, ships as a demo in
+[`pytypehintweb`](https://github.com/offerrall/pytypehintweb):
 
 ```bash
 pip install "pytypehintweb[demo]"
