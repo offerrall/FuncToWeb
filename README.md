@@ -389,6 +389,29 @@ pytypehintweb-demo
 
 → [architecture.md](docs/architecture.md)
 
+## Small enough to audit
+
+Those three libraries are the whole stack: nested forms, recursive validation,
+streaming, the file lifecycle and the published contract are all inside these
+lines (v2.0.0, `.py`/`.js`/`.css` under `src/`).
+
+```text
+pytypehint       1,987 lines    types, validation, defaults
+pytypehintweb    9,558 lines    plan, widgets, transport (includes the JS/CSS)
+FuncToWeb        4,716 lines    routes, execution, storage, /doc
+total           ~16,000 lines
+```
+
+Each layer can be read on its own: pytypehint is about 2,000 lines of pure
+stdlib and takes an afternoon, and no layer needs the others to be understood.
+The whole set also fits inside the context window of a general-purpose AI: you
+can hand over an entire library, or the three of them, and ask it to review,
+explain or audit them. It is not only readable by humans; it is reviewable by
+machines.
+
+Few lines means little surface to hide in: what the documentation promises can
+be checked by reading the code.
+
 ## Documentation
 
 [docs/index.md](docs/index.md) is the complete index, organized by what you
