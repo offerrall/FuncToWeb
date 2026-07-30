@@ -251,7 +251,10 @@ this definition. In the version of this CRUD where each function spells its
 own parameters, the same change is four edits — and missing the one in
 `edit_task` loses the date silently on every edit.
 
-The full example is [`examples/project/todo.py`](examples/project/todo.py).
+The full example, with its hand-written frontend opening these functions in
+modals, is [`examples/project/todo.py`](examples/project/todo.py);
+[`users.py`](examples/project/users.py) beside it adds a photo per user,
+walking the whole file cycle — upload once, edit without re-uploading.
 
 ## How it compares
 
