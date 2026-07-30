@@ -472,6 +472,14 @@ pytypehintweb-demo
 
 ![The widget catalog, grouped by type, with the cases of each one](docs/images/pytypehintweb-demo.png)
 
+Beside the stack, not under it: FuncToWeb stores nothing — a function runs and
+returns. When a small app needs its rows to outlive the process,
+[`pytypehintstore`](https://github.com/offerrall/pytypehintstore) persists the
+same dataclasses this stack validates, in memory and shadowed by a JSON file you
+can open and edit. It is optional and not a dependency:
+[`examples/project/todo_stored.py`](examples/project/todo_stored.py) is the todo
+mini-app with the dict swapped for a store.
+
 → [architecture.md](docs/architecture.md)
 
 ## Small enough to audit

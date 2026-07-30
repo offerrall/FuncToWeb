@@ -44,6 +44,7 @@ Examples and mini-apps alike serve at <http://127.0.0.1:8000> and block until
 | Mini-app | What it combines | Documentation |
 | --- | --- | --- |
 | [`project/todo.py`](project/todo.py) | one dataclass model reused by three functions, `router_of()` under a prefix, a hand-written route of your own | [types](../docs/types.md), [router](../docs/router.md) |
+| [`project/todo_stored.py`](project/todo_stored.py) | the same mini-app whose tasks survive the restart: the dict becomes a store and the model that draws the forms is what the JSON file holds | [types](../docs/types.md), [router](../docs/router.md) |
 
 A mini-app is still short enough to read in one sitting, and it is still an
 ordinary FastAPI application: the library contributes a router, never the host.
@@ -52,10 +53,15 @@ ordinary FastAPI application: the library contributes a router, never the host.
 
 Everything works with `pip install func-to-web`, except
 [`outputs_optional/`](outputs_optional/README.md), where each subfolder
-declares its own (`pillow`, `matplotlib`, `pandas`, `polars`, `numpy`). None
-of them is required by the library.
+declares its own (`pillow`, `matplotlib`, `pandas`, `polars`, `numpy`), and
+[`project/todo_stored.py`](project/todo_stored.py), which needs
+[`pytypehintstore`](https://github.com/offerrall/pytypehintstore). None of them
+is required by the library.
 
 The examples use fictional data, never access the Internet and write only to
-the system temporary directories, with one deliberate exception:
+the system temporary directories, with two deliberate exceptions:
 [`files/storage_dir.py`](files/storage_dir.py) points `uploads_dir` at a
-`storage/` folder beside itself, because where the files land is its lesson.
+`storage/` folder beside itself, because where the files land is its lesson,
+and [`project/todo_stored.py`](project/todo_stored.py) keeps its store in a
+`data/` folder beside itself, for the same reason — the file it writes is what
+it is teaching.
