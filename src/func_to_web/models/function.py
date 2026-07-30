@@ -14,7 +14,7 @@ from func_to_web.templates.page import labelled_plan, page_from_plan
 from func_to_web.templates.theme import Theme, checked_theme
 from func_to_web.web.upload import reference_of
 
-SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SLUG_PATTERN = re.compile(r"^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$")
 RESERVED_SLUGS = {"doc", "static", "upload", "returns"}
 
 
@@ -44,10 +44,10 @@ def referenced_plan(signature: Signature) -> dict[str, Any]:
 class WebFunction:
     """A callable prepared for the web: schema, plan and page compiled once.
 
-    name, description and slug default to fn.__name__, fn.__doc__ and a slug
-    derived from fn.__name__; capture_prints left as None inherits whatever
-    the space decides. Raises TypeError for an invalid field type and
-    ValueError for an empty or malformed name or slug.
+    name, description and slug default to fn.__name__, fn.__doc__ and
+    fn.__name__ as it is, with no transformation; capture_prints left as None
+    inherits whatever the space decides. Raises TypeError for an invalid field
+    type and ValueError for an empty or malformed name or slug.
     """
 
     fn: Callable[..., Any]
@@ -98,13 +98,7 @@ class WebFunction:
         else:
             description = self.description
 
-        derived_slug = re.sub(
-            r"-+",
-            "-",
-            declared_name.lower().replace("_", "-"),
-        ).strip("-")
-
-        slug = derived_slug if self.slug == "" else self.slug
+        slug = declared_name if self.slug == "" else self.slug
 
         name = name.strip()
 
@@ -124,7 +118,8 @@ class WebFunction:
 
         if SLUG_PATTERN.fullmatch(slug) is None:
             raise ValueError(
-                "slug must contain only lowercase letters, numbers and single hyphens"
+                "slug must contain only letters, numbers, underscores and "
+                "single hyphens"
             )
 
         if slug in RESERVED_SLUGS:

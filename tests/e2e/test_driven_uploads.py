@@ -86,7 +86,7 @@ def field_input(page, label):
 def test_choosing_a_file_and_submitting_uploads_and_runs(open_page,
                                                          local_file,
                                                          uploads_dir):
-    page = open_page(take_one, "take-one")
+    page = open_page(take_one, "take_one")
     chosen = local_file("report.txt", b"chosen content")
 
     file_input(page).set_input_files(chosen)
@@ -104,7 +104,7 @@ def test_choosing_a_file_and_submitting_uploads_and_runs(open_page,
 def test_a_dropped_file_is_uploaded_like_a_chosen_one(open_page, drop_file,
                                                       local_file,
                                                       uploads_dir):
-    page = open_page(take_one, "take-one")
+    page = open_page(take_one, "take_one")
     chosen = local_file("dropped.txt", b"dropped content")
 
     drop_file("input[type=file]", chosen)
@@ -118,7 +118,7 @@ def test_a_dropped_file_is_uploaded_like_a_chosen_one(open_page, drop_file,
 
 def test_the_upload_modal_names_the_file_while_it_travels(open_page,
                                                           local_file):
-    page = open_page(take_one, "take-one", delay_uploads=1.5)
+    page = open_page(take_one, "take_one", delay_uploads=1.5)
     chosen = local_file("slowly.txt", b"x" * 2048)
 
     file_input(page).set_input_files(chosen)
@@ -139,7 +139,7 @@ def test_the_upload_modal_names_the_file_while_it_travels(open_page,
 
 def test_the_progress_only_moves_forward_and_ends_at_a_hundred(open_page,
                                                                local_file):
-    page = open_page(take_one, "take-one")
+    page = open_page(take_one, "take_one")
     chosen = local_file("big.txt", b"x" * (4 * 1024 * 1024))
 
     page.evaluate(WATCH_PERCENT)
@@ -159,7 +159,7 @@ def test_the_progress_only_moves_forward_and_ends_at_a_hundred(open_page,
 
 def test_several_files_are_uploaded_one_by_one(open_page, local_file,
                                                uploads_dir):
-    page = open_page(take_many, "take-many", delay_uploads=0.4)
+    page = open_page(take_many, "take_many", delay_uploads=0.4)
 
     file_input(page).set_input_files([
         local_file("one.txt", b"one"),
@@ -198,7 +198,7 @@ def test_several_files_are_uploaded_one_by_one(open_page, local_file,
 
 def test_a_refused_upload_shows_the_server_message_and_stays_open(open_page,
                                                                   local_file):
-    page = open_page(take_one, "take-one", max_upload_bytes=8)
+    page = open_page(take_one, "take_one", max_upload_bytes=8)
     chosen = local_file("toolarge.txt", b"x" * 64)
 
     file_input(page).set_input_files(chosen)
@@ -215,7 +215,7 @@ def test_a_refused_upload_shows_the_server_message_and_stays_open(open_page,
 
 
 def test_escape_closes_the_failed_upload_modal(open_page, local_file):
-    page = open_page(take_one, "take-one", max_upload_bytes=8)
+    page = open_page(take_one, "take_one", max_upload_bytes=8)
 
     file_input(page).set_input_files(local_file("toolarge.txt", b"x" * 64))
     page.click("#submit")
@@ -227,7 +227,7 @@ def test_escape_closes_the_failed_upload_modal(open_page, local_file):
 
 
 def test_the_close_button_hides_the_failed_upload_modal(open_page, local_file):
-    page = open_page(take_one, "take-one", max_upload_bytes=8)
+    page = open_page(take_one, "take_one", max_upload_bytes=8)
 
     file_input(page).set_input_files(local_file("toolarge.txt", b"x" * 64))
     page.click("#submit")
@@ -242,7 +242,7 @@ def test_a_server_failure_is_retried_by_pressing_submit_again(open_page,
                                                               local_file,
                                                               uploads_dir,
                                                               monkeypatch):
-    page = open_page(take_one, "take-one")
+    page = open_page(take_one, "take_one")
     chosen = local_file("retried.txt", b"retried content")
     switch = SwitchableReplace()
 
@@ -266,7 +266,7 @@ def test_a_server_failure_is_retried_by_pressing_submit_again(open_page,
 
 def test_a_confirmed_upload_is_not_sent_again(open_page, local_file,
                                               uploads_dir, page):
-    page = open_page(take_one, "take-one")
+    page = open_page(take_one, "take_one")
     sent = []
 
     def counted(route):
@@ -290,7 +290,7 @@ def test_a_confirmed_upload_is_not_sent_again(open_page, local_file,
 def test_changing_another_parameter_never_uploads_the_file_again(open_page,
                                                                  local_file,
                                                                  uploads_dir):
-    page = open_page(take_one_repeated, "take-one-repeated")
+    page = open_page(take_one_repeated, "take_one_repeated")
     sent = []
 
     def counted(route):

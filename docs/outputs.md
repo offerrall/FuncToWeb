@@ -340,7 +340,7 @@ The fifth output is declared by marking the whole return with `OpenForm`, and it
 carries the URL that opens another function in the space:
 
 ```json
-{"result": {"type": "form", "href": "../edit-product/?prefill=%7B…%7D&hidden=%5B…%5D"}}
+{"result": {"type": "form", "href": "../edit_product/?prefill=%7B…%7D&hidden=%5B…%5D"}}
 ```
 
 It is the only output that appears on its own. The full contract is in

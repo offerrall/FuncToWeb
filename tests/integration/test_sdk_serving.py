@@ -19,7 +19,7 @@ EXPORTS = re.compile(r"^export (?:async )?(?:function\*? |class )(\w+)",
 EXPECTED_EXPORTS = {
     "FuncToWebError", "fileReference", "outputsOf", "call", "events",
     "callStream", "upload", "doc", "downloadUrl", "formUrl", "pageUrl",
-    "embed", "openModal",
+    "embed", "openModal", "listen",
 }
 
 
@@ -84,7 +84,7 @@ def test_the_helpers_carry_no_trace_of_the_space(module):
 
 
 def test_the_route_call_builds_answers_on_every_slug(hosted):
-    for slug in ("add", "divide", "count-lines", "report"):
+    for slug in ("add", "divide", "count_lines", "report"):
         assert hosted.get(f"{PREFIX}/{slug}/").status_code == 200
 
 
@@ -118,7 +118,7 @@ def test_the_route_upload_builds_accepts_a_minted_reference(hosted):
 
     assert stored.json() == {"uploaded": True}
 
-    used = hosted.post(f"{PREFIX}/count-lines/invoke", json={"source": reference})
+    used = hosted.post(f"{PREFIX}/count_lines/invoke", json={"source": reference})
 
     assert used.json() == {"result": {"type": "text", "value": "3"}}
 

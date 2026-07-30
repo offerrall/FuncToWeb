@@ -107,7 +107,7 @@ def test_several_runs_replace_the_previous_result(open_page):
 
 
 def test_submit_is_disabled_while_the_call_is_running(open_page):
-    page = open_page(slow_add, "slow-add")
+    page = open_page(slow_add, "slow_add")
 
     page.click("#submit")
 

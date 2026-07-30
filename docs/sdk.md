@@ -1,8 +1,8 @@
 # `sdk.js`
 
 The helpers that a frontend of your own would otherwise write by hand: calling
-a function, uploading a file, following a stream, and opening a function's page
-in an iframe or a modal.
+a function, uploading a file, following a stream, opening a function's page in
+an iframe or a modal, and hearing what happened inside it.
 
 It is not a Python function and there is nothing to generate: it is one more
 [static asset](static-assets.md), served with the rest at
@@ -35,6 +35,9 @@ Two kinds of URL, and that is the whole convention:
 /tools/add    a function       call, callStream, events, pageUrl, embed, openModal
 /tools        the whole space  upload, doc, downloadUrl, formUrl
 ```
+
+`listen()` is the one export that takes no URL: it takes an `<iframe>` you
+already have, because what it works on is a page that is already open.
 
 Trailing slashes are dropped, and an absolute URL works the same
 (`https://tools.example.com/add`) when the frontend and the space live on
@@ -146,7 +149,8 @@ const modal = openModal("/tools/divide", {
 `embed()` appends an `<iframe>` to the element you pass —an element or a CSS
 selector— and returns it. `openModal()` puts that same iframe in an overlay
 with a close button, closing on `Escape` and on a click outside; it returns
-`{element, iframe, close}`, so the host can close it too.
+`{element, iframe, close, closed}`, so the host can close it too and can wait
+for it.
 
 Both bring their own style sheet, injected once, so they work on a page with no
 CSS of its own. The overlay and its close button are the only things they
@@ -158,9 +162,120 @@ The theme is decided by the space, not by the host application
 the iframe from outside, so a space that must always look dark is mounted with
 `theme="dark"`.
 
-There is still no communication back from the iframe to the host application
-(result notification, height adjustment, origin policy), so a result is shown
-inside the iframe and stays there.
+## Reacting to the modal
+
+A modal that only opens is half a feature: the host that opens *create task*
+wants to refresh its list afterwards, and only if something was really created.
+The page announces what happens inside it, and the handle is where you wait for
+it:
+
+```javascript
+const modal = openModal("/tools/create_task", {closeOnResult: true});
+
+const {completed, results} = await modal.closed;
+
+if (completed) await refresh();
+```
+
+`closed` resolves **once**, when the modal closes by any route —the close
+button, a click outside, `Escape`, `closeOnResult`, your own `close()`— with two
+values:
+
+```text
+completed   true if at least one run finished inside the modal
+results     the outputs of the last run, or null if there were none
+```
+
+A modal the user dismisses without running anything resolves
+`{completed: false, results: null}`, which is the same shape and needs no
+special case. `results` is the list of outputs [outputs.md](outputs.md)
+describes, exactly the one `call()` resolves to.
+
+Three options tell the modal what to do as it happens:
+
+```javascript
+openModal("/tools/create_task", {
+    closeOnResult: true,
+    onResult: (outputs) => toast(outputs[0].value),
+    onError: (message) => toast(message),
+    onClose: () => release(),
+});
+```
+
+`closeOnResult` defaults to **`false`**: a result is drawn *inside* the page —an
+image, a table, a download link— and closing the modal would throw away what
+the user came to see. Turn it on for a form whose result is a confirmation, like
+the one above, and leave it off for anything the user has to read.
+
+### Your own iframe
+
+`embed()`, or an `<iframe>` you wrote yourself, hears the same announcements
+through `listen()`:
+
+```javascript
+const frame = embed("#panel", "/tools/create_task");
+
+const channel = listen(frame, {
+    onReady: () => spinner.hide(),
+    onResult: (outputs) => refresh(),
+    onError: (message) => show(message),
+    onNavigate: (href) => track(href),
+});
+
+channel.cache;   // {ready, results, error}, the last of each
+channel.stop();  // stops listening
+```
+
+Every handler is optional. `cache` is what has arrived so far, for a host that
+prefers to read rather than be called, and `openModal()` is built on exactly
+this: `closed` reports that cache when the overlay goes away.
+
+### The protocol
+
+The page posts one message per event to `window.parent`, and nothing at all
+when it is not embedded. Four kinds, each with the payload it needs:
+
+```text
+ready                        the page is up and the form is mounted
+result    {outputs}          a run finished; the outputs it just drew
+error     {message}          a run failed; the error of the envelope
+navigate  {href}             an OpenForm result is about to move the iframe
+```
+
+Every message also carries `v`, the protocol version, and `slug`, the function
+it comes from:
+
+```json
+{"v": 1, "kind": "result", "slug": "create_task",
+ "outputs": [{"type": "text", "value": "Task 1 created"}]}
+```
+
+`v` is how this can grow without breaking a host: a receiver ignores, in
+silence, anything whose `v` it does not know, anything with no `kind`, and any
+`kind` it has not heard of. `listen()` does that for you, so a host written
+today keeps working against a page that learns a fifth kind tomorrow.
+
+Two boundaries are deliberate. `error` is a *run* that failed —the `error` of
+the envelope, a `422` or a `500` ([http.md](http.md#the-status-code))— and never
+a field the browser rejected as you typed: that is not the host's business, and
+one kind means one thing. And `navigate` is emitted **instead of** `result` on
+the [OpenForm](open-form.md) branch, because moving to another form is not a
+result and must not count as one.
+
+`result` can arrive more than once: the user changes a value and runs again.
+Each arrival replaces the previous one, which is why `results` is the *last*
+run and not a list of runs.
+
+The message is posted with a `targetOrigin` of `"*"`, because the page does not
+know who embedded it: whoever can embed a page can read what runs inside it. See
+[security.md](security.md#the-result-travels-to-whoever-embeds-the-page).
+
+Still missing, and not part of this: adjusting the iframe's height to its
+content, and any host-to-page direction. Initial values still travel as
+`prefill` in the URL ([prefill.md](prefill.md)), not as a message.
+
+Why the autoclose is off, why `error` skips validation and why `result` reuses
+the envelope: [design/sdk.md](design/sdk.md).
 
 ## Failures
 

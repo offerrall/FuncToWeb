@@ -4,7 +4,7 @@ from tempfile import gettempdir
 
 from platformdirs import user_data_path
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 NAME: str = "".join(part.title() for part in __name__.split(".")[0].split("_"))
 DATA_DIR: Path = user_data_path(NAME, appauthor=False)

@@ -237,7 +237,7 @@ def test_a_registered_callable_target_resolves_to_its_entry():
     space = WebFunctions((WebFunction(select_product),
                           WebFunction(edit_product)))
 
-    action = space.forms["select-product"]
+    action = space.forms["select_product"]
 
     assert action.target.fn is edit_product
     assert action.hidden == ("product_id",)
@@ -264,7 +264,7 @@ def test_an_ambiguous_target_is_a_return_contract_error():
 def test_a_web_function_target_resolves_by_identity():
     space = WebFunctions((WebFunction(emit_to_instance), EDIT_INSTANCE))
 
-    assert space.forms["emit-to-instance"].target is EDIT_INSTANCE
+    assert space.forms["emit_to_instance"].target is EDIT_INSTANCE
 
 
 def test_an_equivalent_web_function_is_not_the_target():
@@ -279,14 +279,14 @@ def test_a_web_function_target_wins_over_a_twin_of_its_callable():
     space = WebFunctions((WebFunction(emit_to_instance), EDIT_INSTANCE,
                           WebFunction(edit_product, slug="twin")))
 
-    assert space.forms["emit-to-instance"].target is EDIT_INSTANCE
+    assert space.forms["emit_to_instance"].target is EDIT_INSTANCE
 
 
 def test_an_existing_hidden_name_is_accepted():
     space = WebFunctions((WebFunction(select_product),
                           WebFunction(edit_product)))
 
-    assert space.forms["select-product"].hidden == ("product_id",)
+    assert space.forms["select_product"].hidden == ("product_id",)
 
 
 def test_an_unknown_hidden_name_is_a_return_contract_error():
@@ -294,13 +294,13 @@ def test_an_unknown_hidden_name_is_a_return_contract_error():
         router_of([emit_to_unknown_hidden, edit_product])
 
     assert str(error.value) == (
-        "unknown hidden field 'nope' for OpenForm target 'edit-product'")
+        "unknown hidden field 'nope' for OpenForm target 'edit_product'")
 
 
 def test_a_target_with_a_custom_slug_opens_under_that_slug(client_factory):
     client = client_factory([emit_to_instance, EDIT_INSTANCE])
 
-    response = client.post("/emit-to-instance/invoke", json={})
+    response = client.post("/emit_to_instance/invoke", json={})
 
     assert href_of(response).startswith("../edit/?")
 
@@ -308,7 +308,7 @@ def test_a_target_with_a_custom_slug_opens_under_that_slug(client_factory):
 def test_a_dataclass_return_becomes_the_prefill(client_factory):
     client = client_factory([select_product, edit_product])
 
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
     assert query_of(href_of(response))["prefill"] == {
         "product_id": 3, "name": "Widget", "stock": 5}
@@ -317,7 +317,7 @@ def test_a_dataclass_return_becomes_the_prefill(client_factory):
 def test_a_dict_return_becomes_the_prefill(client_factory):
     client = client_factory([select_product_as_dict, edit_product])
 
-    response = client.post("/select-product-as-dict/invoke",
+    response = client.post("/select_product_as_dict/invoke",
                            json={"product_id": 4})
 
     assert query_of(href_of(response))["prefill"] == {
@@ -327,7 +327,7 @@ def test_a_dict_return_becomes_the_prefill(client_factory):
 def test_scalar_fields_travel_in_their_browser_transport(client_factory):
     client = client_factory([collect_task, store_task])
 
-    response = client.post("/collect-task/invoke", json={})
+    response = client.post("/collect_task/invoke", json={})
 
     assert query_of(href_of(response))["prefill"] == {
         "task_id": 7,
@@ -367,10 +367,10 @@ def test_a_file_with_bounds_travels_and_opens(client_factory, stored_file,
     stored_file("a.txt", size=4)
     client = client_factory([pick_bounded, describe_bounded])
 
-    response = client.post("/pick-bounded/invoke", json={"document": "a.txt"})
+    response = client.post("/pick_bounded/invoke", json={"document": "a.txt"})
 
     assert query_of(href_of(response))["prefill"] == {"document": "a.txt"}
-    assert destination(client, "/pick-bounded/",
+    assert destination(client, "/pick_bounded/",
                        href_of(response)).status_code == 200
 
 
@@ -379,7 +379,7 @@ def test_a_file_written_outside_the_storage_fails_the_execution(
     stored_file("a.txt")
     client = client_factory([pick_elsewhere, describe])
 
-    response = client.post("/pick-elsewhere/invoke", json={"document": "a.txt"})
+    response = client.post("/pick_elsewhere/invoke", json={"document": "a.txt"})
 
     assert response.status_code == 500
     assert response.json()["error"] == (
@@ -393,7 +393,7 @@ def test_lists_travel_item_by_item(client_factory, stored_file, uploads_dir):
     stored_file("b.txt")
     client = client_factory([pick_many, describe_many])
 
-    response = client.post("/pick-many/invoke", json={
+    response = client.post("/pick_many/invoke", json={
         "documents": ["a.txt", "b.txt"],
         "rows": [{"document": "a.txt", "tag": "z"}],
     })
@@ -404,13 +404,13 @@ def test_lists_travel_item_by_item(client_factory, stored_file, uploads_dir):
         "rows": [{"document": "a.txt", "tag": "z"}],
     }
     assert not leaks(response, uploads_dir)
-    assert destination(client, "/pick-many/", href).status_code == 200
+    assert destination(client, "/pick_many/", href).status_code == 200
 
 
 def test_a_nested_dataclass_travels_as_a_nested_object(client_factory):
     client = client_factory([choose_trip, plan_trip])
 
-    response = client.post("/choose-trip/invoke", json={})
+    response = client.post("/choose_trip/invoke", json={})
 
     assert query_of(href_of(response))["prefill"] == {
         "trip": {"origin": {"street": "Gran Via", "city": "Bilbao"},
@@ -420,7 +420,7 @@ def test_a_nested_dataclass_travels_as_a_nested_object(client_factory):
 def test_an_unknown_returned_field_fails_the_execution(client_factory):
     client = client_factory([emit_unknown_field, edit_product])
 
-    response = client.post("/emit-unknown-field/invoke", json={})
+    response = client.post("/emit_unknown_field/invoke", json={})
 
     assert response.status_code == 500
     assert response.json()["error"] == (
@@ -432,7 +432,7 @@ def test_a_returned_field_of_the_wrong_type_fails_the_execution(
         client_factory):
     client = client_factory([emit_wrong_type, edit_product])
 
-    response = client.post("/emit-wrong-type/invoke", json={})
+    response = client.post("/emit_wrong_type/invoke", json={})
 
     assert response.status_code == 500
     assert response.json()["error"] == (
@@ -444,7 +444,7 @@ def test_a_return_that_is_not_a_mapping_or_dataclass_fails_the_execution(
         client_factory):
     client = client_factory([emit_text, edit_product])
 
-    response = client.post("/emit-text/invoke", json={})
+    response = client.post("/emit_text/invoke", json={})
 
     assert response.status_code == 500
     assert response.json()["error"] == (
@@ -455,25 +455,25 @@ def test_a_return_that_is_not_a_mapping_or_dataclass_fails_the_execution(
 def test_the_result_is_a_form_output_with_a_relative_href(client_factory):
     client = client_factory([select_product, edit_product])
 
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
     assert response.json()["result"]["type"] == "form"
-    assert href_of(response).startswith("../edit-product/?")
+    assert href_of(response).startswith("../edit_product/?")
 
 
 def test_the_href_stays_relative_under_a_prefix(client_factory):
     client = client_factory([select_product, edit_product], prefix="/tools")
 
-    response = client.post("/tools/select-product/invoke",
+    response = client.post("/tools/select_product/invoke",
                            json={"product_id": 3})
 
-    assert href_of(response).startswith("../edit-product/?")
+    assert href_of(response).startswith("../edit_product/?")
 
 
 def test_hidden_is_serialized_in_the_query(client_factory):
     client = client_factory([select_product, edit_product])
 
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
     assert query_of(href_of(response))["hidden"] == ["product_id"]
 
@@ -481,7 +481,7 @@ def test_hidden_is_serialized_in_the_query(client_factory):
 def test_no_hidden_names_leave_the_query_without_hidden(client_factory):
     client = client_factory([select_product_as_dict, edit_product])
 
-    response = client.post("/select-product-as-dict/invoke",
+    response = client.post("/select_product_as_dict/invoke",
                            json={"product_id": 4})
 
     assert "hidden" not in query_of(href_of(response))
@@ -489,19 +489,19 @@ def test_no_hidden_names_leave_the_query_without_hidden(client_factory):
 
 def test_the_destination_page_really_opens(client_factory):
     client = client_factory([select_product, edit_product])
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
-    page = destination(client, "/select-product/", href_of(response))
+    page = destination(client, "/select_product/", href_of(response))
 
     assert page.status_code == 200
 
 
 def test_the_destination_page_opens_under_a_prefix(client_factory):
     client = client_factory([select_product, edit_product], prefix="/tools")
-    response = client.post("/tools/select-product/invoke",
+    response = client.post("/tools/select_product/invoke",
                            json={"product_id": 3})
 
-    page = destination(client, "/tools/select-product/", href_of(response))
+    page = destination(client, "/tools/select_product/", href_of(response))
 
     assert page.status_code == 200
 
@@ -509,9 +509,9 @@ def test_the_destination_page_opens_under_a_prefix(client_factory):
 def test_the_destination_page_keeps_the_space_theme(client_factory,
                                                     html_root):
     client = client_factory([select_product, edit_product], theme="dark")
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
-    page = destination(client, "/select-product/", href_of(response))
+    page = destination(client, "/select_product/", href_of(response))
 
     assert 'data-pth-theme="dark"' in html_root(page.text)
 
@@ -519,9 +519,9 @@ def test_the_destination_page_keeps_the_space_theme(client_factory,
 def test_the_destination_page_carries_the_prefill_and_the_hidden_names(
         client_factory, plan_of_page):
     client = client_factory([select_product, edit_product])
-    response = client.post("/select-product/invoke", json={"product_id": 3})
+    response = client.post("/select_product/invoke", json={"product_id": 3})
 
-    page = destination(client, "/select-product/", href_of(response))
+    page = destination(client, "/select_product/", href_of(response))
     plan = plan_of_page(page.text)
 
     assert {field["name"]: field.get("default") for field in plan["fields"]} == {
@@ -532,7 +532,7 @@ def test_the_destination_page_carries_the_prefill_and_the_hidden_names(
 def test_the_opening_also_arrives_over_the_stream(client_factory, sse):
     client = client_factory([select_product, edit_product])
 
-    response = client.post("/select-product/invoke-stream",
+    response = client.post("/select_product/invoke-stream",
                            json={"product_id": 3})
     events = sse(response.text)
 

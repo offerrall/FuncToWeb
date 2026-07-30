@@ -49,6 +49,7 @@ DOCUMENTED_PAGES = (
 )
 
 DELIBERATE_FRAGMENTS = {
+    ("README.md", 241),
     ("docs/prefill.md", 191),
     ("docs/router.md", 7),
     ("docs/run.md", 7),
@@ -543,12 +544,12 @@ def test_the_readme_fastapi_integration_snippet_works(clients):
 def test_the_readme_dataclass_snippet_reaches_the_function(client_factory):
     client = client_factory(create_order)
 
-    assert client.post("/create-order/invoke",
+    assert client.post("/create_order/invoke",
                        json={"order": {"product": "Chair", "quantity": 2}}
                        ).json() == {
         "result": {"type": "text", "value": "2 × Chair"}
     }
-    assert client.post("/create-order/invoke",
+    assert client.post("/create_order/invoke",
                        json={"order": {"product": "Chair", "quantity": 0}}
                        ).status_code == 422
 
@@ -615,19 +616,19 @@ def test_the_open_form_snippet_opens_the_target_prefilled(clients):
     app.include_router(router_of([select_product, edit_product]),
                        prefix="/tools")
     client = clients(app)
-    result = client.post("/tools/select-product/invoke",
+    result = client.post("/tools/select_product/invoke",
                          json={"product_id": 7}).json()["result"]
     query = parse_qs(urlparse(result["href"]).query)
 
     assert result["type"] == "form"
-    assert result["href"].startswith("../edit-product/?")
+    assert result["href"].startswith("../edit_product/?")
     assert json.loads(query["prefill"][0]) == {
         "product_id": 7,
         "name": "Chair",
         "stock": 12,
     }
     assert json.loads(query["hidden"][0]) == ["product_id"]
-    assert client.get("/tools/edit-product/",
+    assert client.get("/tools/edit_product/",
                       params={"prefill": query["prefill"][0],
                               "hidden": query["hidden"][0]}).status_code == 200
 
@@ -664,7 +665,7 @@ def test_the_download_snippet_offers_a_stored_path(client_factory, tmp_path):
 def test_the_download_snippet_offers_bytes_built_in_memory(client_factory):
     MEMORY_REPORTS.append(b"%PDF-1.4 memory")
     client = client_factory(report_in_memory)
-    result = client.post("/report-in-memory/invoke", json={}).json()["result"]
+    result = client.post("/report_in_memory/invoke", json={}).json()["result"]
 
     assert result["type"] == "download"
     assert result["filename"] == "report.pdf"
@@ -790,7 +791,7 @@ def test_the_prefill_snippet_produces_a_page_with_values(client_factory):
 def test_the_prefill_query_answers_the_documented_codes(client_factory,
                                                         plan_of_page):
     client = client_factory(edit_user)
-    good = client.get("/edit-user/",
+    good = client.get("/edit_user/",
                       params={"prefill": json.dumps({"name": "Ana",
                                                      "age": 32})})
     plan = plan_of_page(good.text)
@@ -799,21 +800,21 @@ def test_the_prefill_query_answers_the_documented_codes(client_factory,
     assert good.status_code == 200
     assert named["name"]["default"] == "Ana"
     assert named["age"]["default"] == 32
-    assert client.get("/edit-user/",
+    assert client.get("/edit_user/",
                       params={"prefill": "{not json"}).status_code == 400
-    assert client.get("/edit-user/",
+    assert client.get("/edit_user/",
                       params={"prefill": "[1, 2]"}).json()["detail"] == (
         "prefill must be a JSON object"
     )
-    assert client.get("/edit-user/",
+    assert client.get("/edit_user/",
                       params={"prefill": '{"nope": 1}'}).json()["detail"] == (
         "unknown prefill field: 'nope'"
     )
-    assert client.get("/edit-user/",
+    assert client.get("/edit_user/",
                       params={"hidden": '{"a":1}'}).json()["detail"] == (
         "hidden must be a JSON array"
     )
-    assert client.get("/edit-user/",
+    assert client.get("/edit_user/",
                       params={"hidden": '["a",1]'}).json()["detail"] == (
         "hidden must contain only strings"
     )
@@ -821,7 +822,7 @@ def test_the_prefill_query_answers_the_documented_codes(client_factory,
 
 def test_the_http_snippet_reads_the_documented_envelope(client_factory):
     client = client_factory(create_tag)
-    payload = client.post("/create-tag/invoke", json={"name": "demo"}).json()
+    payload = client.post("/create_tag/invoke", json={"name": "demo"}).json()
 
     assert "error" not in payload
     assert payload["result"] == {"type": "text", "value": "tag demo"}
@@ -829,8 +830,8 @@ def test_the_http_snippet_reads_the_documented_envelope(client_factory):
 
 def test_the_http_snippet_status_codes_are_the_documented_ones(client_factory):
     client = client_factory([create_tag, divide])
-    missing = client.post("/create-tag/invoke", json={})
-    extra = client.post("/create-tag/invoke", json={"name": "x", "zzz": 1})
+    missing = client.post("/create_tag/invoke", json={})
+    extra = client.post("/create_tag/invoke", json={"name": "x", "zzz": 1})
     crashing = client.post("/divide/invoke", json={"a": 1, "b": 0})
 
     assert missing.status_code == 422
@@ -855,8 +856,8 @@ def test_the_streaming_snippet_switches_capture_per_function(clients, sse):
         capture_prints=True,
     ))
     client = clients(app)
-    quiet = sse(client.post("/noisy-task/invoke-stream", json={}).text)
-    loud = sse(client.post("/normal-task/invoke-stream", json={}).text)
+    quiet = sse(client.post("/noisy_task/invoke-stream", json={}).text)
+    loud = sse(client.post("/normal_task/invoke-stream", json={}).text)
 
     assert [name for name, _ in quiet] == ["start", "result"]
     assert [name for name, _ in loud][0] == "start"
@@ -884,11 +885,11 @@ def test_the_types_snippets_validate_before_calling(client_factory):
                        json={"limits": {"minimum": 1, "maximum": 9}}).json() == {
         "result": {"type": "text", "value": "1 - 9"}
     }
-    assert client.post("/set-color/invoke",
+    assert client.post("/set_color/invoke",
                        json={"color": "#ff0000"}).json() == {
         "result": {"type": "text", "value": "#ff0000"}
     }
-    assert client.post("/set-color/invoke",
+    assert client.post("/set_color/invoke",
                        json={"color": "red"}).status_code == 422
 
 
@@ -946,9 +947,9 @@ def test_the_documented_slug_derivation_still_holds():
     def MyFunction() -> str:
         return ""
 
-    assert WebFunction(save_result).slug == "save-result"
-    assert WebFunction(load__cache).slug == "load-cache"
-    assert WebFunction(MyFunction).slug == "myfunction"
+    assert WebFunction(save_result).slug == "save_result"
+    assert WebFunction(load__cache).slug == "load__cache"
+    assert WebFunction(MyFunction).slug == "MyFunction"
 
     with pytest.raises(ValueError,
                        match="cannot derive a valid slug from "
@@ -1000,7 +1001,7 @@ def test_the_documented_open_form_return_contract_still_holds(client_factory):
         return "not a mapping"
 
     client = client_factory([picks_wrong, create_tag])
-    answer = client.post("/picks-wrong/invoke", json={})
+    answer = client.post("/picks_wrong/invoke", json={})
 
     assert answer.status_code == 500
     assert answer.json() == {

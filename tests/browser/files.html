@@ -33,7 +33,7 @@ import {
 
 const STORED = new URLSearchParams(location.search).get("stored");
 
-const PREFILL = `take-one/?prefill=${
+const PREFILL = `take_one/?prefill=${
     encodeURIComponent(JSON.stringify({ document: STORED }))}`;
 
 function names(root) {
@@ -76,7 +76,7 @@ function uploadRequests(win) {
 await run({
 
     async valid() {
-        const { form, host } = await compiledForm("take-one/");
+        const { form, host } = await compiledForm("take_one/");
 
         const input = fileInputOf(host, "document");
 
@@ -108,7 +108,7 @@ await run({
     },
 
     async min_size() {
-        const { form, host } = await compiledForm("take-bounded/");
+        const { form, host } = await compiledForm("take_bounded/");
 
         pick(fileInputOf(host, "document"),
              [sizedFile(window, "tiny.txt", 10)]);
@@ -117,7 +117,7 @@ await run({
     },
 
     async max_size() {
-        const { form, host } = await compiledForm("take-bounded/");
+        const { form, host } = await compiledForm("take_bounded/");
 
         pick(fileInputOf(host, "document"),
              [sizedFile(window, "huge.txt", 400)]);
@@ -126,7 +126,7 @@ await run({
     },
 
     async extension() {
-        const { form, host } = await compiledForm("take-one/");
+        const { form, host } = await compiledForm("take_one/");
 
         pick(fileInputOf(host, "document"),
              [textFile(window, "note.pdf", "hello")]);
@@ -135,7 +135,7 @@ await run({
     },
 
     async multiple() {
-        const { form, host } = await compiledForm("take-many/");
+        const { form, host } = await compiledForm("take_many/");
 
         const input = fileInputOf(host, "documents");
 
@@ -159,7 +159,7 @@ await run({
     },
 
     async nested() {
-        const { form, host } = await compiledForm("take-nested/");
+        const { form, host } = await compiledForm("take_nested/");
 
         const group = fieldOf(host, "item");
 
@@ -185,7 +185,7 @@ await run({
     },
 
     async rows() {
-        const { form, host } = await compiledForm("take-rows/");
+        const { form, host } = await compiledForm("take_rows/");
 
         const list = fieldOf(host, "rows").querySelector(".pth-list");
 
@@ -273,7 +273,7 @@ await run({
     },
 
     async upload_flow() {
-        const page = await openPage("take-one/");
+        const page = await openPage("take_one/");
 
         pick(page.doc.querySelector(".pth-file-input"),
              [textFile(page.win, "note.txt", "uploaded bytes")]);
@@ -313,7 +313,7 @@ await run({
     },
 
     async refused_never_uploads() {
-        const page = await openPage("take-one/");
+        const page = await openPage("take_one/");
 
         pick(page.doc.querySelector(".pth-file-input"),
              [textFile(page.win, "note.pdf", "hello")]);

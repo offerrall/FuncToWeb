@@ -487,10 +487,10 @@ def test_hidden_field_ships_no_markup_of_its_own():
 
 def test_hidden_does_not_skip_validation(client_factory):
     client = client_factory([http_task])
-    page = client.get("/http-task/",
+    page = client.get("/http_task/",
                       params={"hidden": json.dumps(["task_id"])})
 
-    response = client.post("/http-task/invoke", json={"title": "abc"})
+    response = client.post("/http_task/invoke", json={"title": "abc"})
 
     assert page.status_code == 200
     assert response.status_code == 422
@@ -533,7 +533,7 @@ def test_applying_a_prefill_does_not_mutate_the_web_function(plan_of_page):
 def test_page_with_prefill_and_hidden_is_served(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/", params={
+    response = client.get("/http_task/", params={
         "prefill": json.dumps({"task_id": 7}),
         "hidden": json.dumps(["task_id"]),
     })
@@ -545,7 +545,7 @@ def test_page_with_prefill_and_hidden_is_served(client_factory):
 def test_prefill_that_is_not_valid_json_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/", params={"prefill": "{not json"})
+    response = client.get("/http_task/", params={"prefill": "{not json"})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "prefill must be valid JSON"
@@ -554,7 +554,7 @@ def test_prefill_that_is_not_valid_json_is_rejected(client_factory):
 def test_prefill_root_that_is_not_an_object_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/", params={"prefill": "[1, 2]"})
+    response = client.get("/http_task/", params={"prefill": "[1, 2]"})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "prefill must be a JSON object"
@@ -563,7 +563,7 @@ def test_prefill_root_that_is_not_an_object_is_rejected(client_factory):
 def test_unknown_prefill_field_over_http_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"prefill": json.dumps({"nope": 1})})
 
     assert response.status_code == 400
@@ -573,7 +573,7 @@ def test_unknown_prefill_field_over_http_is_rejected(client_factory):
 def test_wrong_prefill_type_over_http_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"prefill": json.dumps({"task_id": "dos"})})
 
     assert response.status_code == 400
@@ -583,7 +583,7 @@ def test_wrong_prefill_type_over_http_is_rejected(client_factory):
 def test_prefill_breaking_a_constraint_over_http_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"prefill": json.dumps({"title": "ab"})})
 
     assert response.status_code == 400
@@ -594,7 +594,7 @@ def test_unknown_enum_member_over_http_is_rejected(client_factory):
     client = client_factory([http_task])
 
     response = client.get(
-        "/http-task/", params={"prefill": json.dumps({"priority": "URGENT"})})
+        "/http_task/", params={"prefill": json.dumps({"priority": "URGENT"})})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "priority: expected Priority, got str"
@@ -604,7 +604,7 @@ def test_non_iso_date_over_http_is_rejected(client_factory):
     client = client_factory([http_task])
 
     response = client.get(
-        "/http-task/", params={"prefill": json.dumps({"due": "30/07/2026"})})
+        "/http_task/", params={"prefill": json.dumps({"due": "30/07/2026"})})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "due: expected date, got str"
@@ -613,7 +613,7 @@ def test_non_iso_date_over_http_is_rejected(client_factory):
 def test_hidden_that_is_not_valid_json_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/", params={"hidden": "[not json"})
+    response = client.get("/http_task/", params={"hidden": "[not json"})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "hidden must be valid JSON"
@@ -622,7 +622,7 @@ def test_hidden_that_is_not_valid_json_is_rejected(client_factory):
 def test_hidden_that_is_not_an_array_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"hidden": json.dumps({"a": 1})})
 
     assert response.status_code == 400
@@ -632,7 +632,7 @@ def test_hidden_that_is_not_an_array_is_rejected(client_factory):
 def test_hidden_with_non_string_elements_is_rejected(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"hidden": json.dumps(["a", 1])})
 
     assert response.status_code == 400
@@ -642,7 +642,7 @@ def test_hidden_with_non_string_elements_is_rejected(client_factory):
 def test_unknown_hidden_name_over_http_is_accepted(client_factory):
     client = client_factory([http_task])
 
-    response = client.get("/http-task/",
+    response = client.get("/http_task/",
                           params={"hidden": json.dumps(["nope"])})
 
     assert response.status_code == 200
@@ -653,7 +653,7 @@ def test_repeated_hidden_name_over_http_hides_once(client_factory):
     client = client_factory([http_task])
 
     response = client.get(
-        "/http-task/", params={"hidden": json.dumps(["task_id", "task_id"])})
+        "/http_task/", params={"hidden": json.dumps(["task_id", "task_id"])})
 
     assert response.status_code == 200
     assert hidden_of(response.text) == ["task_id"]
@@ -661,9 +661,9 @@ def test_repeated_hidden_name_over_http_hides_once(client_factory):
 
 def test_empty_hidden_list_over_http_is_the_base_page(client_factory):
     client = client_factory([http_task])
-    base = client.get("/http-task/").text
+    base = client.get("/http_task/").text
 
-    response = client.get("/http-task/", params={"hidden": json.dumps([])})
+    response = client.get("/http_task/", params={"hidden": json.dumps([])})
 
     assert response.status_code == 200
     assert response.text == base
@@ -676,7 +676,7 @@ def test_stored_file_prefill_over_http_opens_the_page(client_factory,
     stored_file("a.txt")
     client = client_factory([read_document])
 
-    response = client.get("/read-document/",
+    response = client.get("/read_document/",
                           params={"prefill": json.dumps({"document": "a.txt"})})
 
     assert response.status_code == 200
@@ -692,10 +692,10 @@ def test_the_prefilled_reference_completes_the_round_trip(client_factory,
     pending_file("a.txt", data=b"hello")
     client = client_factory([read_document])
 
-    page = client.get("/read-document/",
+    page = client.get("/read_document/",
                       params={"prefill": json.dumps({"document": "a.txt"})})
     served = defaults_of(plan_of_page(page.text))["document"]
-    response = client.post("/read-document/invoke", json={"document": served})
+    response = client.post("/read_document/invoke", json={"document": served})
 
     assert served == "a.txt"
     assert response.status_code == 200
@@ -706,7 +706,7 @@ def test_missing_file_prefill_over_http_is_rejected(client_factory):
     client = client_factory([read_document])
 
     response = client.get(
-        "/read-document/",
+        "/read_document/",
         params={"prefill": json.dumps({"document": "nope.txt"})})
 
     assert response.status_code == 400
@@ -717,7 +717,7 @@ def test_traversing_file_prefill_over_http_is_rejected(client_factory):
     client = client_factory([read_document])
 
     response = client.get(
-        "/read-document/",
+        "/read_document/",
         params={"prefill": json.dumps({"document": "../evil.txt"})})
 
     assert response.status_code == 400
@@ -730,7 +730,7 @@ def test_absolute_file_prefill_over_http_is_rejected(client_factory):
     client = client_factory([read_document])
 
     response = client.get(
-        "/read-document/",
+        "/read_document/",
         params={"prefill": json.dumps({"document": "/etc/passwd"})})
 
     assert response.status_code == 400
@@ -745,7 +745,7 @@ def test_wrong_extension_prefill_over_http_is_rejected(client_factory,
     client = client_factory([read_document])
 
     response = client.get(
-        "/read-document/",
+        "/read_document/",
         params={"prefill": json.dumps({"document": "notes.pdf"})})
 
     assert response.status_code == 400

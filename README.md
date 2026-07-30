@@ -1,4 +1,4 @@
-# FuncToWeb 2.0.0
+# FuncToWeb 2.1.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -6,6 +6,9 @@
 
 > Write the function once. The form, the validation, the HTTP API and the
 > documentation are the same definition, so they cannot drift apart.
+
+**Build your web app however you like — and when it needs a form, open a Python
+function in a modal instead of writing one.**
 
 Write a function with its **type hints**. From that signature FuncToWeb derives
 the **form**, the **validation**, the **execution endpoint** and the
@@ -98,9 +101,12 @@ prefix, so any prefix works.
 
 ## Your own frontend
 
-The space serves `sdk.js`, a handful of plain functions for the parts every
-frontend would have to write itself: calling, uploading, streaming, and opening
-a function's page in an iframe or a modal.
+Your page stays yours. When it needs a "create user" form, you do not write the
+form, the validation or the endpoint: you write `def create_user(...)` and open
+it in a modal. `sdk.js`, the static asset the space serves, covers the rest with
+a handful of plain functions for the parts every frontend would have to write
+itself: calling, uploading, streaming, and opening a function's page in an
+iframe or a modal.
 
 ```javascript
 import { call, openModal } from "/tools/static/sdk.js";
@@ -109,7 +115,8 @@ const outputs = await call("/tools/divide", {a: 10, b: 2});
 
 outputs[0].value;   // "5.0"
 
-openModal("/tools/divide", {prefill: {a: 10}});
+// Your page's "New user" button — form, validation and endpoint come from the Python signature
+openModal("/tools/create_user", {prefill: {team: "sales"}});
 ```
 
 There is no URL to assemble, no envelope to unwrap and no build step: it is a
@@ -173,6 +180,79 @@ Python function
       └── /doc
 ```
 
+## Change once, propagate everywhere
+
+A CRUD is where duplication usually creeps in: the same fields respelled
+across the create form, the edit form, the validation and the API. Here the
+model is written once, and the functions only reference it:
+
+```python
+from dataclasses import dataclass
+from itertools import count
+from typing import Annotated, Literal
+
+from fastapi import FastAPI
+
+from func_to_web import Label, Max, Min, router_of
+
+# --- the model, once -----------------------------------------------------
+
+@dataclass
+class Task:
+    title: Annotated[str, Min(1), Max(80), Label("Title")]
+    priority: Literal["low", "normal", "high"] = "normal"
+    done: bool = False
+
+
+TASKS: dict[int, Task] = {}
+_ids = count(1)
+
+# --- the three functions reference it; none respells a field -------------
+
+def create_task(task: Task) -> str:
+    """Create a task."""
+    task_id = next(_ids)
+    TASKS[task_id] = task
+    return f"Task {task_id} created"
+
+
+def edit_task(task_id: int, task: Task) -> str:
+    """Edit a task."""
+    if task_id not in TASKS:
+        raise KeyError(f"no task {task_id}")
+    TASKS[task_id] = task
+    return "Task updated"
+
+
+def delete_task(task_id: int) -> str:
+    """Delete a task."""
+    if TASKS.pop(task_id, None) is None:
+        raise KeyError(f"no task {task_id}")
+    return "Task deleted"
+
+
+app = FastAPI()
+app.include_router(router_of([create_task, edit_task, delete_task]), prefix="/tools")
+```
+
+Now add a field:
+
+```python
+    due_date: date | None = None
+```
+
+![The create task form with due_date added: a toggle that enables a date picker](docs/images/todo-due-date.png)
+
+That one line updates both forms (a date picker with its optional toggle),
+the validation (`422` on anything that is not an ISO date or `None`), and the
+contract `/doc` publishes. Nothing else is edited, because the forms, the
+validation and the documentation are not written anywhere: they are read from
+this definition. In the version of this CRUD where each function spells its
+own parameters, the same change is four edits — and missing the one in
+`edit_task` loses the date silently on every edit.
+
+The full example is [`examples/project/todo.py`](examples/project/todo.py).
+
 ## How it compares
 
 Gradio and Streamlit are built for demos and data apps, each with its own UI
@@ -184,7 +264,8 @@ there. And it is built for internal tools mounted inside an existing FastAPI
 application: they run under the host's authentication and routing, the
 contract is strict and typed, and execution is an ordinary HTTP call. Where
 the tool has to live, and whether your functions may know about it, usually
-decides the choice.
+decides the choice. And unlike Gradio or Streamlit, it fits inside a frontend
+that already exists: any function is an embeddable page, one `openModal()` away.
 
 ## Capabilities
 
@@ -312,7 +393,8 @@ upload no execution ever uses expires; what your code received stays.
 The examples are probably the best way to learn the library.
 [`examples/`](examples/README.md) contains 80 runnable programs in 11 folders.
 Each file teaches **a single capability**: you can read it in one sitting and
-run it as it is.
+run it as it is. Alongside them, [`examples/project/`](examples/project/) holds
+mini-apps, where several capabilities are combined into one small application.
 
 ```python
 """A progress bar is nothing more than one print per finished step."""
@@ -349,7 +431,7 @@ progress API: `print()` is the API, and the interface shows the lines while the
 function runs. The other folders follow the same pattern (types, validation,
 files, outputs, `OpenForm`, themes, FastAPI and HTTP clients).
 
-The whole set is about 3,700 lines, so it fits inside the context window of a
+The whole set is about 2,800 lines, so it fits inside the context window of a
 general-purpose AI: you can hand over the complete collection, or a single
 folder for a specific task.
 
@@ -393,12 +475,12 @@ pytypehintweb-demo
 
 Those three libraries are the whole stack: nested forms, recursive validation,
 streaming, the file lifecycle and the published contract are all inside these
-lines (v2.0.0, `.py`/`.js`/`.css` under `src/`).
+lines (v2.1.0, `.py`/`.js`/`.css` under `src/`).
 
 ```text
 pytypehint       1,987 lines    types, validation, defaults
 pytypehintweb    9,558 lines    plan, widgets, transport (includes the JS/CSS)
-FuncToWeb        4,716 lines    routes, execution, storage, /doc
+FuncToWeb        4,834 lines    routes, execution, storage, /doc
 total           ~16,000 lines
 ```
 
@@ -420,7 +502,7 @@ practice.
 
 ## Status
 
-2.0.0 is a stable release: the public API is the one described in
+2.1.0 is a stable release: the public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 

@@ -77,7 +77,7 @@ def test_the_page_is_served_under_any_prefix(mounted):
 def test_every_function_of_the_space_is_served_under_any_prefix(mounted):
     client, prefix = mounted
 
-    for slug in ("add", "read", "pack", "select-product", "edit-product"):
+    for slug in ("add", "read", "pack", "select_product", "edit_product"):
         assert client.get(f"{prefix}/{slug}/").status_code == 200
 
 
@@ -241,18 +241,18 @@ def test_the_served_html_links_its_assets_relatively(mounted):
 def test_the_open_form_href_is_relative_under_any_prefix(mounted):
     client, prefix = mounted
 
-    href = client.post(f"{prefix}/select-product/invoke",
+    href = client.post(f"{prefix}/select_product/invoke",
                        json={"product_id": 7}).json()["result"]["href"]
 
-    assert href.startswith("../edit-product/?")
+    assert href.startswith("../edit_product/?")
 
 
 def test_the_open_form_href_resolves_under_any_prefix(mounted):
     client, prefix = mounted
 
-    href = client.post(f"{prefix}/select-product/invoke",
+    href = client.post(f"{prefix}/select_product/invoke",
                        json={"product_id": 7}).json()["result"]["href"]
-    target = urljoin(f"{prefix}/select-product/", href)
+    target = urljoin(f"{prefix}/select_product/", href)
 
     assert client.get(target).status_code == 200
 
@@ -262,9 +262,9 @@ def test_the_open_form_target_opens_prefilled_under_any_prefix(
 ):
     client, prefix = mounted
 
-    href = client.post(f"{prefix}/select-product/invoke",
+    href = client.post(f"{prefix}/select_product/invoke",
                        json={"product_id": 7}).json()["result"]["href"]
-    html = client.get(urljoin(f"{prefix}/select-product/", href)).text
+    html = client.get(urljoin(f"{prefix}/select_product/", href)).text
     fields = {field["name"]: field["default"]
               for field in plan_of_page(html)["fields"]}
 

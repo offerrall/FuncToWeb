@@ -8,7 +8,7 @@ applications and agents: one request, one response.
 import requests
 
 response = requests.post(
-    "http://127.0.0.1:8000/create-tag/invoke",
+    "http://127.0.0.1:8000/create_tag/invoke",
     json={"name": "demo"},
 )
 

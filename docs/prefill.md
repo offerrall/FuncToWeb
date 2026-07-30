@@ -28,7 +28,7 @@ names and its values travel in the browser transport format
 [http.md](http.md#the-input) describes, the same one `/invoke` uses.
 
 ```javascript
-const url = new URL("/tools/edit-user/", location.origin);
+const url = new URL("/tools/edit_user/", location.origin);
 
 url.searchParams.set("prefill", JSON.stringify({name: "Ana", age: 32}));
 

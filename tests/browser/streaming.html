@@ -181,7 +181,7 @@ await run({
     },
 
     async unicode() {
-        const page = await openPage("narrate-unicode/");
+        const page = await openPage("narrate_unicode/");
 
         await narrate(page, settled);
 
@@ -192,7 +192,7 @@ await run({
     },
 
     async failing() {
-        const page = await openPage("narrate-then-fail/");
+        const page = await openPage("narrate_then_fail/");
         const state = await narrate(page, settled);
 
         equal("what was printed before the failure is kept",

@@ -245,8 +245,8 @@ def test_concurrent_prints_never_reach_the_other_stream(
     client = client_factory([alpha_printer(gate), beta_printer(gate)])
 
     alpha, beta = gathered([
-        lambda: client.post("/talk-alpha/invoke-stream", json={}),
-        lambda: client.post("/talk-beta/invoke-stream", json={}),
+        lambda: client.post("/talk_alpha/invoke-stream", json={}),
+        lambda: client.post("/talk_beta/invoke-stream", json={}),
     ])
 
     alpha_events = sse(alpha.text)

@@ -35,7 +35,7 @@ SPACE = [as_table, as_image, as_several]
 
 
 def test_a_table_is_drawn_with_headers_and_rows(open_page):
-    page = open_page(SPACE, "as-table")
+    page = open_page(SPACE, "as_table")
 
     page.click("#submit")
     page.wait_for_selector(TABLE)
@@ -46,7 +46,7 @@ def test_a_table_is_drawn_with_headers_and_rows(open_page):
 
 
 def test_the_table_csv_button_downloads_the_same_data(open_page):
-    page = open_page(SPACE, "as-table")
+    page = open_page(SPACE, "as_table")
 
     page.click("#submit")
     page.wait_for_selector(TABLE)
@@ -63,7 +63,7 @@ def test_the_table_csv_button_downloads_the_same_data(open_page):
 
 
 def test_an_image_is_drawn_from_the_data_url(open_page):
-    page = open_page(SPACE, "as-image")
+    page = open_page(SPACE, "as_image")
 
     page.click("#submit")
     page.wait_for_selector(IMAGE)
@@ -76,7 +76,7 @@ def test_an_image_is_drawn_from_the_data_url(open_page):
 
 
 def test_several_outputs_keep_their_return_order(open_page):
-    page = open_page(SPACE, "as-several")
+    page = open_page(SPACE, "as_several")
 
     page.click("#submit")
     page.wait_for_selector(IMAGE)
@@ -90,7 +90,7 @@ def test_several_outputs_keep_their_return_order(open_page):
 
 
 def test_a_second_run_replaces_every_output(open_page):
-    page = open_page(SPACE, "as-table")
+    page = open_page(SPACE, "as_table")
 
     page.click("#submit")
     page.wait_for_selector(TABLE)

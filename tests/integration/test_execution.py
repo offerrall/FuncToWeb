@@ -99,7 +99,7 @@ SUCCESS = ("/adding/invoke", {"a": 1})
 DECODE_FAILURE = ("/reading/invoke", {"document": "missing.txt"})
 BUILD_FAILURE = ("/bounded/invoke", {"a": 1})
 RAISING = ("/exploding/invoke", {})
-RETURN_FAILURE = ("/broken-download/invoke", {})
+RETURN_FAILURE = ("/broken_download/invoke", {})
 OUTPUT_FAILURE = ("/looping/invoke", {})
 
 STATUS_MATRIX = [
@@ -112,10 +112,10 @@ STATUS_MATRIX = [
     ("/adding/invoke", {}, 422),
     ("/adding/invoke", {"a": 1, "ghost": 3}, 422),
     (*RAISING, 500),
-    ("/exploding-async/invoke", {}, 500),
+    ("/exploding_async/invoke", {}, 500),
     (*RETURN_FAILURE, 500),
     (*OUTPUT_FAILURE, 500),
-    ("/prepare-badly/invoke", {}, 500),
+    ("/prepare_badly/invoke", {}, 500),
 ]
 
 FAILING_MATRIX = [case for case in STATUS_MATRIX if case[2] != 200]
@@ -248,7 +248,7 @@ def test_raising_function_answers_500_with_its_exception(pipeline):
 
 
 def test_raising_async_function_answers_500_with_its_exception(pipeline):
-    response = pipeline.post("/exploding-async/invoke", json={})
+    response = pipeline.post("/exploding_async/invoke", json={})
 
     assert response.status_code == 500
     assert error_of(response) == "ValueError: async boom"
@@ -269,7 +269,7 @@ def test_build_failure_answers_422(pipeline):
 
 
 def test_return_parser_failure_answers_500(pipeline):
-    response = pipeline.post("/broken-download/invoke", json={})
+    response = pipeline.post("/broken_download/invoke", json={})
 
     assert response.status_code == 500
     assert error_of(response) == "ReturnContractError: expected Path for Download, got int"
@@ -283,7 +283,7 @@ def test_output_parser_failure_answers_500(pipeline):
 
 
 def test_open_form_return_failure_answers_500(pipeline):
-    response = pipeline.post("/prepare-badly/invoke", json={})
+    response = pipeline.post("/prepare_badly/invoke", json={})
 
     assert response.status_code == 500
     assert error_of(response) == (

@@ -190,7 +190,9 @@ def test_slug_frontier_never_accepts_a_traversable_slug():
         except (TypeError, ValueError):
             continue
 
-    assert accepted == [LONG_NAME]
+    # "NUL" is a valid slug: it is a URL segment, never a file name, and the
+    # frontier only has to keep out what could leave the segment.
+    assert accepted == ["NUL", LONG_NAME]
 
     for slug in accepted:
         assert SLUG_PATTERN.fullmatch(slug)

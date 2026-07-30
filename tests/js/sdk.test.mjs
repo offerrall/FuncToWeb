@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { installDocument, makeElement, walk } from "./dom.mjs";
+import { installDocument, makeElement, messaging, walk } from "./dom.mjs";
 import { installFetch } from "./browser.mjs";
 import {
     FuncToWebError, call, callStream, doc, downloadUrl, embed, events,
-    fileReference, formUrl, openModal, outputsOf, pageUrl, upload,
+    fileReference, formUrl, listen, openModal, outputsOf, pageUrl, upload,
 } from "../../src/func_to_web/static/sdk.js";
 
 const FUNCTION = "/tools/add";
@@ -613,4 +613,376 @@ test("closing a modal twice notifies once", () => {
     modal.close();
 
     assert.deepEqual(closed, [true]);
+});
+
+
+const PENDING = Symbol("pending");
+
+const OUTPUTS = [{ type: "text", value: "3" }];
+
+const OTHER = [{ type: "text", value: "7" }];
+
+
+function message(kind, extra = {}) {
+    return { v: 1, kind, slug: "add", ...extra };
+}
+
+
+function opened(options = {}) {
+    const document = installDocument();
+    const bus = messaging();
+    const modal = openModal(FUNCTION, options);
+
+    modal.iframe.contentWindow = { name: "inner" };
+
+    return { document, bus, modal };
+}
+
+
+function announce(bus, modal, data) {
+    bus.send(modal.iframe.contentWindow, data);
+}
+
+
+function state(promise) {
+    return Promise.race([promise, Promise.resolve(PENDING)]);
+}
+
+
+test("listen ignores a message coming from another frame", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+    const seen = [];
+
+    frame.contentWindow = { name: "mine" };
+
+    listen(frame, { onResult: (outputs) => seen.push(outputs) });
+
+    bus.send({ name: "someone else" }, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(seen, []);
+});
+
+
+test("listen ignores a message while the frame has no window", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+    const seen = [];
+
+    listen(frame, { onResult: (outputs) => seen.push(outputs) });
+
+    bus.send(undefined, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(seen, []);
+});
+
+
+test("listen ignores everything foreign to the protocol", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+    const seen = [];
+
+    frame.contentWindow = { name: "inner" };
+
+    const channel = listen(frame, {
+        onReady: () => seen.push("ready"),
+        onResult: (outputs) => seen.push(outputs),
+        onError: (text) => seen.push(text),
+        onNavigate: (href) => seen.push(href),
+    });
+
+    const foreign = [
+        null,
+        "a string",
+        42,
+        { kind: "result", outputs: OUTPUTS },
+        { v: 2, kind: "result", outputs: OUTPUTS },
+        { v: "1", kind: "result", outputs: OUTPUTS },
+        { v: 1, outputs: OUTPUTS },
+        { v: 1, kind: 7 },
+        { v: 1, kind: "whatever" },
+        { v: 1, kind: "result" },
+        { v: 1, kind: "result", outputs: "not an array" },
+    ];
+
+    for (const data of foreign) bus.send(frame.contentWindow, data);
+
+    assert.deepEqual(seen, []);
+    assert.deepEqual(channel.cache, { ready: false, results: null, error: null });
+});
+
+
+test("listen caches the last result and the last error", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+
+    frame.contentWindow = { name: "inner" };
+
+    const channel = listen(frame);
+
+    bus.send(frame.contentWindow, message("ready"));
+    bus.send(frame.contentWindow, message("result", { outputs: OUTPUTS }));
+    bus.send(frame.contentWindow, message("result", { outputs: OTHER }));
+    bus.send(frame.contentWindow, message("error", { message: "boom" }));
+
+    assert.equal(channel.cache.ready, true);
+    assert.deepEqual(channel.cache.results, OTHER);
+    assert.equal(channel.cache.error, "boom");
+});
+
+
+test("listen reports every kind to its handler", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+    const seen = [];
+
+    frame.contentWindow = { name: "inner" };
+
+    listen(frame, {
+        onReady: () => seen.push(["ready"]),
+        onResult: (outputs) => seen.push(["result", outputs]),
+        onError: (text) => seen.push(["error", text]),
+        onNavigate: (href) => seen.push(["navigate", href]),
+    });
+
+    bus.send(frame.contentWindow, message("ready"));
+    bus.send(frame.contentWindow, message("result", { outputs: OUTPUTS }));
+    bus.send(frame.contentWindow, message("error", { message: "boom" }));
+    bus.send(frame.contentWindow, message("navigate", { href: "../edit_task/" }));
+
+    assert.deepEqual(seen, [
+        ["ready"],
+        ["result", OUTPUTS],
+        ["error", "boom"],
+        ["navigate", "../edit_task/"],
+    ]);
+});
+
+
+test("listen works with no handlers at all", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+
+    frame.contentWindow = { name: "inner" };
+
+    const channel = listen(frame);
+
+    bus.send(frame.contentWindow, message("navigate", { href: "../x/" }));
+    bus.send(frame.contentWindow, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(channel.cache.results, OUTPUTS);
+});
+
+
+test("stop leaves the channel deaf", () => {
+    installDocument();
+
+    const bus = messaging();
+    const frame = makeElement("iframe");
+    const seen = [];
+
+    frame.contentWindow = { name: "inner" };
+
+    const channel = listen(frame, { onResult: (outputs) => seen.push(outputs) });
+
+    assert.equal(bus.count(), 1);
+
+    channel.stop();
+
+    assert.equal(bus.count(), 0);
+
+    bus.send(frame.contentWindow, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(seen, []);
+    assert.equal(channel.cache.results, null);
+});
+
+
+test("the modal handle keeps its three original members and adds closed", () => {
+    const { document, modal } = opened();
+
+    assert.equal(modal.element.parent, document.body);
+    assert.equal(modal.iframe.tagName, "IFRAME");
+    assert.equal(typeof modal.close, "function");
+    assert.ok(modal.closed instanceof Promise);
+});
+
+
+test("closed resolves with nothing completed when the modal never ran", async () => {
+    const { modal } = opened();
+
+    modal.close();
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("closed carries the last of two results", async () => {
+    const { bus, modal } = opened();
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+    announce(bus, modal, message("result", { outputs: OTHER }));
+
+    modal.close();
+
+    assert.deepEqual(await modal.closed, { completed: true, results: OTHER });
+});
+
+
+test("an error alone does not make the session completed", async () => {
+    const { bus, modal } = opened();
+
+    announce(bus, modal, message("error", { message: "boom" }));
+
+    modal.close();
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("closeOnResult closes the modal on the first result", async () => {
+    const { document, bus, modal } = opened({ closeOnResult: true });
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(document.body.children, []);
+    assert.deepEqual(await modal.closed, { completed: true, results: OUTPUTS });
+});
+
+
+test("a result leaves the modal open by default", async () => {
+    const { document, bus, modal } = opened();
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(document.body.children, [modal.element]);
+    assert.equal(await state(modal.closed), PENDING);
+});
+
+
+test("the modal reports the result and the error to its own handlers", () => {
+    const seen = [];
+    const { bus, modal } = opened({
+        onResult: (outputs) => seen.push(["result", outputs]),
+        onError: (text) => seen.push(["error", text]),
+    });
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+    announce(bus, modal, message("error", { message: "boom" }));
+
+    assert.deepEqual(seen, [["result", OUTPUTS], ["error", "boom"]]);
+});
+
+
+test("escape resolves closed as any other way out", async () => {
+    const { document, bus, modal } = opened();
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+    document.dispatch("keydown", { key: "Escape" });
+
+    assert.deepEqual(await modal.closed, { completed: true, results: OUTPUTS });
+});
+
+
+test("the close button resolves closed", async () => {
+    const { modal } = opened();
+    const button = walk(modal.element).find((n) => n.tagName === "BUTTON");
+
+    button.click();
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("a click on the backdrop resolves closed", async () => {
+    const { modal } = opened();
+
+    modal.element.dispatch("click", { target: modal.element });
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("closed resolves exactly once when the close fires twice", async () => {
+    const { modal } = opened();
+    const settled = [];
+
+    modal.closed.then((value) => settled.push(value));
+
+    modal.close();
+    modal.close();
+
+    await modal.closed;
+    await Promise.resolve();
+
+    assert.deepEqual(settled, [{ completed: false, results: null }]);
+});
+
+
+test("a modal stops listening once it is closed", async () => {
+    const { bus, modal } = opened();
+
+    modal.close();
+
+    assert.equal(bus.count(), 0);
+
+    announce(bus, modal, message("result", { outputs: OUTPUTS }));
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("a url that will not load still returns a usable handle", async () => {
+    const document = installDocument();
+
+    const modal = openModal("/tools/nope");
+
+    assert.notEqual(modal, undefined);
+    assert.ok(modal.closed instanceof Promise);
+    assert.equal(modal.element.parent, document.body);
+    assert.match(modal.iframe.src, /^\/tools\/nope\/$/);
+
+    modal.close();
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("a modal closed before its frame loads resolves anyway", async () => {
+    installDocument();
+
+    const modal = openModal(FUNCTION);
+
+    assert.equal(modal.iframe.contentWindow, undefined);
+
+    modal.close();
+
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
+});
+
+
+test("navigate does not count as a result", async () => {
+    const seen = [];
+    const { bus, modal } = opened({ closeOnResult: true });
+
+    listen(modal.iframe, { onNavigate: (href) => seen.push(href) });
+
+    announce(bus, modal, message("navigate", { href: "../edit_task/?prefill=1" }));
+
+    modal.close();
+
+    assert.deepEqual(seen, ["../edit_task/?prefill=1"]);
+    assert.deepEqual(await modal.closed, { completed: false, results: null });
 });

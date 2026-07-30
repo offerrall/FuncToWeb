@@ -93,7 +93,7 @@ await run({
     },
 
     async upload() {
-        const page = await openPage("take-one/");
+        const page = await openPage("take_one/");
 
         pick(page.doc.querySelector(".pth-file-input"),
              [textFile(page.win, "note.txt", "prefixed bytes")]);

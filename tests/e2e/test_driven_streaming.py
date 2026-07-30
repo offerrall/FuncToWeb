@@ -84,7 +84,7 @@ def test_the_final_result_keeps_what_was_printed(open_page):
 
 
 def test_a_crash_keeps_the_lines_printed_before_it(open_page):
-    page = open_page(noisy_failure, "noisy-failure")
+    page = open_page(noisy_failure, "noisy_failure")
 
     page.click("#submit")
     page.wait_for_selector(ERROR)

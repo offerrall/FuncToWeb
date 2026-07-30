@@ -6,7 +6,7 @@ from func_to_web import Choices, Min, OpenForm, run
 
 LOANS: dict[str, int] = {"L-100": 7, "L-200": 14, "L-300": 3}
 
-Reference = Annotated[str, Choices(values=("L-100", "L-200", "L-300"))]
+Reference = Annotated[str, Choices(values=tuple(LOANS))]
 
 
 def extend_loan(reference: str, days: Annotated[int, Min(1)]) -> str:

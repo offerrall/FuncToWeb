@@ -29,6 +29,9 @@ library.
   [router.md](../router.md)
 * [run.md](run.md) — why the space index navigates with `location.replace()`
   and carries no form logic of its own. → [run.md](../run.md)
+* [sdk.md](sdk.md) — why the modal does not close itself by default, why `error`
+  is not about validation, and why the payload of `result` is the envelope of
+  `/invoke` again. → [sdk.md](../sdk.md)
 * [streaming.md](streaming.md) — how `print()` capture works, why it is
   experimental, and why the transport polls. → [streaming.md](../streaming.md)
 * [web-function.md](web-function.md) — why the description is passed through

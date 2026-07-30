@@ -1,5 +1,132 @@
 # Changelog
 
+## [2.1.0] - 2026-07-30
+
+The feature of this release is the channel back from an embedded page. Until now
+a host application could open a function in a modal and learn nothing from it:
+the result was drawn inside the iframe and stayed there, so a page could not
+refresh its list after a *create task* or close a dialog once a submit had
+worked. Now the page announces what happens inside it, and the host waits on a
+promise. Nothing existing changes behaviour — see **Compatibility** below for the
+one exception, which is the slug.
+
+### Added
+- **An embedded page announces its runs to whoever embeds it** — a new static
+  asset, `emit.js`, posts one message to `window.parent` per event: `ready` when
+  the form is mounted, `result` with the outputs a run just drew, `error` with
+  the `error` of the envelope, and `navigate` with the `href` an
+  [`OpenForm`](docs/open-form.md) is about to move the iframe to. Every message
+  carries `v` —the protocol version, `1`— and the `slug` it comes from. A page
+  nobody embeds (`window.parent === window`) posts nothing at all and does not
+  fail. `targetOrigin` is `"*"`, because the page does not know who embedded it:
+  [`security.md`](docs/security.md#the-result-travels-to-whoever-embeds-the-page)
+  states the assumption.
+- **`openModal()` returns a `closed` promise** — it resolves **once**, when the
+  modal closes by any route (the close button, a click outside, `Escape`,
+  `closeOnResult`, a programmatic `close()`), with
+  `{completed, results}`: `completed` is true if at least one run finished
+  inside, and `results` is the outputs of the last one, or `null`. A modal
+  dismissed without running anything resolves `{completed: false, results: null}`
+  — the same shape, no special case. The handle is returned synchronously and
+  unconditionally, so a URL that answers `404` still gives a closable modal whose
+  promise resolves.
+- **`closeOnResult`, `onResult` and `onError` on `openModal()`** —
+  `closeOnResult` defaults to **`false`**, because a result is drawn *inside* the
+  page and closing the overlay would throw away an image, a table or a download
+  the user opened it to see; turn it on for a form whose result is a
+  confirmation.
+- **`listen(iframe, handlers)`** — the same announcements for an iframe you
+  mounted yourself, with `embed()` or by hand. It filters by
+  `event.source`, ignores in silence anything whose `v` it does not know, has no
+  `kind`, or carries a `kind` it has not heard of, and returns `{cache, stop}`;
+  `cache` holds the last of each. Every handler —`onReady`, `onResult`,
+  `onError`, `onNavigate`— is optional. `openModal()` is built on it.
+- **`error` is a run that failed, never a field the browser rejected** — one kind
+  means one thing, so a host can act on it. Client-side validation stays silent,
+  and `navigate` is emitted **instead of** `result`, because moving to another
+  form is not a result and must not make `completed` true.
+
+### Changed
+- **The default slug is `fn.__name__` as it is** — `create_task` is served at
+  `/create_task/`. The derivation lowercased the name and collapsed every `_`
+  into a `-`, while the published contract
+  ([`docs/migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md#startup-mounting-and-the-function-space),
+  [`docs/design/history-1.6-to-2.0.md`](docs/design/history-1.6-to-2.0.md#defaults-that-changed-on-purpose))
+  stated the opposite: code and contract had diverged, and it is resolved in
+  favour of the contract, because a rule that transforms nothing is the one a
+  reader can predict. A hyphenated URL is still available where it is wanted:
+  `WebFunction(edit_product, slug="edit-product")`. The **displayed** name is
+  untouched — the `<title>`, the `<h1>` and the `run()` index still prettify
+  `create_task` into `Create task`. The two pages that stated the rule needed no
+  correction to it: the code moved to meet them, and the contract won.
+- **A slug accepts letters, digits and underscores** — the old validation took
+  lowercase letters, digits and single hyphens only, and would have refused
+  almost every name the rule above derives. It now takes any letter, digit or
+  `_`, plus single internal hyphens, which also makes a hand-written
+  `slug="hello_world"` or `slug="Hello"` valid where it used to raise. What the
+  frontier rejects is unchanged: spaces, `/`, `\`, dots, `%`, non-ASCII
+  characters, double hyphens and a leading or trailing hyphen. `doc`, `static`,
+  `upload` and `returns` stay reserved.
+
+### Compatibility
+- **The channel is entirely additive** — a host that uses none of it behaves
+  exactly as before: the modal handle keeps `element`, `iframe` and `close` with
+  the same meanings and merely gains `closed`, `closeOnResult` defaults to the
+  old behaviour, and a page embedded by a host that does not listen runs as it
+  always did. No signature loses an argument and no return value loses a member.
+- **The slug is the one behaviour change, and it moves URLs** — a function whose
+  name carries `_` was served at the hyphenated URL in 2.0.0 and is served at the
+  underscored one now: `/create-task/` becomes `/create_task/`. A deployment that
+  published those URLs, or a client that hard-coded them, pins the old form
+  explicitly with `WebFunction(create_task, slug="create-task")`, which is
+  unchanged and still valid. Nothing else about a function moves: the displayed
+  name, the plan, the envelope and the reserved slugs are the same.
+
+### Documentation
+- **`sdk.md`** — a new **Reacting to the modal** section covering `closed`, the
+  three options, `listen()` for an iframe of your own, and the versioned protocol
+  with the exact payload of each kind. The page previously stated that *"there is
+  still no communication back from the iframe to the host application"*; what is
+  still missing is now only the iframe's height and the host-to-page direction.
+- **`security.md`** — the `targetOrigin "*"` of the announcements, stated beside
+  the prefill assumption it resembles: whoever can embed a page can read what
+  runs inside it.
+- **`design/sdk.md`** — a new note on why `closeOnResult` is off by default, why
+  `error` skips client-side validation, and why the payload of `result` reuses
+  the envelope of `/invoke` instead of a shape of its own.
+- **`static-assets.md`** — `emit.js` in the table of FuncToWeb's own assets.
+- **`web-function.md`** — the `Slug` section documented the old derivation in
+  detail, with its own table of examples; it now describes the rule as it is,
+  says that hyphens remain available through `slug=`, and states that slugs are
+  case-sensitive because URLs are.
+- **URLs in the pages and examples** — `http.md`, `prefill.md`, `outputs.md` and
+  `migration-1.6-to-2.0.md` showed the hyphenated form of a function whose name
+  carries `_`, as did `examples/fastapi/iframe_host.py` and
+  `examples/themes/router_theme.py`.
+- **`README.md`** — a new *Change once, propagate everywhere* section walking
+  through the todo CRUD: the model written once, the three functions that only
+  reference it, and what adding a single `due_date` field reaches without any
+  other edit (with the screenshot of the resulting form). The opening also says
+  what the library is for in one line: build your app however you like, and when
+  it needs a form, open a Python function instead of writing one.
+- **`examples/project/todo.py`** — a new example, the one the README walks
+  through: three functions over one dataclass, mounted under `/tools`, with a
+  host page of its own that opens each of them in a modal and refreshes its list
+  from `closed`. It is the runnable demonstration of the channel above.
+- **`examples/README.md`** — the collection now has two kinds of file: the 80
+  single-capability examples as before, and **mini-apps** in `project/`, each
+  combining several capabilities into one small complete application. Both are
+  runnable programs, so the count in the main README is unchanged in meaning.
+- **Repetition removed from five examples** — a repeated `Annotated` alias
+  extracted (`examples/types/dataclass_input.py`,
+  `examples/outputs_optional/numpy/matrix.py`), a `Choices` derived from the data
+  it lists instead of restating it (`examples/themes/open_form_theme.py`), an
+  `OpenForm` return that no longer declares a dataclass to carry one value
+  (`examples/files/file_prefill.py`), and one HTTP client reusing another's
+  `invoke()` and `PREFIX` rather than keeping its own copy
+  (`examples/http/upload_client.py`, noted in `examples/http/README.md`). No
+  example changes what it teaches.
+
 ## [2.0.0] - 2026-07-29
 
 2.0 is not one more release: it is a different library built on the same idea.

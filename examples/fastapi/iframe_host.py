@@ -17,7 +17,7 @@ from func_to_web import router_of
 
 PAGE = """<h1>Support desk</h1>
 <p>Estimate a delivery date without leaving this page.</p>
-<iframe src="/tools/estimate-delivery/"
+<iframe src="/tools/estimate_delivery/"
         title="Estimate delivery"
         width="100%"
         height="620"

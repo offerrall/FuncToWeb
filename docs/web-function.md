@@ -92,28 +92,36 @@ See [design/web-function.md](design/web-function.md).
 
 ### Slug
 
-A single URL segment: lowercase letters, digits and single hyphens only, with no
+A single URL segment: letters, digits, underscores and single hyphens, with no
 leading or trailing hyphen. `doc`, `static`, `upload` and `returns` are reserved
 because they are routes of the space itself. They are always rejected, even in a
 space that never registers `/upload` or `/returns`: the contract does not depend
 on the order in which the routes are declared.
 
-Without `slug=` it is derived from `fn.__name__`: lowercased, one or more `_`
-collapsed into a single `-`, with no hyphens at either end.
+Without `slug=` it is `fn.__name__` **as it is**, with no transformation: the
+function you wrote is the URL you get.
 
 ```text
-save_result   → save-result
-load__cache   → load-cache
-__dunder__    → dunder
-MyFunction    → myfunction
+save_result   → save_result
+load__cache   → load__cache
+__dunder__    → __dunder__
+MyFunction    → MyFunction
 <lambda>      → ValueError: cannot derive a valid slug from
                 fn.__name__='<lambda>'; pass slug explicitly
 ```
 
-A hand-written `slug=` is **not silently normalized**: it is validated as
-written, so `"hello_world"`, `"Hello"`, `"-hello"` or `" add "` are errors
-rather than being turned into something similar. `strip()` is not applied to it
-either, precisely so that a stray space is caught.
+A name that is not a valid segment —`<lambda>` and anything outside letters,
+digits and underscores— is refused rather than repaired, and asks for an
+explicit `slug=`.
+
+Slugs are case-sensitive, as URLs are: `/MyTool/` and `/mytool/` are different
+routes.
+
+A hand-written `slug=` is **not silently normalized** either: it is validated as
+written, so `"-hello"`, `"hello--world"` or `" add "` are errors rather than
+being turned into something similar. `strip()` is not applied to it, precisely
+so that a stray space is caught. Hyphens are still accepted there, which is how
+a function keeps a hyphenated URL: `slug="edit-product"`.
 
 ### `capture_prints`
 

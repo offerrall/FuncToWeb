@@ -36,7 +36,7 @@ def build_app() -> FastAPI:
 
 
 if __name__ == "__main__":
-    print(f"Light: http://{HOST}:{PORT}/light/word-count/")
-    print(f"Dark:  http://{HOST}:{PORT}/dark/word-count/")
+    print(f"Light: http://{HOST}:{PORT}/light/word_count/")
+    print(f"Dark:  http://{HOST}:{PORT}/dark/word_count/")
 
     uvicorn.run(build_app(), host=HOST, port=PORT)

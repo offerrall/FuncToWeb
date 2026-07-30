@@ -6,10 +6,12 @@ import numpy as np
 
 from func_to_web import Choices, Max, Min, run
 
+Size = Annotated[int, Min(2), Max(12)]
+
 
 def multiplication_table(
-    rows: Annotated[int, Min(2), Max(12)] = 6,
-    columns: Annotated[int, Min(2), Max(12)] = 6,
+    rows: Size = 6,
+    columns: Size = 6,
     operation: Annotated[
         str, Choices(values=("multiply", "add", "power"))
     ] = "multiply",

@@ -279,26 +279,77 @@ export function makeElement(tagName, attributes = {}) {
 }
 
 
+let bus = null;
+
+let sent = null;
+
+
+export function installMessaging() {
+    const listeners = new Listeners();
+
+    globalThis.addEventListener = (type, callback) => {
+        listeners.addEventListener(type, callback);
+    };
+
+    globalThis.removeEventListener = (type, callback) => {
+        listeners.removeEventListener(type, callback);
+    };
+
+    bus = {
+        send(source, data) {
+            listeners.dispatch("message", { source, data });
+        },
+        count() {
+            return (listeners.listeners.get("message") ?? new Set()).size;
+        },
+    };
+
+    return bus;
+}
+
+
+export function messaging() {
+    return bus;
+}
+
+
 export function installDocument() {
     const document = new FakeDocument();
 
     globalThis.HTMLElement = FakeElement;
     globalThis.document = document;
 
+    installMessaging();
+
     return document;
 }
 
 
-export function installWindow() {
+export function installWindow({ embedded = false, pathname = "/add/" } = {}) {
     const assigned = [];
+    const posted = [];
 
-    globalThis.window = {
+    const window = {
         location: {
+            pathname,
             assign(href) {
                 assigned.push(href);
             },
         },
+        postMessage(data, targetOrigin) {
+            posted.push({ data, targetOrigin });
+        },
     };
 
+    window.parent = embedded ? { postMessage: window.postMessage } : window;
+
+    globalThis.window = window;
+    sent = posted;
+
     return assigned;
+}
+
+
+export function postedMessages() {
+    return sent;
 }

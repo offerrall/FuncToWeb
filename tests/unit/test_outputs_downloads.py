@@ -221,7 +221,7 @@ def test_download_is_served_from_the_returns_route(client_factory, sized_file):
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
 
-    result = invoke(client, "send-file")
+    result = invoke(client, "send_file")
     response = client.get(f"/returns/{result['value']}")
 
     assert response.status_code == 200
@@ -232,7 +232,7 @@ def test_download_result_has_the_download_shape(client_factory, sized_file):
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
 
-    result = invoke(client, "send-file")
+    result = invoke(client, "send_file")
 
     assert result["type"] == "download"
     assert result["filename"] == "report.txt"
@@ -242,7 +242,7 @@ def test_download_is_served_under_a_prefix(client_factory, sized_file):
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source), prefix="/tools")
 
-    result = invoke(client, "send-file", prefix="/tools")
+    result = invoke(client, "send_file", prefix="/tools")
     response = client.get(f"/tools/returns/{result['value']}")
 
     assert response.status_code == 200
@@ -254,7 +254,7 @@ def test_content_disposition_carries_the_public_name(client_factory,
     source = sized_file("internal.tmp", data=b"payload")
     client = client_factory(named_function(source, "report.pdf"))
 
-    result = invoke(client, "send-fixed")
+    result = invoke(client, "send_fixed")
     response = client.get(f"/returns/{result['value']}")
     disposition = response.headers["content-disposition"]
 
@@ -266,7 +266,7 @@ def test_media_type_is_octet_stream(client_factory, sized_file):
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
 
-    result = invoke(client, "send-file")
+    result = invoke(client, "send_file")
     response = client.get(f"/returns/{result['value']}")
 
     assert response.headers["content-type"] == "application/octet-stream"
@@ -276,7 +276,7 @@ def test_string_return_is_stored_as_a_path(client_factory, sized_file):
     source = sized_file("report.txt", data=b"from a str path")
     client = client_factory(text_function(source))
 
-    result = invoke(client, "send-text-path")
+    result = invoke(client, "send_text_path")
     response = client.get(f"/returns/{result['value']}")
 
     assert result["filename"] == "report.txt"
@@ -286,7 +286,7 @@ def test_string_return_is_stored_as_a_path(client_factory, sized_file):
 def test_bytes_return_is_stored_with_its_name(client_factory):
     client = client_factory(bytes_function(b"generated", "memory.pdf"))
 
-    result = invoke(client, "send-bytes")
+    result = invoke(client, "send_bytes")
     response = client.get(f"/returns/{result['value']}")
 
     assert result["filename"] == "memory.pdf"
@@ -319,7 +319,7 @@ def test_returning_a_file_does_not_expose_an_arbitrary_path(client_factory,
     secret = sized_file("secret.txt", data=b"top secret")
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
-    allowed = invoke(client, "send-file")["value"]
+    allowed = invoke(client, "send_file")["value"]
 
     assert client.get(f"/returns/{allowed}").content == b"payload"
 
@@ -345,7 +345,7 @@ def test_returned_file_is_a_copy_inside_the_returns_directory(client_factory,
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
 
-    reference = invoke(client, "send-file")["value"]
+    reference = invoke(client, "send_file")["value"]
 
     assert (returns_dir / reference).is_file()
     assert [path.name for path in returns_dir.iterdir()] == [reference]
@@ -356,7 +356,7 @@ def test_returns_directory_of_the_test_is_respected(client_factory,
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))
 
-    reference = invoke(client, "send-file")["value"]
+    reference = invoke(client, "send_file")["value"]
     served, _ = stored_return(reference)
 
     assert served.parent == returns_dir
@@ -366,7 +366,7 @@ def test_awkward_filename_is_encoded_in_the_header(client_factory, sized_file):
     source = sized_file("internal.tmp", data=b"payload")
     client = client_factory(named_function(source, "a b;c=d.txt"))
 
-    result = invoke(client, "send-fixed")
+    result = invoke(client, "send_fixed")
     response = client.get(f"/returns/{result['value']}")
 
     assert response.status_code == 200
@@ -379,7 +379,7 @@ def test_awkward_filename_keeps_its_public_name(client_factory, sized_file):
     source = sized_file("internal.tmp", data=b"payload")
     client = client_factory(named_function(source, "a b;c=d.txt"))
 
-    result = invoke(client, "send-fixed")
+    result = invoke(client, "send_fixed")
 
     assert result["filename"] == "a b;c=d.txt"
     assert stored_return(result["value"])[1] == "a b;c=d.txt"
@@ -394,7 +394,7 @@ def test_a_filename_the_route_would_refuse_is_never_written(client_factory,
     source = sized_file("internal.tmp", data=b"payload")
     client = client_factory(named_function(source, filename))
 
-    response = client.post("/send-fixed/invoke", json={"times": 1})
+    response = client.post("/send_fixed/invoke", json={"times": 1})
 
     assert response.status_code == 500
     assert response.json()["error"].startswith(
@@ -408,7 +408,7 @@ def test_a_refused_filename_reports_no_local_path(client_factory, sized_file,
     source = sized_file("internal.tmp", data=b"payload")
     client = client_factory(named_function(source, 'a"b.txt'))
 
-    response = client.post("/send-fixed/invoke", json={"times": 1})
+    response = client.post("/send_fixed/invoke", json={"times": 1})
 
     assert not carries(response.json()["error"], source)
     assert not carries(response.json()["error"], source.parent)
@@ -424,7 +424,7 @@ def test_several_downloads_keep_their_order(client_factory, sized_file):
         return "Finished", [first, second]
 
     client = client_factory(send_many)
-    outputs = invoke(client, "send-many")
+    outputs = invoke(client, "send_many")
 
     assert [output["type"] for output in outputs] == ["text", "download",
                                                       "download"]

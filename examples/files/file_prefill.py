@@ -1,6 +1,5 @@
 """A planted file opens a form as an existing file, with nothing pending."""
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
@@ -19,18 +18,9 @@ def analyse_document(document: TextFile, keyword: Keyword = "the") -> str:
     return f"{matches} matches for {keyword!r} in {len(words)} words"
 
 
-@dataclass
-class Analysis:
-    """The values the analysis form is opened with."""
-
-    document: TextFile
-    keyword: str
-
-
-def choose_document(document: TextFile) -> Annotated[
-    Analysis,
-    OpenForm(analyse_document),
-]:
+def choose_document(
+    document: TextFile,
+) -> Annotated[dict, OpenForm(analyse_document)]:
     """Upload a document once and land on the analysis form with it in place.
 
     The returned document travels as a prefill value, and a prefilled file is
@@ -39,7 +29,7 @@ def choose_document(document: TextFile) -> Annotated[
     shows it as the current file, and submitting sends its reference without
     uploading a single byte again.
     """
-    return Analysis(document=document, keyword="the")
+    return {"document": document}
 
 
 if __name__ == "__main__":

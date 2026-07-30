@@ -13,13 +13,14 @@ download and the cache. That is why `static` is a reserved slug.
 The first one that exists is served, so if the same name existed in both,
 FuncToWeb would win.
 
-FuncToWeb's own assets are five files and one folder:
+FuncToWeb's own assets are six files and one folder:
 
 | Asset | What it is |
 | --- | --- |
 | `page.js` | Builds a function page from the plan embedded in the markup, and runs it |
 | `upload.js` | The upload that precedes `/invoke`, with its progress modal |
 | `output.js` | The rendering of the outputs with their copy and download buttons |
+| [`emit.js`](sdk.md#the-protocol) | What the page announces to whoever embeds it |
 | `page.css` | The style of that page |
 | [`sdk.js`](sdk.md) | The helpers a frontend of your own calls the space with |
 | `icons/` | The five SVGs the outputs use |

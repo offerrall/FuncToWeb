@@ -14,6 +14,8 @@ const FILE_SLUG_LIMIT = 15;
 
 const MODAL_STYLE_ID = "functoweb-modal-style";
 
+const PROTOCOL_VERSION = 1;
+
 const ASCII_FOLDINGS = {
     "ß": "ss", "æ": "ae", "œ": "oe", "ø": "o", "å": "a", "đ": "d", "ð": "d",
     "þ": "th", "ł": "l", "ı": "i",
@@ -427,8 +429,67 @@ export function embed(target, url, options = {}) {
 }
 
 
+function announced(data) {
+    if (data === null || typeof data !== "object") return null;
+    if (data.v !== PROTOCOL_VERSION) return null;
+    if (typeof data.kind !== "string") return null;
+
+    return data;
+}
+
+
+export function listen(iframe, handlers = {}) {
+    const {
+        onReady = null, onResult = null, onError = null, onNavigate = null,
+    } = handlers;
+
+    const cache = { ready: false, results: null, error: null };
+
+    function received(event) {
+        const source = iframe.contentWindow;
+
+        if (source === undefined || source === null) return;
+        if (event.source !== source) return;
+
+        const message = announced(event.data);
+
+        if (message === null) return;
+
+        if (message.kind === "ready") {
+            cache.ready = true;
+
+            if (onReady !== null) onReady();
+        } else if (message.kind === "result") {
+            if (!Array.isArray(message.outputs)) return;
+
+            cache.results = message.outputs;
+
+            if (onResult !== null) onResult(message.outputs);
+        } else if (message.kind === "error") {
+            cache.error = message.message;
+
+            if (onError !== null) onError(message.message);
+        } else if (message.kind === "navigate") {
+            if (onNavigate !== null) onNavigate(message.href);
+        }
+    }
+
+    globalThis.addEventListener("message", received);
+
+    return {
+        cache,
+        stop() {
+            globalThis.removeEventListener("message", received);
+        },
+    };
+}
+
+
 export function openModal(url, options = {}) {
-    const { onClose = null, ...rest } = options;
+    const {
+        onClose = null, closeOnResult = false, onResult = null, onError = null,
+        ...rest
+    } = options;
     const document = globalThis.document;
 
     styled();
@@ -450,6 +511,21 @@ export function openModal(url, options = {}) {
     const frame = embed(panel, url, rest);
 
     let open = true;
+    let settle = null;
+
+    const closed = new Promise((resolve) => {
+        settle = resolve;
+    });
+
+    const channel = listen(frame, {
+        onResult(outputs) {
+            if (onResult !== null) onResult(outputs);
+            if (closeOnResult) close();
+        },
+        onError(message) {
+            if (onError !== null) onError(message);
+        },
+    });
 
     function escaped(event) {
         if (event.key === "Escape") close();
@@ -461,9 +537,15 @@ export function openModal(url, options = {}) {
         open = false;
 
         document.removeEventListener("keydown", escaped);
+        channel.stop();
         overlay.remove();
 
         if (onClose !== null) onClose();
+
+        settle({
+            completed: channel.cache.results !== null,
+            results: channel.cache.results,
+        });
     }
 
     button.addEventListener("click", close);
@@ -475,5 +557,5 @@ export function openModal(url, options = {}) {
     document.addEventListener("keydown", escaped);
     document.body.append(overlay);
 
-    return { element: overlay, iframe: frame, close };
+    return { element: overlay, iframe: frame, close, closed };
 }

@@ -132,14 +132,14 @@ def test_title_heads_the_navigation(alpha):
 def test_a_single_function_is_listed(alpha):
     html = index_of(space_of_functions(alpha), "")
 
-    assert [entry[1] for entry in function_anchors(html)] == ["alpha-one"]
+    assert [entry[1] for entry in function_anchors(html)] == ["alpha_one"]
 
 
 def test_several_functions_are_listed(alpha, beta, bare):
     html = index_of(space_of_functions(alpha, beta, bare), "")
 
     assert [entry[1] for entry in function_anchors(html)] == [
-        "alpha-one", "beta-two", "bare-tool",
+        "alpha_one", "beta_two", "bare_tool",
     ]
 
 
@@ -147,7 +147,7 @@ def test_functions_keep_the_space_order(alpha, beta):
     html = index_of(space_of_functions(beta, alpha), "")
 
     assert [entry[1] for entry in function_anchors(html)] == [
-        "beta-two", "alpha-one",
+        "beta_two", "alpha_one",
     ]
 
 
@@ -187,7 +187,7 @@ def test_function_without_description_has_no_span(bare):
     html = index_of(space_of_functions(bare), "")
     entry = ANCHOR.search(html)
 
-    assert entry.group(2) == "bare-tool"
+    assert entry.group(2) == "bare_tool"
     assert "<span>" not in entry.group(3)
 
 
@@ -301,7 +301,7 @@ def test_a_slug_with_markup_cannot_reach_the_template(alpha):
 def test_slug_is_written_verbatim_in_both_attributes(alpha):
     html = index_of(space_of_functions(alpha), "")
 
-    assert '<a href="#alpha-one" data-slug="alpha-one">' in html
+    assert '<a href="#alpha_one" data-slug="alpha_one">' in html
 
 
 def test_a_space_without_functions_is_impossible():

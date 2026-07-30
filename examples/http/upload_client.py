@@ -3,9 +3,10 @@
 Terminal 1: python examples/http/server.py
 Terminal 2: python examples/http/upload_client.py
 
-invoke() is imported from the client next to it, which works from any working
-directory because Python puts the folder of the script first on sys.path; run
-as a module (-m) it would not, and there is no need to.
+invoke() and the address it calls are imported from the client next to it,
+which works from any working directory because Python puts the folder of the
+script first on sys.path; run as a module (-m) it would not, and there is no
+need to.
 
 curl -X POST http://127.0.0.1:8000/upload \
      -H "X-File-Reference: notes-<uuid>.txt" --data-binary @notes.txt
@@ -18,11 +19,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from invoke_client import invoke
-
-BASE = "http://127.0.0.1:8000"
-
-PREFIX = ""
+from invoke_client import BASE, PREFIX, invoke
 
 SAMPLE = "alpha beta\ngamma delta\nepsilon\n"
 

@@ -147,12 +147,12 @@ def test_the_name_is_stored_stripped():
 @pytest.mark.parametrize(
     ("function", "expected"),
     [
-        (save_result, "save-result"),
-        (load__cache, "load-cache"),
-        (__dunder__, "dunder"),
-        (MyFunction, "myfunction"),
-        (blur_image, "blur-image"),
-        (read_HTML_pages, "read-html-pages"),
+        (save_result, "save_result"),
+        (load__cache, "load__cache"),
+        (__dunder__, "__dunder__"),
+        (MyFunction, "MyFunction"),
+        (blur_image, "blur_image"),
+        (read_HTML_pages, "read_HTML_pages"),
     ],
 )
 def test_slug_derives_from_dunder_name(function, expected):
@@ -183,14 +183,14 @@ def test_a_sync_function_is_served(client_factory):
 def test_an_async_function_builds():
     web_function = WebFunction(add_async)
 
-    assert web_function.slug == "add-async"
+    assert web_function.slug == "add_async"
     assert web_function.description == "Add two numbers without blocking."
 
 
 def test_an_async_function_is_awaited_when_served(client_factory):
     client = client_factory(add_async)
 
-    response = client.post("/add-async/invoke", json={"a": 1, "b": 2})
+    response = client.post("/add_async/invoke", json={"a": 1, "b": 2})
 
     assert response.status_code == 200
     assert response.json() == {"result": {"type": "text", "value": "3"}}
@@ -438,7 +438,6 @@ def test_a_slug_that_strips_to_nothing_is_rejected(value):
 @pytest.mark.parametrize(
     "value",
     [
-        "Hello",
         "hello world",
         "hello--world",
         "a/b",
@@ -449,7 +448,6 @@ def test_a_slug_that_strips_to_nothing_is_rejected(value):
         "你好",
         "-hello",
         "hello-",
-        "hello_world",
         " add ",
     ],
 )
@@ -457,11 +455,16 @@ def test_a_malformed_slug_is_rejected(value):
     with pytest.raises(
         ValueError,
         match=(
-            "^slug must contain only lowercase letters, numbers and single "
+            "^slug must contain only letters, numbers, underscores and single "
             "hyphens$"
         ),
     ):
         WebFunction(add, slug=value)
+
+
+@pytest.mark.parametrize("value", ["Hello", "hello_world", "__private__", "A1_b"])
+def test_a_slug_written_as_an_identifier_is_accepted(value):
+    assert WebFunction(add, slug=value).slug == value
 
 
 @pytest.mark.parametrize("value", sorted(RESERVED_SLUGS))
@@ -589,7 +592,7 @@ def test_a_failed_build_leaves_no_files_and_no_global_state(
     builders = [
         lambda: WebFunction(42),
         lambda: WebFunction(add, name=42),
-        lambda: WebFunction(add, slug="Hello"),
+        lambda: WebFunction(add, slug="hello world"),
         lambda: WebFunction(add, slug="doc"),
         lambda: WebFunction(lambda a: a),
         lambda: WebFunction(unsupported_parameter),

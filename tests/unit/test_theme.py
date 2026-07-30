@@ -301,12 +301,12 @@ def test_the_target_page_of_an_open_form_keeps_the_theme_of_the_space(
 ):
     client = client_factory([pick_note, edit_note], prefix="/tools",
                             theme=theme)
-    result = client.post("/tools/pick-note/invoke", json={"note_id": 3})
+    result = client.post("/tools/pick_note/invoke", json={"note_id": 3})
 
     assert result.status_code == 200
 
     href = result.json()["result"]["href"]
-    opening = client.get(urljoin("/tools/pick-note/", href))
+    opening = client.get(urljoin("/tools/pick_note/", href))
 
     assert opening.status_code == 200
     assert html_root(opening.text) == ROOT_TAGS[theme]

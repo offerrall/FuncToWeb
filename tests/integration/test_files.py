@@ -195,7 +195,7 @@ def test_a_rejected_extension_names_the_file_not_its_path(client_factory,
     client = client_factory(read_one)
     reference = put(client, "ext-9.md", "nope")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert response.status_code == 422
     assert f"not an accepted file type: {reference!r}" in error_of(response)
@@ -208,7 +208,7 @@ def test_a_rejected_prefill_names_the_file_not_its_path(client_factory,
     reference = put(client, "ext-10.md", "nope")
 
     response = client.get(
-        "/read-one/", params={"prefill": json.dumps({"document": reference})})
+        "/read_one/", params={"prefill": json.dumps({"document": reference})})
 
     assert response.status_code == 400
     assert f"not an accepted file type: {reference!r}" in (
@@ -221,7 +221,7 @@ def test_a_rejected_extension_over_the_stream_names_no_path(client_factory,
     client = client_factory(read_one)
     reference = put(client, "ext-11.md", "nope")
 
-    response = client.post("/read-one/invoke-stream",
+    response = client.post("/read_one/invoke-stream",
                            json={"document": reference})
 
     assert f"not an accepted file type: {reference!r}" in response.text
@@ -232,7 +232,7 @@ def test_single_file_round_trip(client_factory, uploads_dir):
     client = client_factory(read_one)
     reference = put(client, "alpha-1.txt", "alpha")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert text_of(response) == "alpha"
     assert_real_paths(uploads_dir)
@@ -243,7 +243,7 @@ def test_function_receives_the_stored_path_not_the_reference(client_factory,
     client = client_factory(read_one)
     reference = put(client, "beta-1.txt", "beta")
 
-    invoke(client, "read-one", {"document": reference})
+    invoke(client, "read_one", {"document": reference})
 
     assert RECEIVED == [str(uploads_dir.resolve() / reference)]
     assert Path(RECEIVED[0]).read_bytes() == b"beta"
@@ -253,7 +253,7 @@ def test_optional_file_with_a_value(client_factory, uploads_dir):
     client = client_factory(read_optional)
     reference = put(client, "gamma-1.txt", "gamma")
 
-    response = invoke(client, "read-optional", {"document": reference})
+    response = invoke(client, "read_optional", {"document": reference})
 
     assert text_of(response) == "gamma"
     assert_real_paths(uploads_dir)
@@ -262,7 +262,7 @@ def test_optional_file_with_a_value(client_factory, uploads_dir):
 def test_optional_file_with_none(client_factory):
     client = client_factory(read_optional)
 
-    response = invoke(client, "read-optional", {"document": None})
+    response = invoke(client, "read_optional", {"document": None})
 
     assert text_of(response) == "none"
     assert RECEIVED == []
@@ -271,7 +271,7 @@ def test_optional_file_with_none(client_factory):
 def test_optional_file_omitted_takes_its_default(client_factory):
     client = client_factory(read_optional)
 
-    response = invoke(client, "read-optional", {})
+    response = invoke(client, "read_optional", {})
 
     assert text_of(response) == "none"
 
@@ -281,7 +281,7 @@ def test_list_of_files(client_factory, uploads_dir):
     first = put(client, "one-1.txt", "one")
     second = put(client, "two-1.txt", "two")
 
-    response = invoke(client, "read-many", {"documents": [first, second]})
+    response = invoke(client, "read_many", {"documents": [first, second]})
 
     assert text_of(response) == "one|two"
     assert_real_paths(uploads_dir)
@@ -293,12 +293,12 @@ def test_list_preserves_the_declared_order(client_factory):
     second = put(client, "b-1.txt", "b")
     third = put(client, "c-1.txt", "c")
 
-    forward = invoke(client, "read-many",
+    forward = invoke(client, "read_many",
                      {"documents": [first, second, third]})
 
     assert text_of(forward) == "a|b|c"
 
-    backward = invoke(client, "read-many",
+    backward = invoke(client, "read_many",
                       {"documents": [third, second, first]})
 
     assert text_of(backward) == "c|b|a"
@@ -309,7 +309,7 @@ def test_list_of_optional_files(client_factory, uploads_dir):
     first = put(client, "opt-1.txt", "first")
     second = put(client, "opt-2.txt", "second")
 
-    response = invoke(client, "read-optional-items",
+    response = invoke(client, "read_optional_items",
                       {"documents": [first, None, second]})
 
     assert text_of(response) == "first|none|second"
@@ -320,7 +320,7 @@ def test_list_of_file_or_int(client_factory, uploads_dir):
     client = client_factory(read_mixed_items)
     reference = put(client, "mixed-1.txt", "doc")
 
-    response = invoke(client, "read-mixed-items",
+    response = invoke(client, "read_mixed_items",
                       {"items": [reference, 7, reference]})
 
     assert text_of(response) == "doc|7|doc"
@@ -333,7 +333,7 @@ def test_list_of_lists_of_files(client_factory, uploads_dir):
     second = put(client, "g-2.txt", "g2")
     third = put(client, "g-3.txt", "g3")
 
-    response = invoke(client, "read-groups",
+    response = invoke(client, "read_groups",
                       {"groups": [[first, second], [third]]})
 
     assert text_of(response) == "g1,g2|g3"
@@ -344,7 +344,7 @@ def test_dataclass_carrying_a_file(client_factory, uploads_dir):
     client = client_factory(read_attachment)
     reference = put(client, "att-1.txt", "body")
 
-    response = invoke(client, "read-attachment",
+    response = invoke(client, "read_attachment",
                       {"item": {"document": reference, "tag": "note"}})
 
     assert text_of(response) == "note:body"
@@ -356,7 +356,7 @@ def test_list_of_dataclasses_carrying_files(client_factory, uploads_dir):
     first = put(client, "att-2.txt", "one")
     second = put(client, "att-3.txt", "two")
 
-    response = invoke(client, "read-attachments", {"items": [
+    response = invoke(client, "read_attachments", {"items": [
         {"document": first, "tag": "x"},
         {"document": second, "tag": "y"},
     ]})
@@ -370,7 +370,7 @@ def test_union_of_file_and_int_taking_the_file_branch(client_factory,
     client = client_factory(read_either)
     reference = put(client, "either-1.txt", "chosen")
 
-    response = invoke(client, "read-either", {"item": reference})
+    response = invoke(client, "read_either", {"item": reference})
 
     assert text_of(response) == "chosen"
     assert_real_paths(uploads_dir)
@@ -379,7 +379,7 @@ def test_union_of_file_and_int_taking_the_file_branch(client_factory,
 def test_union_of_file_and_int_taking_the_int_branch(client_factory):
     client = client_factory(read_either)
 
-    response = invoke(client, "read-either", {"item": 42})
+    response = invoke(client, "read_either", {"item": 42})
 
     assert text_of(response) == "42"
     assert RECEIVED == []
@@ -392,7 +392,7 @@ def test_several_files_in_one_invocation(client_factory, uploads_dir):
     third = put(client, "many-3.txt", "3")
     fourth = put(client, "many-4.txt", "4")
 
-    response = invoke(client, "read-several", {
+    response = invoke(client, "read_several", {
         "first": first,
         "second": second,
         "extra": [third, fourth],
@@ -408,7 +408,7 @@ def test_round_trip_under_a_router_prefix(client_factory, uploads_dir):
     client = client_factory(read_one, prefix="/tools")
     reference = put(client, "pref-1.txt", "prefixed", prefix="/tools")
 
-    response = invoke(client, "read-one", {"document": reference},
+    response = invoke(client, "read_one", {"document": reference},
                       prefix="/tools")
 
     assert text_of(response) == "prefixed"
@@ -447,7 +447,7 @@ def test_inside_the_ceiling_but_outside_the_field_bound(client_factory,
 
     assert len(stored_bytes(reference)) == size
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 422
     assert error_of(response) == (
@@ -461,7 +461,7 @@ def test_file_valid_for_both_limits(client_factory, uploads_dir):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "good-1.txt", 80)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert text_of(response) == "x" * 80
     assert_real_paths(uploads_dir)
@@ -471,7 +471,7 @@ def test_exactly_min_size_is_accepted(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "min-exact.txt", MINIMUM)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 200
     assert len(RECEIVED) == 1
@@ -481,7 +481,7 @@ def test_one_byte_below_min_size_is_unprocessable(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "min-under.txt", MINIMUM - 1)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 422
     assert error_of(response) == (
@@ -495,7 +495,7 @@ def test_exactly_max_size_is_accepted(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "max-exact.txt", MAXIMUM)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 200
     assert len(RECEIVED) == 1
@@ -505,7 +505,7 @@ def test_one_byte_above_max_size_is_unprocessable(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "max-over.txt", MAXIMUM + 1)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 422
     assert error_of(response) == (
@@ -519,7 +519,7 @@ def test_a_size_verdict_is_input_validation_not_a_server_error(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "verdict-1.txt", 10)
 
-    response = invoke(client, "read-bounded", {"document": reference})
+    response = invoke(client, "read_bounded", {"document": reference})
 
     assert response.status_code == 422
     assert response.status_code != 500
@@ -532,10 +532,10 @@ def test_the_function_is_not_called_when_build_fails(client_factory):
     good = put_bytes(client, "call-good.txt", 80)
     bad = put_bytes(client, "call-bad.txt", 10)
 
-    assert invoke(client, "read-bounded", {"document": bad}).status_code == 422
+    assert invoke(client, "read_bounded", {"document": bad}).status_code == 422
     assert RECEIVED == []
 
-    assert invoke(client, "read-bounded", {"document": good}).status_code == 200
+    assert invoke(client, "read_bounded", {"document": good}).status_code == 200
     assert len(RECEIVED) == 1
 
 
@@ -544,7 +544,7 @@ def test_the_size_bound_reaches_inside_a_list(client_factory):
     good = put_bytes(client, "list-good.txt", 80)
     bad = put_bytes(client, "list-bad.txt", 10)
 
-    response = invoke(client, "read-bounded-list", {"documents": [good, bad]})
+    response = invoke(client, "read_bounded_list", {"documents": [good, bad]})
 
     assert response.status_code == 422
     assert "file too small" in error_of(response)
@@ -555,7 +555,7 @@ def test_the_size_bound_reaches_inside_a_dataclass(client_factory):
     client = client_factory(read_bounded_attachment, max_upload_bytes=CEILING)
     bad = put_bytes(client, "nested-bad.txt", MAXIMUM + 1)
 
-    response = invoke(client, "read-bounded-attachment",
+    response = invoke(client, "read_bounded_attachment",
                       {"item": {"document": bad, "tag": "t"}})
 
     assert response.status_code == 422
@@ -567,7 +567,7 @@ def test_the_size_bound_reaches_inside_a_union(client_factory):
     client = client_factory(read_bounded_either, max_upload_bytes=CEILING)
     bad = put_bytes(client, "union-bad.txt", 10)
 
-    response = invoke(client, "read-bounded-either", {"item": bad})
+    response = invoke(client, "read_bounded_either", {"item": bad})
 
     assert response.status_code == 422
     assert "file too small" in error_of(response)
@@ -578,7 +578,7 @@ def test_the_same_size_verdict_arrives_over_the_stream(client_factory, sse):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "sse-bad.txt", 10)
 
-    response = client.post("/read-bounded/invoke-stream",
+    response = client.post("/read_bounded/invoke-stream",
                            json={"document": reference})
 
     assert response.status_code == 200
@@ -600,7 +600,7 @@ def test_a_valid_file_also_flows_through_the_stream(client_factory, sse):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "sse-good.txt", 80)
 
-    response = client.post("/read-bounded/invoke-stream",
+    response = client.post("/read_bounded/invoke-stream",
                            json={"document": reference})
 
     assert response.status_code == 200
@@ -615,14 +615,14 @@ def test_an_accepted_extension_runs(client_factory):
     client = client_factory(read_one)
     reference = put(client, "ext-1.txt", "ok")
 
-    assert text_of(invoke(client, "read-one", {"document": reference})) == "ok"
+    assert text_of(invoke(client, "read_one", {"document": reference})) == "ok"
 
 
 def test_a_rejected_extension_is_unprocessable(client_factory):
     client = client_factory(read_one)
     reference = put(client, "ext-2.md", "nope")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert response.status_code == 422
     assert "not an accepted file type: 'ext-2.md'" in error_of(response)
@@ -635,7 +635,7 @@ def test_an_uppercase_reference_extension_is_accepted(client_factory,
     client = client_factory(read_one)
     reference = put(client, "ext-3.TXT", "shout")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert text_of(response) == "shout"
     assert RECEIVED[0].endswith(".TXT")
@@ -646,7 +646,7 @@ def test_a_mixed_case_reference_extension_is_accepted(client_factory):
     client = client_factory(read_one)
     reference = put(client, "ext-4.TxT", "mixed")
 
-    assert text_of(invoke(client, "read-one",
+    assert text_of(invoke(client, "read_one",
                           {"document": reference})) == "mixed"
 
 
@@ -659,7 +659,7 @@ def test_a_reference_without_extension_fails_a_bound_field(client_factory):
     client = client_factory(read_one)
     reference = put(client, "bare-name", "nothing")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert response.status_code == 422
     assert "not an accepted file type" in error_of(response)
@@ -670,7 +670,7 @@ def test_a_reference_without_extension_passes_an_unbound_field(client_factory,
     client = client_factory(read_any)
     reference = put(client, "bare-name-2", "anything")
 
-    response = invoke(client, "read-any", {"document": reference})
+    response = invoke(client, "read_any", {"document": reference})
 
     assert text_of(response) == "anything"
     assert_real_paths(uploads_dir)
@@ -680,7 +680,7 @@ def test_multiple_suffixes_match_the_last_suffix(client_factory, uploads_dir):
     client = client_factory(read_gz)
     reference = put(client, "archive-1.tar.gz", "packed")
 
-    response = invoke(client, "read-gz", {"document": reference})
+    response = invoke(client, "read_gz", {"document": reference})
 
     assert text_of(response) == "packed"
     assert_real_paths(uploads_dir)
@@ -690,7 +690,7 @@ def test_multiple_suffixes_match_a_compound_extension(client_factory):
     client = client_factory(read_tar_gz)
     reference = put(client, "archive-2.tar.gz", "compound")
 
-    assert text_of(invoke(client, "read-tar-gz",
+    assert text_of(invoke(client, "read_tar_gz",
                           {"document": reference})) == "compound"
 
 
@@ -698,7 +698,7 @@ def test_a_compound_extension_rejects_a_single_suffix(client_factory):
     client = client_factory(read_tar_gz)
     reference = put(client, "archive-3.gz", "single")
 
-    response = invoke(client, "read-tar-gz", {"document": reference})
+    response = invoke(client, "read_tar_gz", {"document": reference})
 
     assert response.status_code == 422
     assert "not an accepted file type" in error_of(response)
@@ -708,7 +708,7 @@ def test_multiple_suffixes_rejected_by_an_unrelated_extension(client_factory):
     client = client_factory(read_one)
     reference = put(client, "archive-4.tar.gz", "wrong")
 
-    response = invoke(client, "read-one", {"document": reference})
+    response = invoke(client, "read_one", {"document": reference})
 
     assert response.status_code == 422
     assert "not an accepted file type" in error_of(response)
@@ -718,7 +718,7 @@ def test_a_manual_client_cannot_skip_the_field_bound(client_factory):
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = put_bytes(client, "manual-1.txt", MAXIMUM + 1)
 
-    response = client.post("/read-bounded/invoke",
+    response = client.post("/read_bounded/invoke",
                            json={"document": reference})
 
     assert response.status_code == 422
@@ -731,7 +731,7 @@ def test_a_manual_client_is_bound_by_an_untouched_reference(client_factory,
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = stored_file(name="manual-2.txt", size=5)
 
-    response = client.post("/read-bounded/invoke",
+    response = client.post("/read_bounded/invoke",
                            json={"document": reference})
 
     assert response.status_code == 422
@@ -745,7 +745,7 @@ def test_a_manual_client_with_a_valid_reference_runs(client_factory,
     client = client_factory(read_bounded, max_upload_bytes=CEILING)
     reference = stored_file(name="manual-3.txt", size=80)
 
-    response = client.post("/read-bounded/invoke",
+    response = client.post("/read_bounded/invoke",
                            json={"document": reference})
 
     assert text_of(response) == "x" * 80
@@ -757,7 +757,7 @@ def test_one_upload_serves_three_invocations(client_factory, uploads_dir):
     reference = put(client, "reuse-1.txt", "ab")
 
     results = [
-        text_of(invoke(client, "scale-report",
+        text_of(invoke(client, "scale_report",
                        {"document": reference, "factor": factor}))
         for factor in (1, 2, 3)
     ]

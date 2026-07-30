@@ -89,6 +89,11 @@ def static(a: int = 1) -> int:
     return a
 
 
+def MyTool(a: int = 1) -> int:
+    """Keeps its capitals in the slug."""
+    return a
+
+
 def test_a_single_function_registers_only_the_five_fixed_routes(
     app_factory, scalar,
 ):
@@ -213,8 +218,8 @@ def test_registration_order_is_functions_upload_returns_doc_static(
     app = app_factory([takes_file, makes_file])
 
     assert routes_of(app) == [
-        *group_of("takes-file"),
-        *group_of("makes-file"),
+        *group_of("takes_file"),
+        *group_of("makes_file"),
         UPLOAD_ROUTE,
         RETURNS_ROUTE,
         DOC_ROUTE,
@@ -411,12 +416,32 @@ def test_a_reserved_slug_is_refused_even_without_that_route(scalar, slug):
         WebFunction(scalar, slug=slug)
 
 
+def test_a_name_with_capitals_registers_the_route_with_them(app_factory):
+    app = app_factory(MyTool)
+
+    assert routes_of(app) == [*group_of("MyTool"), DOC_ROUTE, STATIC_ROUTE]
+
+
+def test_the_route_of_a_slug_is_case_sensitive(client_factory):
+    client = client_factory(MyTool)
+
+    assert client.get("/MyTool/").status_code == 200
+    assert client.get("/mytool/").status_code == 404
+
+
+def test_invoke_is_case_sensitive_too(client_factory):
+    client = client_factory(MyTool)
+
+    assert client.post("/MyTool/invoke", json={"a": 1}).status_code == 200
+    assert client.post("/mytool/invoke", json={"a": 1}).status_code == 404
+
+
 def test_open_form_registers_no_extra_route(app_factory):
     app = app_factory([select_product, edit_product])
 
     assert routes_of(app) == [
-        *group_of("select-product"),
-        *group_of("edit-product"),
+        *group_of("select_product"),
+        *group_of("edit_product"),
         DOC_ROUTE,
         STATIC_ROUTE,
     ]
@@ -427,11 +452,11 @@ def test_open_form_between_functions_of_the_same_space_resolves(
 ):
     client = client_factory([select_product, edit_product])
 
-    result = client.post("/select-product/invoke",
+    result = client.post("/select_product/invoke",
                          json={"product_id": 7}).json()["result"]
 
     assert result["type"] == "form"
-    assert result["href"].startswith("../edit-product/?")
+    assert result["href"].startswith("../edit_product/?")
 
 
 def test_open_form_alone_in_the_space_is_refused():

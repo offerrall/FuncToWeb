@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./loader.mjs";
-import { installDocument, installWindow, makeElement, find } from "./dom.mjs";
+import {
+    installDocument, installWindow, makeElement, find, postedMessages,
+} from "./dom.mjs";
 import {
     installClipboard, installObjectUrls, installTimers, installFetch, streamOf,
     splitBytes, sse,
@@ -67,7 +69,11 @@ async function load(options = {}) {
         submit,
         result,
         fields,
-        assigned: installWindow(),
+        assigned: installWindow({
+            embedded: options.embedded ?? false,
+            pathname: options.pathname ?? "/tools/add/",
+        }),
+        posted: postedMessages(),
         chunks: [],
         response: null,
         seen: [],
@@ -757,4 +763,202 @@ test("does not invoke the server when an upload fails", async () => {
     assert.equal(page.calls.length, 0);
     assert.deepEqual(page.cards(), []);
     assert.equal(page.submit.disabled, false);
+});
+
+
+function kinds(page) {
+    return page.posted.map((entry) => entry.data.kind);
+}
+
+
+function announced(page, kind) {
+    return page.posted
+        .filter((entry) => entry.data.kind === kind)
+        .map((entry) => entry.data);
+}
+
+
+test("a page nobody embeds announces nothing", async () => {
+    const page = await load();
+
+    await page.send([sse("result", { result: { type: "text", value: "3" } })]);
+
+    assert.deepEqual(page.posted, []);
+});
+
+
+test("an embedded page announces that it is ready", async () => {
+    const page = await load({ embedded: true });
+
+    assert.deepEqual(kinds(page), ["ready"]);
+    assert.deepEqual(page.posted[0], {
+        data: { v: 1, kind: "ready", slug: "add" },
+        targetOrigin: "*",
+    });
+});
+
+
+test("the slug of every message is the last segment of the path", async () => {
+    const page = await load({
+        embedded: true,
+        pathname: "/tools/create_task/",
+    });
+
+    await page.send([sse("result", { result: { type: "text", value: "x" } })]);
+
+    assert.deepEqual([...new Set(page.posted.map((entry) => entry.data.slug))],
+                     ["create_task"]);
+});
+
+
+test("announces the very outputs it just drew", async () => {
+    const page = await load({ embedded: true });
+    const outputs = [
+        { type: "text", value: "3" },
+        { type: "table", headers: ["a"], rows: [["1"]] },
+    ];
+
+    const cards = await page.send([sse("result", { result: outputs })]);
+
+    assert.deepEqual(cards, ["ftw-output-text", "ftw-output-table"]);
+    assert.deepEqual(announced(page, "result"),
+                     [{ v: 1, kind: "result", slug: "add", outputs }]);
+});
+
+
+test("announces a lone output as a list of one", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { result: { type: "text", value: "3" } })]);
+
+    assert.deepEqual(announced(page, "result"), [{
+        v: 1,
+        kind: "result",
+        slug: "add",
+        outputs: [{ type: "text", value: "3" }],
+    }]);
+});
+
+
+test("announces an empty result as an empty list", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { result: [] })]);
+
+    assert.deepEqual(announced(page, "result"),
+                     [{ v: 1, kind: "result", slug: "add", outputs: [] }]);
+});
+
+
+test("announces one result per run", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { result: { type: "text", value: "3" } })]);
+    await page.send([sse("result", { result: { type: "text", value: "7" } })]);
+
+    assert.deepEqual(kinds(page), ["ready", "result", "result"]);
+    assert.deepEqual(announced(page, "result").map((data) => data.outputs), [
+        [{ type: "text", value: "3" }],
+        [{ type: "text", value: "7" }],
+    ]);
+});
+
+
+test("announces the error the envelope carries", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { error: "ZeroDivisionError: division by zero" })]);
+
+    assert.deepEqual(announced(page, "error"), [{
+        v: 1,
+        kind: "error",
+        slug: "add",
+        message: "ZeroDivisionError: division by zero",
+    }]);
+});
+
+
+test("a field the browser rejects is not announced as an error", async () => {
+    const page = await load({
+        embedded: true,
+        plan: { fields: [{ name: "a", label: "Age" }] },
+        form: {
+            ready: false,
+            fields: [{
+                name: "a",
+                widget: {
+                    el: makeElement("div"),
+                    hasError: () => true,
+                    isReady: () => false,
+                },
+            }],
+        },
+    });
+
+    await page.submit.click();
+
+    assert.equal(page.message(), "Fix: Age");
+    assert.deepEqual(kinds(page), ["ready"]);
+});
+
+
+test("announces the navigation of an open form instead of a result", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([
+        sse("result", { result: { type: "form", href: "../edit_task/?prefill=1" } }),
+    ]);
+
+    assert.deepEqual(page.assigned, ["../edit_task/?prefill=1"]);
+    assert.deepEqual(kinds(page), ["ready", "navigate"]);
+    assert.deepEqual(announced(page, "navigate"), [{
+        v: 1,
+        kind: "navigate",
+        slug: "add",
+        href: "../edit_task/?prefill=1",
+    }]);
+});
+
+
+test("announces nothing when the envelope is malformed", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", {})]);
+    await page.send([
+        sse("result", { result: { type: "text", value: "x" }, error: "boom" }),
+    ]);
+
+    assert.deepEqual(kinds(page), ["ready"]);
+});
+
+
+test("announces nothing when an output cannot be drawn", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { result: { type: "unknown", value: "x" } })]);
+
+    assert.equal(page.message(), INVALID);
+    assert.deepEqual(kinds(page), ["ready"]);
+});
+
+
+test("announces nothing when the request itself fails", async () => {
+    const page = await load({ embedded: true });
+
+    page.response = new Error("offline");
+
+    await page.submit.click();
+
+    assert.equal(page.message(), INVALID);
+    assert.deepEqual(kinds(page), ["ready"]);
+});
+
+
+test("announces nothing when the stream carries no answer", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("start", {})]);
+
+    assert.equal(page.message(), INVALID);
+    assert.deepEqual(kinds(page), ["ready"]);
 });

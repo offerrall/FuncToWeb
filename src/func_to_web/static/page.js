@@ -1,3 +1,4 @@
+import { emit } from "./emit.js";
 import { compileForm } from "./form.js";
 import {
     renderDownload, renderError, renderForm, renderImage, renderRunning,
@@ -132,6 +133,7 @@ function showResult(data, kept) {
 
     if (hasError) {
         show(...kept, renderError(data.error));
+        emit("error", { message: data.error });
         return;
     }
 
@@ -139,6 +141,7 @@ function showResult(data, kept) {
 
     if (outputs.length === 1 && isForm(outputs[0])) {
         show(...kept, renderForm(outputs[0]));
+        emit("navigate", { href: outputs[0].href });
         window.location.assign(outputs[0].href);
         return;
     }
@@ -151,6 +154,7 @@ function showResult(data, kept) {
     }
 
     show(...kept, ...elements);
+    emit("result", { outputs });
 }
 
 async function run(body) {
@@ -244,3 +248,5 @@ submit.addEventListener("click", async () => {
         submit.disabled = false;
     }
 });
+
+emit("ready");

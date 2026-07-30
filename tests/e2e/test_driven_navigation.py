@@ -39,30 +39,30 @@ def field_input(page, label):
 
 @pytest.mark.parametrize("prefix", ["", "/tools"])
 def test_open_form_navigates_to_the_target_page(open_page, prefix):
-    page = open_page(SPACE, "select-product", prefix=prefix)
+    page = open_page(SPACE, "select_product", prefix=prefix)
 
     page.click("#submit")
-    page.wait_for_url("**/edit-product/**")
+    page.wait_for_url("**/edit_product/**")
 
     assert page.text_content("h1") == "Edit product"
-    assert f"{prefix}/edit-product/" in unquote(page.url)
+    assert f"{prefix}/edit_product/" in unquote(page.url)
 
 
 def test_the_target_page_arrives_prefilled(open_page):
-    page = open_page(SPACE, "select-product")
+    page = open_page(SPACE, "select_product")
 
     page.click("#submit")
-    page.wait_for_url("**/edit-product/**")
+    page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field")
 
     assert field_input(page, "name").input_value() == "chosen"
 
 
 def test_the_hidden_field_is_not_shown_but_still_travels(open_page):
-    page = open_page(SPACE, "select-product")
+    page = open_page(SPACE, "select_product")
 
     page.click("#submit")
-    page.wait_for_url("**/edit-product/**")
+    page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field")
 
     assert page.locator(".pth-field:has(label:text-is('product_id'))").count() == 0
@@ -73,7 +73,7 @@ def test_the_hidden_field_is_not_shown_but_still_travels(open_page):
 
 
 def test_the_opening_link_is_drawn_before_the_jump(open_page, page):
-    page = open_page(SPACE, "select-product")
+    page = open_page(SPACE, "select_product")
     seen = []
 
     page.expose_binding("recordOpening",
@@ -94,15 +94,15 @@ def test_the_opening_link_is_drawn_before_the_jump(open_page, page):
         page.click("#submit")
 
     assert seen != []
-    assert seen[0].startswith("../edit-product/?prefill=")
-    assert "edit-product" in unquote(page.url)
+    assert seen[0].startswith("../edit_product/?prefill=")
+    assert "edit_product" in unquote(page.url)
 
 
 def test_the_prefilled_page_can_be_run_and_changed(open_page):
-    page = open_page(SPACE, "select-product")
+    page = open_page(SPACE, "select_product")
 
     page.click("#submit")
-    page.wait_for_url("**/edit-product/**")
+    page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field")
 
     field_input(page, "name").fill("edited")

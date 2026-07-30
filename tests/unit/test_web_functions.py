@@ -159,7 +159,7 @@ def test_a_space_without_open_form_has_no_forms():
 def test_an_open_form_target_is_resolved_by_callable():
     space = functions_of([open_add, add])
 
-    action = space.forms["open-add"]
+    action = space.forms["open_add"]
 
     assert action.target is space.functions[1]
     assert action.hidden == ()
@@ -173,7 +173,7 @@ def test_an_open_form_target_is_resolved_by_web_function():
 
     space = functions_of([WebFunction(open_target), target])
 
-    assert space.forms["open-target"].target is target
+    assert space.forms["open_target"].target is target
 
 
 def test_hidden_names_travel_to_the_resolved_form():
@@ -182,7 +182,7 @@ def test_hidden_names_travel_to_the_resolved_form():
 
     space = functions_of([open_with_hidden, add])
 
-    assert space.forms["open-with-hidden"].hidden == ("b",)
+    assert space.forms["open_with_hidden"].hidden == ("b",)
 
 
 @pytest.mark.parametrize(

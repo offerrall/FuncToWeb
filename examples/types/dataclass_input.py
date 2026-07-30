@@ -5,13 +5,15 @@ from typing import Annotated
 
 from func_to_web import Description, Label, Max, Min, run
 
+Side = Annotated[float, Min(0.1), Max(500.0)]
+
 
 @dataclass
 class Rectangle:
     """A rectangle measured in centimetres."""
 
-    width: Annotated[float, Min(0.1), Max(500.0)]
-    height: Annotated[float, Min(0.1), Max(500.0)]
+    width: Side
+    height: Side
     label: Annotated[str, Max(30), Label("Label")] = "unnamed"
 
 

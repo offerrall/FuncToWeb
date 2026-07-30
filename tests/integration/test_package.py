@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.package, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "src" / "func_to_web"
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 WHEEL_NAME = f"func_to_web-{VERSION}-py3-none-any.whl"
 SDIST_NAME = f"func_to_web-{VERSION}.tar.gz"
 SDIST_PREFIX = f"func_to_web-{VERSION}/"
@@ -81,6 +81,7 @@ EXPECTED_ASSETS = frozenset({
     "static/page.js",
     "static/output.js",
     "static/upload.js",
+    "static/emit.js",
     "static/sdk.js",
     "static/page.css",
     "static/icons/alert.svg",

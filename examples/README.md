@@ -1,24 +1,29 @@
 # FuncToWeb examples
 
 [`docs/`](../docs/index.md) is the technical reference; this folder is the
-hands-on part. Each file is a runnable program that teaches **a single
-capability** and nothing else.
+hands-on part, and it holds two kinds of file.
 
-A **runnable program** is a file with an `if __name__ == "__main__":` guard,
-and that is what the count in the main README means. There are 80 of them
-across the 11 folders, which is every `.py` file here: nothing in the
-collection is a module that only exists to be imported.
+**Examples** teach **a single capability** and nothing else: 80 of them, in the
+11 folders of the table below. **Mini-apps** live in [`project/`](project/) and
+do the opposite — each one combines several capabilities into a small complete
+application, to show how the pieces sit together once there is more than one.
+
+Both kinds are runnable programs: a file with an `if __name__ == "__main__":`
+guard, which is what the count in the main README means. That is every `.py`
+file here, nothing in the collection is a module that only exists to be
+imported.
 
 ## Running
 
 ```bash
 python examples/basic/hello.py
+python examples/project/todo.py
 ```
 
-Each example serves at <http://127.0.0.1:8000> and blocks until `Ctrl+C`. The
-clients in `examples/http/` exit on their own.
+Examples and mini-apps alike serve at <http://127.0.0.1:8000> and block until
+`Ctrl+C`. The clients in `examples/http/` exit on their own.
 
-## Folders
+## Example folders
 
 | Folder | What it teaches | Documentation |
 | --- | --- | --- |
@@ -33,6 +38,15 @@ clients in `examples/http/` exit on their own.
 | [`fastapi/`](fastapi/) | `router_of()`, prefixes, your own routes, iframes and `sdk.js` | [router](../docs/router.md), [sdk](../docs/sdk.md) |
 | [`themes/`](themes/) | `system`, `light` and `dark` in `run()` and `router_of()` | [static-assets](../docs/static-assets.md) |
 | [`http/`](http/) | `/invoke`, `/invoke-stream`, `/upload` and `/doc` from a client | [http](../docs/http.md), [api-docs](../docs/api-docs.md) |
+
+## Mini-apps
+
+| Mini-app | What it combines | Documentation |
+| --- | --- | --- |
+| [`project/todo.py`](project/todo.py) | one dataclass model reused by three functions, `router_of()` under a prefix, a hand-written route of your own | [types](../docs/types.md), [router](../docs/router.md) |
+
+A mini-app is still short enough to read in one sitting, and it is still an
+ordinary FastAPI application: the library contributes a router, never the host.
 
 ## Dependencies
 

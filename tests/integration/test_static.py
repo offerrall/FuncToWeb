@@ -11,6 +11,7 @@ OWN_ASSETS = (
     "page.js",
     "output.js",
     "upload.js",
+    "emit.js",
     "sdk.js",
     "page.css",
     "icons/alert.svg",
@@ -329,7 +330,7 @@ def test_crawl_of_the_real_graph_reaches_every_page_asset(client_factory,
     }
 
     assert reached == set(CRAWLED_ASSETS)
-    assert len(visited) == 21
+    assert len(visited) == 22
 
 
 def refusing_resolve(root):

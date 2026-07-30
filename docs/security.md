@@ -68,5 +68,17 @@ It stays in the browser history, in the `Referer` header and in the server
 access log. No channel available today avoids this, so data that must not be
 logged must not travel as a prefill.
 
+## The result travels to whoever embeds the page
+
+An embedded page announces its runs to `window.parent` with a `targetOrigin` of
+`"*"` ([sdk.md](sdk.md#the-protocol)), so the outputs of a run reach the host
+whatever origin it is on. The page cannot narrow that: it does not know who
+embedded it, and asking it to guess would only trade an honest assumption for a
+false one. The assumption is the same as the prefill's, and it points the same
+way: whoever can embed a page can read what runs inside it, so a function whose
+outputs must not leave belongs in a space that is not embeddable from outside —
+which is the host application's boundary, not FuncToWeb's. A page nobody embeds
+announces nothing at all.
+
 Related: [limitations.md](limitations.md), [files.md](files.md),
 [http.md](http.md), [sdk.md](sdk.md#embedding-a-function-page).

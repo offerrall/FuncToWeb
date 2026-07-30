@@ -117,7 +117,7 @@ def test_outputs_render_in_a_real_browser(verify, app_factory, case):
 def test_an_output_the_client_cannot_render_is_refused(verify):
     app = FastAPI()
 
-    @app.post("/as-broken/invoke-stream")
+    @app.post("/as_broken/invoke-stream")
     async def stub() -> Response:
         return Response(STUB, media_type="text/event-stream")
 

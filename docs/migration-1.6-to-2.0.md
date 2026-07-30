@@ -293,7 +293,7 @@ of lines.
 
 | 1.6 | 2.0 |
 | --- | --- |
-| `/my-function?name=Alice&age=30` | `/my-function/?prefill={"name":"Alice","age":30}&hidden=["age"]` |
+| `/my-function?name=Alice&age=30` | `/my_function/?prefill={"name":"Alice","age":30}&hidden=["age"]` |
 
 A prefill that is malformed, names an unknown field or carries a value that breaks
 the contract gets a `400` before the page is served, instead of a half-filled form.

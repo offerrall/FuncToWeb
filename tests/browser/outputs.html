@@ -95,7 +95,7 @@ async function checkIconsOf(page, expected) {
 await run({
 
     async text() {
-        const page = await openPage("as-text/");
+        const page = await openPage("as_text/");
         const output = await runToResult(page);
 
         equal("a str answer becomes one text output",
@@ -113,7 +113,7 @@ await run({
     },
 
     async escaping() {
-        const page = await openPage("as-hostile/");
+        const page = await openPage("as_hostile/");
 
         await runToResult(page);
 
@@ -132,7 +132,7 @@ await run({
     },
 
     async error() {
-        const page = await openPage("as-error/");
+        const page = await openPage("as_error/");
         const output = await runToResult(page);
 
         equal("a raising function becomes one error output",
@@ -149,7 +149,7 @@ await run({
     },
 
     async running() {
-        const page = await openPage("as-slow/");
+        const page = await openPage("as_slow/");
 
         let running = null;
         let mask = "";
@@ -181,7 +181,7 @@ await run({
     },
 
     async stdout() {
-        const page = await openPage("as-printing/");
+        const page = await openPage("as_printing/");
 
         await runToResult(page);
 
@@ -195,7 +195,7 @@ await run({
     },
 
     async table() {
-        const page = await openPage("as-table/");
+        const page = await openPage("as_table/");
         const output = await runToResult(page);
 
         equal("a dataframe becomes one table output",
@@ -216,7 +216,7 @@ await run({
     },
 
     async image() {
-        const page = await openPage("as-image/");
+        const page = await openPage("as_image/");
         const output = await runToResult(page);
 
         equal("an image becomes one image output",
@@ -240,7 +240,7 @@ await run({
     },
 
     async download() {
-        const page = await openPage("as-download/");
+        const page = await openPage("as_download/");
         const output = await runToResult(page);
 
         equal("a Download becomes one download output",
@@ -263,7 +263,7 @@ await run({
     },
 
     async form() {
-        const page = await openPage("as-form/");
+        const page = await openPage("as_form/");
 
         let href = null;
         let name = null;
@@ -307,7 +307,7 @@ await run({
     },
 
     async several() {
-        const page = await openPage("as-several/");
+        const page = await openPage("as_several/");
 
         await runToResult(page);
 
@@ -321,7 +321,7 @@ await run({
     },
 
     async invalid() {
-        const page = await openPage("as-broken/");
+        const page = await openPage("as_broken/");
 
         await runToResult(page);
 
@@ -332,15 +332,15 @@ await run({
     },
 
     async icons() {
-        const text = await openPage("as-text/");
+        const text = await openPage("as_text/");
         await runToResult(text);
         await checkIconsOf(text, ["check.svg", "copy.svg"]);
 
-        const failed = await openPage("as-error/");
+        const failed = await openPage("as_error/");
         await runToResult(failed);
         await checkIconsOf(failed, ["alert.svg"]);
 
-        const stored = await openPage("as-download/");
+        const stored = await openPage("as_download/");
         await runToResult(stored);
         await checkIconsOf(stored, ["download.svg"]);
 
@@ -352,7 +352,7 @@ await run({
     },
 
     async accessibility() {
-        const page = await openPage("as-table/");
+        const page = await openPage("as_table/");
 
         equal("the upload dialog is a modal dialog",
               [page.doc.querySelector(".ftw-upload-dialog")
