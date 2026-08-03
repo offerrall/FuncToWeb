@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.1.1] - 2026-08-03
+
+Copying a result works on a page that is not served from `localhost`. Both copy
+buttons went straight to `navigator.clipboard`, which exists only in a secure
+context, and a panel read over plain http from a LAN address is not one. There
+the property is undefined, the click threw, and the button swallowed the error
+and did nothing — no tick, no message, an empty clipboard and no way to tell
+why. This is where these apps are usually read, so it is the case that matters.
+
+Text now falls back to a hidden `textarea` and `document.execCommand("copy")`,
+which has no such restriction. The element is removed in a `finally`, so a
+browser that refuses the copy does not leave it in the document, and a refusal
+raises rather than reporting success: the tick means the clipboard changed.
+
+A picture gets no fallback, because there is none to give. `execCommand` copies
+a selection and no selection carries an image. Inventing one would mean a button
+that ticks over an empty clipboard, which is worse than one that does not offer.
+So the image button is disabled outside a secure context and says why, and
+points at the download beside it, which works everywhere.
+
+The check is `isSecureContext` and the presence of the API, not the protocol:
+`localhost` is granted a secure context over plain http, and reading the scheme
+would have sent it down the fallback path for no reason.
+
 ## [2.1.0] - 2026-07-30
 
 The feature of this release is the channel back from an embedded page. Until now

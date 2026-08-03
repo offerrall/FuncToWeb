@@ -54,19 +54,69 @@ function actionButton(title, drawing, action, confirms = true) {
     return button;
 }
 
-function copyTextButton(value) {
-    return actionButton("Copy to clipboard", copyIcon,
-                        () => navigator.clipboard.writeText(value));
+// navigator.clipboard exists only in a secure context, and a page served
+// over plain http from a LAN address is not one. That is where these apps
+// are usually read, so the button has to work there
+async function copyText(value) {
+    if (typeof navigator.clipboard?.writeText === "function") {
+        try {
+            await navigator.clipboard.writeText(value);
+
+            return;
+        } catch {
+            // outside a secure context the property is usually missing
+            // altogether, but a browser may keep it and refuse the write.
+            // Either way the fallback below is what is left
+        }
+    }
+
+    const holder = document.createElement("textarea");
+
+    holder.value = value;
+    holder.setAttribute("readonly", "");
+    holder.style.position = "fixed";
+    holder.style.opacity = "0";
+
+    document.body.append(holder);
+    holder.select();
+
+    try {
+        if (!document.execCommand("copy")) {
+            throw new Error("the browser refused to copy");
+        }
+    } finally {
+        holder.remove();
+    }
 }
 
+function copyTextButton(value) {
+    return actionButton("Copy to clipboard", copyIcon,
+                        () => copyText(value));
+}
+
+// a picture has no fallback: execCommand copies a selection, and there is
+// no selection that carries an image. Rather than a button that ticks and
+// leaves the clipboard empty, it says so and stays out of the way
 function copyImageButton(source) {
-    return actionButton("Copy image", copyIcon, async () => {
+    const able = globalThis.isSecureContext
+        && typeof navigator.clipboard?.write === "function"
+        && typeof globalThis.ClipboardItem === "function";
+
+    const button = actionButton("Copy image", copyIcon, async () => {
         const blob = await (await fetch(source)).blob();
 
         await navigator.clipboard.write([
             new ClipboardItem({ [blob.type]: blob }),
         ]);
     });
+
+    if (!able) {
+        button.disabled = true;
+        button.title = "Copying an image needs https or localhost. "
+            + "Download it instead.";
+    }
+
+    return button;
 }
 
 function download(source, filename) {
