@@ -118,6 +118,39 @@ While the function runs, the page shows a status block and accumulates `stdout`
 in a single `<pre>`, written as text and never as HTML. When `result` arrives,
 it renders the outputs, or the error, below what was printed.
 
+### What printing a lot looks like
+
+A function that prints in a loop would otherwise push the rest of the page —the
+result, the form, the button— further down with every line. It does not: what
+was printed gets a window of about ten lines and scrolls inside it, and the page
+keeps its shape however long the run is.
+
+The window **follows the output** while you are at the bottom of it, so the last
+line printed is the one on screen, including when the run ends. Scroll up and it
+stops following, because you are reading; come back to the bottom and it follows
+again. Nothing about this is configurable from Python, but the height is a CSS
+variable, so a page that wants more room says so:
+
+```css
+:root { --ftw-stdout-max-height: 30rem; }
+```
+
+The page also keeps a **bounded** amount of text — the last 40,000 characters,
+some hundreds of lines. A loop printing without end would otherwise grow one
+string until the tab stops answering, which is a page that has crashed rather
+than a page showing a long run. When something has been dropped, the box says
+so on its first line:
+
+```text
+… earlier output trimmed
+```
+
+This is what the *page* keeps, not what the endpoint sends: every `print` event
+still carries everything the function wrote, and a client of your own that wants
+the whole output has it. What the server holds is unbounded too, so a function
+that prints hundreds of megabytes still costs what it costs on the way out —
+the limit here is what the browser is asked to hold on to.
+
 Because the transport is a stream parsed by hand, the client reassembles the
 events: an `event:` line, one or more `data:` lines and the blank line that
 closes them. It tolerates `CRLF` and an event split across two reads, because

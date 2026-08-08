@@ -1,32 +1,20 @@
-# FuncToWeb 2.2.0
+# FuncToWeb 2.3.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![License](https://img.shields.io/pypi/l/func-to-web.svg)](LICENSE)
 
-> Write the function once. The form, the validation, the HTTP API and the
-> documentation are the same definition, so they cannot drift apart.
+**Turn typed Python functions into web interfaces.**
 
-**Build your web app however you like — and when it needs a form, open a Python
-function in a modal instead of writing one.**
+Write a normal Python function with type hints. FuncToWeb turns it into a ready-to-use web form, validates its input and runs it through HTTP.
 
-Write a function with its **type hints**. From that signature FuncToWeb derives
-the **form**, the **validation**, the **execution endpoint** and the
-**published contract**, so you never write any of the four separately.
-
-## First example
-
-```bash
-pip install func-to-web
-```
+No models. No duplicated schemas. No manually written forms.
 
 ```python
 from func_to_web import run
 
-
 def divide(a: float, b: float) -> float:
     return a / b  # Any exception becomes a clean error in the page and the API
-
 
 run(divide)
 ```
@@ -35,7 +23,9 @@ run(divide)
 
 With `run(divide)` you already have a web app at <http://127.0.0.1:8000>.
 
-→ [getting-started.md](docs/getting-started.md), [run.md](docs/run.md)
+```bash
+pip install func-to-web
+```
 
 ## The same function is an API
 
@@ -394,7 +384,7 @@ upload no execution ever uses expires; what your code received stays.
 ## Examples
 
 The examples are probably the best way to learn the library.
-[`examples/`](examples/README.md) contains 80 runnable programs in 11 folders.
+[`examples/`](examples/README.md) contains 81 runnable programs in 11 folders.
 Each file teaches **a single capability**: you can read it in one sitting and
 run it as it is. Alongside them, [`examples/project/`](examples/project/) holds
 mini-apps, where several capabilities are combined into one small application.
@@ -486,12 +476,12 @@ mini-app with the dict swapped for a store.
 
 Those three libraries are the whole stack: nested forms, recursive validation,
 streaming, the file lifecycle and the published contract are all inside these
-lines (v2.2.0, `.py`/`.js`/`.css` under `src/`).
+lines (v2.3.0, `.py`/`.js`/`.css` under `src/`).
 
 ```text
 pytypehint       1,987 lines    types, validation, defaults
 pytypehintweb    9,558 lines    plan, widgets, transport (includes the JS/CSS)
-FuncToWeb        4,923 lines    routes, execution, storage, /doc
+FuncToWeb        5,050 lines    routes, execution, storage, /doc
 total           ~16,000 lines
 ```
 
@@ -513,7 +503,7 @@ practice.
 
 ## Status
 
-2.2.0 is a stable release: the public API is the one described in
+2.3.0 is a stable release: the public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 

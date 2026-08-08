@@ -196,6 +196,167 @@ test("renderStdout appends chunks as text and never as markup", () => {
     assert.ok(!tagsIn(stdout.element).includes("SCRIPT"));
 });
 
+// A function printing in a loop: the page keeps the tail, follows it, and
+// stops following whoever scrolled up to read.
+
+function lines(count, from = 0) {
+    let text = "";
+
+    for (let index = from; index < from + count; index += 1) {
+        text += `line ${index}\n`;
+    }
+
+    return text;
+}
+
+// A reader moving the box, as a browser reports it: the position changes and
+// a scroll event follows.
+function scrolledTo(element, { height, visible, top }) {
+    element.scrollHeight = height;
+    element.clientHeight = visible;
+    element.scrollTop = top;
+    element.dispatch("scroll");
+}
+
+test("renderStdout keeps a long run under a bounded amount of text", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    for (let round = 0; round < 40; round += 1) {
+        stdout.append(lines(1000, round * 1000));
+    }
+
+    assert.ok(value.textContent.length < 60000, `${value.textContent.length}`);
+});
+
+test("renderStdout keeps the end of what was printed, not the start", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(20000));
+
+    assert.ok(value.textContent.endsWith("line 19999\n"));
+    assert.ok(!value.textContent.includes("line 0\n"));
+});
+
+test("renderStdout says so when it has dropped anything", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(20000));
+
+    assert.ok(value.textContent.startsWith("… earlier output trimmed\n"));
+});
+
+test("renderStdout drops nothing, and says nothing, on a short run", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(100));
+
+    assert.equal(value.textContent, lines(100));
+});
+
+test("renderStdout cuts on a line break, never mid-line", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(20000));
+
+    const kept = value.textContent.slice("… earlier output trimmed\n".length);
+
+    assert.ok(/^line \d+\n/.test(kept), kept.slice(0, 40));
+});
+
+test("renderStdout follows the bottom while it is being followed", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    scrolledTo(value, { height: 1000, visible: 200, top: 800 });
+    stdout.append("one more\n");
+
+    assert.equal(value.scrollTop, 1000);
+});
+
+test("renderStdout leaves a reader who scrolled up where they are", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    scrolledTo(value, { height: 1000, visible: 200, top: 120 });
+    stdout.append("one more\n");
+
+    assert.equal(value.scrollTop, 120);
+});
+
+test("renderStdout follows again once the reader returns to the bottom", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    scrolledTo(value, { height: 1000, visible: 200, top: 120 });
+    stdout.append("while away\n");
+
+    assert.equal(value.scrollTop, 120);
+
+    scrolledTo(value, { height: 1400, visible: 200, top: 1200 });
+    stdout.append("back at the bottom\n");
+
+    assert.equal(value.scrollTop, 1400);
+});
+
+test("renderStdout counts a few pixels short of the bottom as the bottom", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    // What a browser reports for a box that is at the bottom: the three
+    // fractions rarely cancel out exactly.
+    scrolledTo(value, { height: 1000, visible: 200, top: 797 });
+    stdout.append("one more\n");
+
+    assert.equal(value.scrollTop, 1000);
+});
+
+test("renderStdout follow puts the view back at the end after a remount", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(50));
+
+    // What replaceChildren() does to it: a node taken out of the document
+    // and put back comes back at the top, with everything else intact.
+    value.scrollHeight = 900;
+    value.clientHeight = 200;
+    value.scrollTop = 0;
+
+    stdout.follow();
+
+    assert.equal(value.scrollTop, 900);
+});
+
+test("renderStdout follow leaves a reader who scrolled up alone", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    stdout.append(lines(50));
+    scrolledTo(value, { height: 1000, visible: 200, top: 100 });
+
+    stdout.follow();
+
+    assert.equal(value.scrollTop, 100);
+});
+
+test("renderStdout follows an element that has no layout at all", () => {
+    const stdout = renderStdout();
+    const value = only(stdout.element, ".ftw-output-value");
+
+    value.scrollHeight = undefined;
+    value.clientHeight = undefined;
+
+    stdout.append("printed before any layout\n");
+
+    assert.equal(value.scrollTop, undefined);
+    assert.equal(value.textContent, "printed before any layout\n");
+});
+
 test("renderTable builds a thead and a tbody with the right shape", () => {
     const element = renderTable(table());
 

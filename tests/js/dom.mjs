@@ -89,6 +89,22 @@ export class FakeElement extends Listeners {
         this.checked = false;
         this.clicks = 0;
         this.scrolls = [];
+        // Only what the code uses: custom properties set one by one. There is
+        // no cascade here, so what is read back is what was written.
+        this.style = {
+            properties: {},
+            setProperty(name, value) {
+                this.properties[name] = value;
+            },
+            getPropertyValue(name) {
+                return this.properties[name] ?? "";
+            },
+        };
+        // No layout here, so these stay where a test puts them: an element
+        // nobody sized reads as one with nothing to scroll.
+        this.scrollTop = 0;
+        this.scrollHeight = 0;
+        this.clientHeight = 0;
     }
 
     classNames() {

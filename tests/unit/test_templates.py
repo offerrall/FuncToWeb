@@ -176,7 +176,7 @@ def test_script_close_inside_plan_data_does_not_break_the_document():
 
     html = WebFunction(evil).html
 
-    assert SCRIPT_TAG.findall(html) == ["<script"] * 3
+    assert SCRIPT_TAG.findall(html) == ["<script"] * 4
     assert "<script>" not in html
     assert "alert(1)</script>" not in html
 
@@ -203,7 +203,7 @@ def test_script_close_inside_plan_data_keeps_the_document_valid():
     document = parsed(WebFunction(evil).html)
 
     assert document.mismatched == []
-    assert len(nodes_named(document, "script")) == 3
+    assert len(nodes_named(document, "script")) == 4
 
 
 def test_markup_characters_in_the_plan_are_escaped_but_recoverable():
@@ -307,7 +307,7 @@ def test_embedded_scripts_declare_json(plan):
     embedded = [mapping for _, mapping, _ in nodes_named(document, "script")
                 if "id" in mapping]
 
-    assert [mapping["type"] for mapping in embedded] == ["application/json"] * 2
+    assert [mapping["type"] for mapping in embedded] == ["application/json"] * 3
 
 
 def test_fields_container_is_present(plan):

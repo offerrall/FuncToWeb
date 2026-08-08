@@ -13,6 +13,8 @@ CASES = [
     "blocked",
     "unicode",
     "failing",
+    "bounded",
+    "trimmed",
 ]
 
 
@@ -43,7 +45,24 @@ def narrate_then_fail(seed: int = 1) -> str:
     raise RuntimeError("it broke")
 
 
-SPACE = [narrate, narrate_unicode, narrate_then_fail]
+def narrate_at_length(lines: Annotated[int, Min(1), Max(400)] = 300) -> str:
+    """Prints far more than fits on a screen."""
+    for index in range(lines):
+        print(f"line {index}")
+
+    return "narrated at length"
+
+
+def narrate_past_the_buffer(seed: int = 1) -> str:
+    """Prints more than the page keeps."""
+    for index in range(6000):
+        print(f"line {index}")
+
+    return "narrated past the buffer"
+
+
+SPACE = [narrate, narrate_unicode, narrate_then_fail, narrate_at_length,
+         narrate_past_the_buffer]
 
 
 @pytest.mark.browser

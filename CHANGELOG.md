@@ -1,5 +1,106 @@
 # Changelog
 
+## [2.3.0] - 2026-08-08
+
+Three things about the page a host opens. A function that prints in a loop no
+longer pushes the rest of the page down for as long as it runs; a modal is as
+tall as the window allows instead of a fixed 760px; and an opening can be told
+to run itself, for the modal you open to see an answer rather than to fill in
+a form. The install also loses a name: `pytypehint` arrives with
+`pytypehintweb` and no longer needs pinning twice.
+
+### Added
+- **`autorun`: an opening that runs itself** — a page opened with `autorun`
+  presses its own submit button as soon as it is mounted. It is the third
+  parameter of an opening, beside `prefill` and `hidden`, and it travels the
+  same two roads: `?autorun=1` on `GET /{slug}/`, and `page_of(…,
+  autorun=True)` from Python. In the SDK it is an option of `pageUrl()`,
+  `embed()` and `openModal()`.
+
+  It exists for the modal you open to **see the answer** rather than to fill in
+  a form: a report, a chart, a generated file, a link. Those functions usually
+  take no parameters, or take them all prefilled by the host, so the button is
+  a step with no decision in it. `call()` skips the button too, but it hands
+  back JSON and leaves the host to draw the table, the image or the download —
+  which is the work this library has already done.
+
+  What it does is press the button, and nothing else: the click that follows is
+  the ordinary one, with the same validation, the same uploads, the same
+  stream, the same result card and the same announcements to the host. It
+  presses **once**, at mount, so a result that opens another form does not
+  inherit it.
+- **An incomplete form is left alone** — if the form is not ready, autorun does
+  nothing at all: no errors shown, no fields marked. Someone who has just
+  opened a modal has not typed anything yet and has nothing to fix; the missing
+  field is on screen, and their click is what the page was waiting for anyway.
+  From there it is an ordinary page, and clicking submit runs it.
+
+### Changed
+- **A modal is as tall as the window allows, instead of 760px** — the panel
+  was a fixed `760×760`, so on any ordinary screen a form was shown through a
+  letterbox with a scrollbar over it while several hundred pixels sat unused
+  around it. Height now follows the window —`90vh`, capped at what the overlay
+  leaves— and only the width stays a number, because a form grows downwards
+  and not sideways. Measured on a 1280×1080 window: the panel goes from 760px
+  to 836px, and the forms that used to be cut off by a hundred pixels are shown
+  whole.
+- **The size is configurable, in whatever unit suits** — `--ftw-modal-width`
+  and `--ftw-modal-height` for every modal, or `openModal(url, {width,
+  height})` for one, which sets those same variables on that panel. Both take
+  any CSS length —`px`, `%`, `vh`, `rem`, `calc()`— and the option also takes a
+  plain number, read as pixels; anything else raises a `FuncToWebError`. Both
+  stay inside `min(…, 100%)`, so no setting can put a corner of the modal
+  outside the window.
+- **What a function prints is shown in a window of its own, and stays there** —
+  a loop that prints pushed the result, the form and the button further down
+  with every line, so a long run left the page unusable and the answer
+  somewhere below the fold. The printed output now gets about ten lines of
+  height (`--ftw-stdout-max-height`, `14rem`) and scrolls inside them: the page
+  keeps its shape however long the run is.
+- **The box follows the output, unless you are reading it** — being at the
+  bottom means the last line printed is the one on screen, which is the point
+  of watching a function narrate itself. Scrolling up stops it following,
+  because a jump on every event makes the box unreadable for exactly as long
+  as the function keeps printing; returning to the bottom starts it again. It
+  also follows once more when the result lands, since drawing the answer
+  replaces the children of the result area and a node put back into the
+  document comes back scrolled to the top — without that, a run that printed
+  ended showing its *first* line.
+- **The page keeps a bounded amount of printed text** — the last 40,000
+  characters, cut on a line break, with `… earlier output trimmed` as the first
+  line when anything was dropped. A loop printing without end grew one string
+  in the DOM until the tab stopped answering: a crashed page, not a long run.
+  This is what the *page* holds; `/invoke-stream` still sends every `print`
+  event in full, so a client of your own still receives everything.
+
+### Removed
+- **`pytypehint` is no longer listed as a direct requirement** — `pytypehintweb`
+  requires it, so it arrives with it and pinning it in two places was one more
+  pair to keep in step. What gets installed does not change; the declaration
+  does. The three names in the install are now `pytypehintweb`, `fastapi` and
+  `uvicorn`.
+
+### Documentation
+- **`prefill.md`** — the page is now about the three parameters of an opening
+  rather than two, with a *Running the opening on its own* section: what
+  autorun is for, that it presses the button and nothing else, what happens to
+  an incomplete form, and the two things it is not — a loop and a permission.
+  `page_of()` gains the argument in its published signature.
+- **`sdk.md`** — `autorun` in *Embedding a function page*, with the modal
+  opened for its answer beside the ones opened to be filled in, and why that is
+  not the same as calling `call()`. A new *The size of a modal* section: the
+  default and why height is the axis that follows the screen, the two ways to
+  change it, the cap that keeps any of them on screen, and the one case no
+  setting fixes.
+- **`streaming.md`** — a new *What printing a lot looks like* section under
+  *In the web interface*: the window and its CSS variable, when the box follows
+  and when it leaves you alone, the character limit and its notice, and the
+  distinction between what the page keeps and what the endpoint sends.
+- **`examples/fastapi/modal_autorun.py`** — the 81st example: a host page whose
+  three buttons open modals that run themselves, one taking no parameters, one
+  prefilled and hidden by the host, and one with a required field nobody
+  filled, which is the case where autorun does nothing and waits.
+
 ## [2.2.0] - 2026-08-08
 
 One dependency less. `platformdirs` was in the install for a single call in

@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.package, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "src" / "func_to_web"
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 WHEEL_NAME = f"func_to_web-{VERSION}-py3-none-any.whl"
 SDIST_NAME = f"func_to_web-{VERSION}.tar.gz"
 SDIST_PREFIX = f"func_to_web-{VERSION}/"
@@ -68,8 +68,9 @@ EXPECTED_CLASSIFIERS = (
     "Typing :: Typed",
 )
 
+# pytypehint is not listed on purpose: pytypehintweb requires it, so it
+# arrives with it and pinning it twice is one more place to keep in step.
 EXPECTED_RUNTIME_REQUIREMENTS = (
-    "pytypehint==0.0.7",
     "pytypehintweb==0.0.5",
     "fastapi==0.121.1",
     "uvicorn==0.38.0",

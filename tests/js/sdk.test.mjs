@@ -452,6 +452,56 @@ test("pageUrl carries prefill and hidden as json", () => {
 });
 
 
+test("pageUrl asks for an autorun only when told to", () => {
+    assert.equal(pageUrl(FUNCTION), "/tools/add/");
+    assert.equal(pageUrl(FUNCTION, { autorun: false }), "/tools/add/");
+    assert.equal(pageUrl(FUNCTION, { autorun: true }), "/tools/add/?autorun=1");
+});
+
+
+test("pageUrl carries autorun beside prefill and hidden", () => {
+    const url = new URL(
+        pageUrl(FUNCTION, { prefill: { a: 9 }, hidden: ["a"], autorun: true }),
+        "http://host");
+
+    assert.equal(url.pathname, "/tools/add/");
+    assert.equal(url.searchParams.get("prefill"), '{"a":9}');
+    assert.equal(url.searchParams.get("hidden"), '["a"]');
+    assert.equal(url.searchParams.get("autorun"), "1");
+});
+
+
+test("embed passes autorun through to the page it mounts", () => {
+    const document = installDocument();
+    const panel = makeElement("div", { id: "panel" });
+
+    document.body.append(panel);
+
+    const frame = embed(panel, FUNCTION, { prefill: { a: 9 }, autorun: true });
+
+    assert.equal(new URL(frame.src, "http://host").searchParams.get("autorun"),
+                 "1");
+});
+
+
+test("openModal passes autorun through to the page it opens", () => {
+    installDocument();
+
+    const modal = openModal(FUNCTION, { autorun: true, prefill: { a: 9 } });
+    const query = new URL(modal.iframe.src, "http://host").searchParams;
+
+    assert.equal(query.get("autorun"), "1");
+    assert.equal(query.get("prefill"), '{"a":9}');
+});
+
+
+test("openModal opens a plain page when nothing asks for an autorun", () => {
+    installDocument();
+
+    assert.equal(openModal(FUNCTION).iframe.src, "/tools/add/");
+});
+
+
 test("downloadUrl escapes the reference", () => {
     assert.equal(downloadUrl(SPACE, "a b.csv"), "/tools/returns/a%20b.csv");
 });
@@ -543,6 +593,99 @@ test("openModal puts the page in an overlay of the body", () => {
     assert.equal(modal.element.className, "ftw-modal");
     assert.equal(modal.iframe.tagName, "IFRAME");
     assert.match(modal.iframe.src, /^\/tools\/add\/\?prefill=/);
+});
+
+
+test("the modal is tall by default so a form is not cut off", () => {
+    installDocument();
+
+    openModal(FUNCTION);
+
+    const sheet = document.getElementById("functoweb-modal-style").textContent;
+
+    assert.match(sheet, /--ftw-modal-height,\s*90vh/);
+    assert.match(sheet, /--ftw-modal-width,\s*760px/);
+});
+
+
+test("the sheet keeps every size inside the window", () => {
+    installDocument();
+
+    openModal(FUNCTION);
+
+    const sheet = document.getElementById("functoweb-modal-style").textContent;
+
+    assert.match(sheet, /width:\s*min\(var\(--ftw-modal-width[^)]*\),\s*100%\)/);
+    assert.match(sheet, /height:\s*min\(var\(--ftw-modal-height[^)]*\),\s*100%\)/);
+});
+
+
+test("a modal given no size sets no property of its own", () => {
+    installDocument();
+
+    const modal = openModal(FUNCTION);
+
+    assert.deepEqual(modal.element.children[0].style.properties, {});
+});
+
+
+test("openModal takes a size in pixels as a number", () => {
+    installDocument();
+
+    const modal = openModal(FUNCTION, { width: 1200, height: 900 });
+    const panel = modal.element.children[0];
+
+    assert.equal(panel.style.getPropertyValue("--ftw-modal-width"), "1200px");
+    assert.equal(panel.style.getPropertyValue("--ftw-modal-height"), "900px");
+});
+
+
+test("openModal takes any css length as a string", () => {
+    installDocument();
+
+    const panels = [
+        ["80vh", "80vh"],
+        ["100%", "100%"],
+        ["48rem", "48rem"],
+        ["  70vh  ", "70vh"],
+        ["calc(100% - 4rem)", "calc(100% - 4rem)"],
+    ].map(([given, want]) => {
+        const modal = openModal(FUNCTION, { height: given });
+
+        return [modal.element.children[0]
+            .style.getPropertyValue("--ftw-modal-height"), want];
+    });
+
+    for (const [got, want] of panels) assert.equal(got, want);
+});
+
+
+test("openModal sizes one axis without touching the other", () => {
+    installDocument();
+
+    const panel = openModal(FUNCTION, { height: "95vh" }).element.children[0];
+
+    assert.equal(panel.style.getPropertyValue("--ftw-modal-height"), "95vh");
+    assert.equal(panel.style.getPropertyValue("--ftw-modal-width"), "");
+});
+
+
+test("openModal refuses a size that is not a length", () => {
+    installDocument();
+
+    for (const value of [true, {}, [], "", "   ", Number.NaN, Infinity]) {
+        assert.throws(() => openModal(FUNCTION, { height: value }),
+                      /must be a number of pixels or a CSS length/);
+    }
+});
+
+
+test("the size is not sent to the page as a query parameter", () => {
+    installDocument();
+
+    const modal = openModal(FUNCTION, { width: 1200, height: 900 });
+
+    assert.equal(modal.iframe.src, "/tools/add/");
 });
 
 

@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web modal checks</title></head>
+<body>
+<!--
+  How much of the window a modal takes, measured by the browser that lays it
+  out. The point of the numbers here is one promise: a host that configures
+  nothing gets a modal a form fits in.
+
+  Sizes are read with getBoundingClientRect on the panel and with
+  scrollHeight on the document inside the iframe, so nothing here trusts the
+  style sheet: it measures the result of applying it.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_modal.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import { BASE, check, equal, note, run, waitFor } from "./harness.js";
+
+const { openModal } = await import(`${BASE}static/sdk.js`);
+
+async function opened(slug, options = {}) {
+    const modal = openModal(`${BASE}${slug}`, options);
+    const panel = modal.element.querySelector(".ftw-modal-panel");
+
+    await waitFor("the page inside to mount", () => {
+        const doc = modal.iframe.contentDocument;
+
+        return doc !== null && doc.querySelector(".pth-field") !== null;
+    });
+
+    const inner = modal.iframe.contentDocument;
+
+    return {
+        modal,
+        panel,
+        box: panel.getBoundingClientRect(),
+        // What the page would need to show everything at once.
+        needs: inner.documentElement.scrollHeight,
+        // What it actually got.
+        got: modal.iframe.getBoundingClientRect().height,
+    };
+}
+
+function fits(page) {
+    return page.needs <= Math.ceil(page.got);
+}
+
+await run({
+
+    async tall() {
+        const page = await opened("many/");
+        const window = globalThis.innerHeight;
+        const share = page.box.height / window;
+
+        check("the panel takes about nine tenths of the window",
+              share > 0.88 && share <= 0.9,
+              `${page.box.height}px of ${window}px`);
+        check("and never more than the window itself",
+              page.box.height <= window, `${page.box.height}px`);
+
+        note(`panel ${Math.round(page.box.height)}px of a ${window}px window`);
+    },
+
+    async uncut() {
+        // The promise of the default: configure nothing, and a form that the
+        // window can hold is shown whole.
+        for (const slug of ["report/", "divide/", "create_task/"]) {
+            const page = await opened(slug);
+
+            check(`${slug} fits with nothing configured`, fits(page),
+                  `needs ${page.needs}px, has ${Math.round(page.got)}px`);
+
+            page.modal.close();
+        }
+
+        const page = await opened("divide/");
+
+        check("and the modal is well past the 760px this used to be fixed at",
+              page.box.height > 760, `${Math.round(page.box.height)}px`);
+    },
+
+    async limit() {
+        // What the tenth of the window costs, in the case where it costs
+        // anything: a form that the screen could hold whole, but the modal
+        // margin cannot. It is the price of a modal looking like a modal, and
+        // it is one line of CSS away for a host that would rather not pay it.
+        const page = await opened("many/");
+        const window = globalThis.innerHeight;
+
+        check("a form this tall does not fit in nine tenths of the window",
+              !fits(page), `needs ${page.needs}px, has ${Math.round(page.got)}px`);
+
+        const whole = await opened("many/", { height: "100%" });
+
+        check("and asking for the whole window does not save it either",
+              !fits(whole),
+              `needs ${whole.needs}px, has ${Math.round(whole.got)}px`);
+        check("because the overlay keeps its margin, whatever is asked for",
+              whole.got <= window - 48 + 1,
+              `${Math.round(whole.got)}px of ${window}px`);
+        check("so the default is already most of what there is to give",
+              page.got / whole.got > 0.9,
+              `${Math.round(page.got)}px of ${Math.round(whole.got)}px`);
+
+        note(`form ${page.needs}px, window ${window}px: `
+             + `default ${Math.round(page.got)}px (was 760px), `
+             + `ceiling ${Math.round(whole.got)}px`);
+    },
+
+    async configured() {
+        const page = await opened("many/", { height: 300, width: 400 });
+
+        equal("a size in pixels is the size it gets",
+              Math.round(page.box.height), 300);
+        equal("on both axes", Math.round(page.box.width), 400);
+        check("and a form that no longer fits says so with a scrollbar",
+              !fits(page));
+    },
+
+    async relative() {
+        const page = await opened("many/", { height: "50vh" });
+
+        equal("a css length is resolved by the browser",
+              Math.round(page.box.height),
+              Math.round(globalThis.innerHeight * 0.5));
+    },
+
+    async bounded() {
+        const page = await opened("many/", { height: "5000px" });
+
+        check("a size larger than the window is cut down to it",
+              page.box.height <= globalThis.innerHeight,
+              `${page.box.height}px of ${globalThis.innerHeight}px`);
+    },
+
+    async sheet() {
+        const first = await opened("divide/", { height: 300 });
+        const second = await opened("many/");
+
+        equal("a modal given a size keeps it", Math.round(first.box.height),
+              300);
+        check("and the next one is back to the default",
+              second.box.height > 400, `${second.box.height}px`);
+    },
+
+});
+</script>
+</body>
+</html>

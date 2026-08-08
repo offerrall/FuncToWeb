@@ -44,6 +44,7 @@ def page_from_plan(
     name: str,
     description: str = "",
     hidden: Iterable[str] = (),
+    autorun: bool = False,
     theme: Theme = "system",
 ) -> str:
     values = {
@@ -51,6 +52,7 @@ def page_from_plan(
             labelled_plan(plan, name=name, description=description)
         ),
         "HIDDEN_JSON": _embedded(sorted(hidden)),
+        "AUTORUN_JSON": _embedded(bool(autorun)),
         "__THEME__": theme_attribute(checked_theme(theme)),
         "__TITLE__": escape(_titled(name)),
         "__META__": (
@@ -71,7 +73,7 @@ def page_from_plan(
 
     return re.sub(
         r"([ \t]*)(__(?:META|DESCRIPTION)__)\n"
-        r"|PLAN_JSON|HIDDEN_JSON|__TITLE__|__THEME__",
+        r"|PLAN_JSON|HIDDEN_JSON|AUTORUN_JSON|__TITLE__|__THEME__",
         render,
         PAGE_TEMPLATE,
     )

@@ -77,6 +77,7 @@ def _register(
     def page(
         prefill: str | None = Query(default=None),
         hidden: str | None = Query(default=None),
+        autorun: bool = Query(default=False),
     ) -> str:
         names = ([] if hidden is None
                  else hidden_names(json_query(hidden, "hidden")))
@@ -86,7 +87,7 @@ def _register(
         if prefill is not None and type(raw) is not dict:
             raise HTTPException(400, "prefill must be a JSON object")
 
-        if not raw and not names:
+        if not raw and not names and not autorun:
             return base
 
         try:
@@ -94,7 +95,7 @@ def _register(
                                     file_resolver=stored_file)
                       if raw else None)
             return page_of(web_function, prefill=values, hidden=names,
-                           theme=theme)
+                           autorun=autorun, theme=theme)
         except (TypeError, ValueError, FileNotFoundError) as error:
             raise HTTPException(
                 400, without_storage_paths(str(error))

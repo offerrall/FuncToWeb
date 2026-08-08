@@ -4,12 +4,13 @@ A prefill is a set of **temporary initial values for one specific opening**: it
 does not change the function, its schema, its plan or its base page.
 
 It has two entry points: `page_of()` from Python and the `prefill` query
-parameter of `GET /{slug}/`; the second builds on the first. `hidden` travels
-alongside it, deciding which parameters are not shown in that opening.
+parameter of `GET /{slug}/`; the second builds on the first. Two more travel
+alongside it, and all three describe **one opening**, never the function.
 
 ```text
 prefill  → proposes initial values
 hidden   → decides which parameters are not shown
+autorun  → asks the page to submit itself once it is ready
 ```
 
 They are independent: `hidden` does not need `prefill` and vice versa. A
@@ -20,7 +21,7 @@ uses this channel.
 ## HTTP API
 
 ```text
-GET /{slug}/?prefill=<JSON object>&hidden=<JSON list of names>
+GET /{slug}/?prefill=<JSON object>&hidden=<JSON list of names>&autorun=1
 ```
 
 The root JSON of the prefill must be an object. Its keys are parameter
@@ -185,6 +186,55 @@ The prefill travels in the URL, with everything that implies (history,
 `Referer`, access log), and there is no other channel. A prefill proposes, it
 does not impose. The full list is in [limitations.md](limitations.md).
 
+## Running the opening on its own
+
+`autorun` asks the page to press its own submit button as soon as it is
+mounted. It is the third parameter of an opening and behaves like the other
+two: it belongs to that opening, it changes nothing about the function, and it
+travels either from Python or in the query.
+
+```text
+GET /{slug}/?autorun=1
+```
+
+```javascript
+openModal(`${SPACE}/monthly_report`, {autorun: true});
+```
+
+It exists for a modal you open to **see the answer**, not to fill in a form: a
+report, a chart, a generated file, a link. Those functions often take no
+parameters, or take them all prefilled by the host, so the form has nothing to
+ask and the button is a step with no decision in it. Calling `/invoke` from
+your own code would skip the button too, but then you get JSON and have to
+draw the table, the image or the download yourself — which is exactly the work
+FuncToWeb has already done.
+
+What it does is *press the button*, and nothing else. The click that follows is
+the ordinary one: the same validation, the same uploads, the same stream, the
+same result card, the same [announcements to the host](sdk.md). Every rule
+about a run is the rule it was already.
+
+```text
+form ready       → it runs, once
+form incomplete  → nothing happens
+```
+
+An incomplete form is left **untouched**: no errors shown, no fields marked,
+nothing in red. Someone who has just opened a modal has not typed anything yet
+and has nothing to fix; the missing field is on screen, and their click is what
+the page was waiting for anyway. From that point on the page is an ordinary
+one, and clicking submit runs it.
+
+Two things it is not:
+
+* **Not a loop.** It presses once, at mount. A result that opens another form
+  with [`OpenForm`](open-form.md) does not carry `autorun` into it unless the
+  href says so.
+* **Not a permission.** Whoever can open the page can already run the function
+  by clicking; this only saves the click. What a page is allowed to run is
+  decided by where the space is mounted and who reaches it →
+  [security.md](security.md).
+
 ## Python API: `page_of()`
 
 ```python
@@ -193,6 +243,7 @@ page_of(
     *,
     prefill: Mapping[str, Any] | None = None,
     hidden: Iterable[str] | None = None,
+    autorun: bool = False,
     theme: Theme = "system",
 ) -> str
 ```
@@ -217,10 +268,13 @@ any flow that generates the page on its own.
 * `hidden` holds parameter names. A bare `str` is rejected, because it would
   iterate character by character:
   `TypeError: hidden must be an iterable of str, not a single str`.
+* `autorun` asks the page to submit itself once mounted; anything other than a
+  `bool` raises `TypeError: autorun must be bool`. See
+  [Running the opening on its own](#running-the-opening-on-its-own).
 * `theme` is the one from [`router_of()`](router.md#theme), with the same three
   values.
-* With no prefill, no hidden and `theme="system"` it returns `WebFunction.html`
-  unchanged.
+* With no prefill, no hidden, no autorun and `theme="system"` it returns
+  `WebFunction.html` unchanged.
 
 The HTML expects the space assets at `../static/...`, so it needs a router that
 serves them. `page_of()` creates no routes and no application: that is the job

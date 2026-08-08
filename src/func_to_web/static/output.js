@@ -182,17 +182,62 @@ export function renderRunning() {
     return element;
 }
 
+const STDOUT_CHARACTERS = 40000;
+
+const STDOUT_TRIMMED = "… earlier output trimmed\n";
+
+const STDOUT_SLACK = 4;
+
 export function renderStdout() {
     const { element, value } = block("stdout", "");
 
     element.append(mark(clockIcon()), value);
 
+    let text = "";
+    let trimmed = false;
+    let following = true;
+
+    value.addEventListener("scroll", () => {
+        following = atBottom(value);
+    });
+
+    function follow() {
+        if (following) value.scrollTop = value.scrollHeight;
+    }
+
     return {
         element,
-        append(text) {
-            value.textContent += text;
+        follow,
+        append(chunk) {
+            text += chunk;
+
+            if (text.length > STDOUT_CHARACTERS) {
+                text = fromWholeLine(text.slice(-STDOUT_CHARACTERS));
+                trimmed = true;
+            }
+
+            value.textContent = trimmed ? STDOUT_TRIMMED + text : text;
+
+            follow();
         },
     };
+}
+
+function fromWholeLine(text) {
+    const start = text.indexOf("\n");
+
+    return start === -1 ? text : text.slice(start + 1);
+}
+
+function atBottom(element) {
+    const { scrollTop, scrollHeight, clientHeight } = element;
+
+    if (typeof scrollHeight !== "number" || typeof clientHeight !== "number"
+            || typeof scrollTop !== "number") {
+        return true;
+    }
+
+    return scrollHeight - clientHeight - scrollTop <= STDOUT_SLACK;
 }
 
 function row(cells, tag) {

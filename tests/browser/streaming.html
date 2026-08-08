@@ -191,6 +191,50 @@ await run({
         equal("and so does the answer", textOf(page.doc), "hecho ✓");
     },
 
+    async bounded() {
+        const page = await openPage("narrate_at_length/");
+
+        await narrate(page, settled);
+
+        const pre = stdoutOf(page.doc);
+        const box = pre.getBoundingClientRect().height;
+
+        check("what was printed does not fit in its box",
+              pre.scrollHeight > pre.clientHeight,
+              `${pre.scrollHeight} in ${pre.clientHeight}`);
+        check("so the box stays short instead of growing with the run",
+              box > 0 && box <= 260, `${box}px`);
+        check("and the whole result area stays a screenful",
+              page.doc.getElementById("result").getBoundingClientRect().height
+              <= 460);
+        check("the view followed the printing to the end",
+              pre.scrollHeight - pre.clientHeight - pre.scrollTop <= 4,
+              `${pre.scrollHeight} ${pre.clientHeight} ${pre.scrollTop}`);
+        equal("with the last line printed at the bottom of it",
+              pre.textContent.trimEnd().split("\n").pop(), "line 299");
+
+        note(`box ${box}px, ${pre.scrollHeight}px of text`);
+    },
+
+    async trimmed() {
+        const page = await openPage("narrate_past_the_buffer/");
+
+        await narrate(page, settled);
+
+        const pre = stdoutOf(page.doc);
+
+        check("a run past the buffer keeps a bounded amount of text",
+              pre.textContent.length < 60000, `${pre.textContent.length}`);
+        check("the end of it, which is what a reader is watching",
+              pre.textContent.trimEnd().endsWith("line 5999"));
+        check("and it says that the start was dropped",
+              pre.textContent.startsWith("… earlier output trimmed\n"));
+        check("the box is still short", pre.clientHeight <= 260,
+              `${pre.clientHeight}px`);
+        equal("and the answer arrived all the same",
+              textOf(page.doc), "narrated past the buffer");
+    },
+
     async failing() {
         const page = await openPage("narrate_then_fail/");
         const state = await narrate(page, settled);

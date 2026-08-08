@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>func_to_web autorun checks</title></head>
+<body>
+<!--
+  A page told to run itself, in a real browser.
+
+  Python can assert that the flag reaches the document; only a browser decides
+  what the page then does with it. Every check here waits on an observable
+  condition, and the two that assert nothing happens wait on a run that did
+  happen —a second page, opened beside the first— rather than on a clock.
+
+  One case per Chrome run, selected with ?case=. Run through pytest:
+
+    python -m pytest tests/browser/test_autorun.py -q
+-->
+<div id="result">PENDING</div>
+<pre id="log"></pre>
+<div id="stage" class="pth-root"></div>
+
+<script type="module">
+import {
+    BASE, check, equal, note, openPage, run, waitFor,
+} from "./harness.js";
+
+const { openModal } = await import(`${BASE}static/sdk.js`);
+
+function outputOf(doc) {
+    const value = doc.querySelector("#result .ftw-output-text .ftw-output-value");
+
+    return value === null ? null : value.textContent;
+}
+
+function cards(doc) {
+    return doc.querySelectorAll("#result .ftw-output").length;
+}
+
+const answered = (doc) => outputOf(doc) !== null;
+
+// Nothing happening is only observable against something that does: a page
+// that autoruns, opened after the quiet one, answers first if the quiet one
+// was never going to.
+async function afterARunElsewhere() {
+    const busy = await openPage("add/?autorun=1");
+
+    await waitFor("the other page to answer", () => answered(busy.doc));
+
+    return busy;
+}
+
+await run({
+
+    async runs() {
+        const page = await openPage("add/?autorun=1");
+
+        await waitFor("the page to run itself", () => answered(page.doc));
+
+        equal("the function ran with the values it was opened with",
+              outputOf(page.doc), "3");
+        equal("and drew one output, as a click would", cards(page.doc), 1);
+
+        // The result lands while the stream is still being drained; page.js
+        // frees the submit in the finally that follows, exactly as it does
+        // for a click.
+        await waitFor("the submit to be freed",
+                      () => page.doc.getElementById("submit").disabled === false);
+
+        check("with the submit usable again, as after any run",
+              page.doc.getElementById("submit").disabled === false);
+    },
+
+    async prefilled() {
+        const query = `prefill=${encodeURIComponent('{"a": 40}')}`;
+        const page = await openPage(`add/?${query}&autorun=1`);
+
+        await waitFor("the page to run itself", () => answered(page.doc));
+
+        equal("the run used what the opening prefilled",
+              outputOf(page.doc), "42");
+    },
+
+    async waits() {
+        const page = await openPage("add/");
+
+        await afterARunElsewhere();
+
+        equal("a page nobody told to run itself shows nothing",
+              cards(page.doc), 0);
+        check("and its submit is untouched",
+              page.doc.getElementById("submit").disabled === false);
+    },
+
+    async incomplete() {
+        const page = await openPage("needs/?autorun=1");
+
+        await afterARunElsewhere();
+
+        equal("a form that cannot be submitted runs nothing",
+              cards(page.doc), 0);
+        equal("and is not shouted at either",
+              page.doc.querySelectorAll(".pth-error, [aria-invalid=\"true\"]")
+                  .length,
+              0);
+
+        note("the page waits for the field to be filled, as it should");
+    },
+
+    async completed() {
+        const page = await openPage("needs/?autorun=1");
+
+        await afterARunElsewhere();
+
+        const input = page.doc.querySelector("#fields input");
+
+        input.value = "5";
+        input.dispatchEvent(new page.win.Event("input", { bubbles: true }));
+        page.doc.getElementById("submit").click();
+
+        await waitFor("the run the reader asked for", () => answered(page.doc));
+
+        equal("a page left alone by autorun still runs when clicked",
+              outputOf(page.doc), "7");
+    },
+
+    async modal() {
+        // What this is for: a host that wants the answer drawn, not fetched.
+        const results = [];
+        const modal = openModal(`${BASE}add`,
+                                { autorun: true, onResult: (outputs) => {
+                                    results.push(outputs);
+                                } });
+
+        await waitFor("the modal to answer on its own",
+                      () => results.length > 0);
+
+        equal("the host was handed the outputs without anyone clicking",
+              results[0].length, 1);
+        equal("and they are the ones the function returned",
+              results[0][0].value, "3");
+
+        const inner = modal.iframe.contentDocument;
+
+        equal("drawn inside the modal, which is the point of opening one",
+              inner.querySelectorAll("#result .ftw-output").length, 1);
+
+        modal.close();
+
+        const { completed } = await modal.closed;
+
+        check("and the modal reports the run when it closes", completed);
+    },
+
+});
+</script>
+</body>
+</html>

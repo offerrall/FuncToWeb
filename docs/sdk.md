@@ -129,11 +129,12 @@ once. The [index that `run()` adds](run.md#the-space-index) uses exactly this
 mechanism: links and an iframe pointing at the pages that already exist.
 
 Initial values do not need a channel of their own: the host application opens
-the same URL with the `prefill` query parameter, and `hidden` decides which
-fields are not shown. See [prefill.md](prefill.md).
+the same URL with the `prefill` query parameter, `hidden` decides which fields
+are not shown, and `autorun` asks the page to submit itself once it is ready.
+See [prefill.md](prefill.md).
 
-That URL with its `prefill` and `hidden`, and the iframe around it, are what
-every host would otherwise write by hand:
+That URL with its three parameters, and the iframe around it, are what every
+host would otherwise write by hand:
 
 ```javascript
 pageUrl("/tools/add", {prefill: {a: 9}, hidden: ["a"]});
@@ -144,7 +145,18 @@ const modal = openModal("/tools/divide", {
     prefill: {a: 10},
     onClose: () => refresh(),
 });
+
+// A modal opened for its answer: no form to fill, so no button to press
+openModal("/tools/monthly_report", {autorun: true});
 ```
+
+`autorun` is for the modal you open to *see* something —a report, a chart, a
+generated file, a link— rather than to fill anything in. `call()` would skip
+the button too, but it hands you JSON and leaves you to draw the table, the
+image or the download; opening the page is how you get those drawn for you.
+The page presses its own button and nothing else changes: same validation,
+same uploads, same stream, same [announcements](#reacting-to-the-modal). A
+form that is missing a value is left untouched and waits for a click.
 
 `embed()` appends an `<iframe>` to the element you pass —an element or a CSS
 selector— and returns it. `openModal()` puts that same iframe in an overlay
@@ -156,6 +168,48 @@ Both bring their own style sheet, injected once, so they work on a page with no
 CSS of its own. The overlay and its close button are the only things they
 paint, and they paint them the same way always: what the user reads is the page
 inside the iframe.
+
+### The size of a modal
+
+A modal is **760px wide and nine tenths of the window tall** by default,
+because the thing inside it is a form and a form that does not fit is a form
+with a scrollbar over it. Height is the axis that matters —a form grows
+downwards— so it is the one that follows the screen instead of a fixed number.
+
+Two ways to change it, and they are the same way twice:
+
+```javascript
+openModal("/tools/create_user", {height: "100%", width: 1100});
+```
+
+```css
+:root {
+    --ftw-modal-width: 1100px;
+    --ftw-modal-height: 100%;
+}
+```
+
+The option sets those variables on that one panel; the CSS sets them for every
+modal. Both take any CSS length —`px`, `%`, `vh`, `rem`, a `calc()`— and the
+option also takes a plain number, read as pixels. Anything else raises
+`FuncToWebError: the height must be a number of pixels or a CSS length`.
+
+Whatever is asked for, the panel is capped at the window:
+
+```text
+width:  min(--ftw-modal-width,  100%)
+height: min(--ftw-modal-height, 100%)
+```
+
+So no setting can push a corner of the modal off screen, and `100%` is the
+ceiling rather than an overflow. That ceiling is the window **minus the 48px
+the overlay keeps** around the panel, which is what makes it read as a modal
+and not as a page.
+
+A form taller than that scrolls inside the iframe, and no height setting
+changes it: the iframe does not grow to fit its content, since the page does
+not report a height. What the default guarantees is the other half of the
+problem — that nothing above the form is wasted.
 
 The theme is decided by the space, not by the host application
 ([router.md](router.md#theme)): a host application cannot impose its theme on

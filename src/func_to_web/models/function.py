@@ -185,12 +185,14 @@ def page_of(
     *,
     prefill: Mapping[str, Any] | None = None,
     hidden: Iterable[str] | None = None,
+    autorun: bool = False,
     theme: Theme = "system",
 ) -> str:
     """Render the complete HTML of one opening of a WebFunction.
 
-    prefill proposes initial values as real Python objects and hidden names
-    the parameters that opening does not show; neither changes the
+    prefill proposes initial values as real Python objects, hidden names the
+    parameters that opening does not show, and autorun asks the page to
+    submit itself as soon as it is ready; none of the three changes the
     WebFunction. Raises TypeError for an invalid argument type and ValueError
     for an unknown prefill field.
     """
@@ -200,12 +202,16 @@ def page_of(
     if type(hidden) is str:
         raise TypeError("hidden must be an iterable of str, not a single str")
 
+    if type(autorun) is not bool:
+        raise TypeError("autorun must be bool")
+
     names = frozenset() if hidden is None else frozenset(hidden)
 
     if any(type(name) is not str for name in names):
         raise TypeError("hidden must contain only str")
 
-    if not prefill and not names and checked_theme(theme) == "system":
+    if (not prefill and not names and not autorun
+            and checked_theme(theme) == "system"):
         return web_function.html
 
     signature = (
@@ -218,5 +224,6 @@ def page_of(
         name=web_function.name,
         description=web_function.description,
         hidden=names,
+        autorun=autorun,
         theme=theme,
     )

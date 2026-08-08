@@ -59,6 +59,9 @@ async function load(options = {}) {
     document.byId.set("functoweb-hidden", makeElement("script", {
         textContent: JSON.stringify(options.hidden ?? []),
     }));
+    document.byId.set("functoweb-autorun", makeElement("script", {
+        textContent: JSON.stringify(options.autorun ?? false),
+    }));
     document.byId.set("submit", submit);
     document.byId.set("result", result);
     document.byId.set("fields", fields);
@@ -105,9 +108,27 @@ async function load(options = {}) {
         return values.length === 0 ? null : values.at(-1).textContent;
     };
 
+    // Set before the import, because a page that autoruns presses its button
+    // while the module is still being evaluated: anything the answer needs
+    // has to be waiting for it by then.
+    page.chunks = options.chunks ?? [];
+    xhr.scenarios.push(...(options.scenarios ?? []));
+
     instance += 1;
 
     await import(`${PAGE}?instance=${instance}`);
+
+    // A page that autoruns presses its button and nothing awaits the run: the
+    // import returns with the upload and the stream still in flight. Drain
+    // the microtasks they are made of before handing the page over, so a test
+    // asserts on a finished run and not on a race.
+    if (options.autorun) {
+        for (let turn = 0;
+             turn < 50 && page.result.children.length === 0;
+             turn += 1) {
+            await Promise.resolve();
+        }
+    }
 
     return page;
 }
@@ -961,4 +982,123 @@ test("announces nothing when the stream carries no answer", async () => {
 
     assert.equal(page.message(), INVALID);
     assert.deepEqual(kinds(page), ["ready"]);
+});
+
+
+// autorun: the page presses its own button once, and only if pressing it
+// would do anything.
+
+test("autorun submits the form as soon as the page is ready", async () => {
+    const page = await load({
+        autorun: true,
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.calls[0].url, "invoke-stream");
+    assert.deepEqual(page.cards(), ["ftw-output-text"]);
+    assert.equal(page.message(), "done");
+});
+
+test("a page nobody asked to autorun waits for a click", async () => {
+    const page = await load({
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.equal(page.calls.length, 0);
+    assert.deepEqual(page.cards(), []);
+});
+
+test("autorun sends the body the form read, as a click would", async () => {
+    const page = await load({
+        autorun: true,
+        form: { body: { a: 41 } },
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.equal(page.calls[0].options.body, JSON.stringify({ a: 41 }));
+});
+
+test("autorun leaves a form that is not ready alone", async () => {
+    const page = await load({
+        autorun: true,
+        plan: { fields: [{ name: "a", label: "Age" }] },
+        form: {
+            ready: false,
+            fields: [{
+                name: "a",
+                widget: {
+                    el: makeElement("div"),
+                    hasError: () => false,
+                    isReady: () => false,
+                },
+            }],
+        },
+    });
+
+    assert.equal(page.calls.length, 0);
+    assert.equal(form.errorsShown, 0);
+    assert.deepEqual(page.cards(), []);
+});
+
+test("a form left alone by autorun still runs when it is clicked", async () => {
+    const page = await load({
+        autorun: true,
+        plan: { fields: [{ name: "a", label: "Age" }] },
+        form: {
+            ready: false,
+            fields: [{
+                name: "a",
+                widget: {
+                    el: makeElement("div"),
+                    hasError: () => false,
+                    isReady: () => false,
+                },
+            }],
+        },
+    });
+
+    form.ready = true;
+
+    await page.send([sse("result", { result: { type: "text", value: "late" } })]);
+
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.message(), "late");
+});
+
+test("autorun presses the button once and not once per field", async () => {
+    const page = await load({
+        autorun: true,
+        plan: { fields: [{ name: "a" }, { name: "b" }, { name: "c" }] },
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.submit.clicks, 1);
+});
+
+test("autorun announces its result to a host like any other run", async () => {
+    const page = await load({
+        autorun: true,
+        embedded: true,
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.deepEqual(kinds(page), ["ready", "result"]);
+});
+
+test("autorun uploads what the form carries before invoking", async () => {
+    const completed = [];
+    const page = await load({
+        autorun: true,
+        form: { uploads: [upload(completed, "a.txt", 10)] },
+        scenarios: [{ outcome: "load", status: 200,
+                      response: { uploaded: true } }],
+        chunks: [sse("result", { result: { type: "text", value: "done" } })],
+    });
+
+    assert.deepEqual(completed, ["a.txt"]);
+    assert.equal(xhr.requests.length, 1);
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.message(), "done");
 });

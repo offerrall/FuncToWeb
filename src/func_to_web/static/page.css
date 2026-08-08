@@ -224,6 +224,11 @@ header p {
 .ftw-output-stdout .ftw-output-value {
     display: block;
     align-items: initial;
+    max-height: var(--ftw-stdout-max-height, 14rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--pth-input-border) transparent;
 }
 
 .ftw-output-grid {

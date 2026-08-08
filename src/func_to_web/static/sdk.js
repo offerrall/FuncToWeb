@@ -42,8 +42,8 @@ const MODAL_STYLE = `
 .ftw-modal-panel {
     position: relative;
     display: block;
-    width: min(760px, 100%);
-    height: min(760px, 100%);
+    width: min(var(--ftw-modal-width, 760px), 100%);
+    height: min(var(--ftw-modal-height, 90vh), 100%);
     overflow: hidden;
     border-radius: 12px;
     background: transparent;
@@ -373,12 +373,16 @@ export function formUrl(spaceUrl, output) {
 }
 
 
-export function pageUrl(url, { prefill = null, hidden = null } = {}) {
+export function pageUrl(
+    url,
+    { prefill = null, hidden = null, autorun = false } = {},
+) {
     const page = `${trimmed(url)}/`;
     const query = new URLSearchParams();
 
     if (prefill !== null) query.set("prefill", JSON.stringify(prefill));
     if (hidden !== null) query.set("hidden", JSON.stringify(hidden));
+    if (autorun) query.set("autorun", "1");
 
     const search = query.toString();
 
@@ -485,9 +489,24 @@ export function listen(iframe, handlers = {}) {
 }
 
 
+function cssLength(value, name) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return `${value}px`;
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+        return value.trim();
+    }
+
+    throw new FuncToWebError(
+        `the ${name} must be a number of pixels or a CSS length`);
+}
+
+
 export function openModal(url, options = {}) {
     const {
         onClose = null, closeOnResult = false, onResult = null, onError = null,
+        width = null, height = null,
         ...rest
     } = options;
     const document = globalThis.document;
@@ -500,6 +519,16 @@ export function openModal(url, options = {}) {
 
     overlay.className = "ftw-modal";
     panel.className = "ftw-modal-panel";
+
+    if (width !== null) {
+        panel.style.setProperty("--ftw-modal-width", cssLength(width, "width"));
+    }
+
+    if (height !== null) {
+        panel.style.setProperty("--ftw-modal-height",
+                                cssLength(height, "height"));
+    }
+
     button.className = "ftw-modal-close";
     button.type = "button";
     button.textContent = "×";
