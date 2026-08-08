@@ -1,13 +1,52 @@
 from os import environ
 from pathlib import Path
+from sys import platform
 from tempfile import gettempdir
 
-from platformdirs import user_data_path
-
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 NAME: str = "".join(part.title() for part in __name__.split(".")[0].split("_"))
-DATA_DIR: Path = user_data_path(NAME, appauthor=False)
+
+
+def _user_data_dir(name: str) -> Path:
+    """Where this platform keeps the data of an application, `name` inside.
+
+    The three conventions, each read from the machine that answers for it:
+    `%LOCALAPPDATA%` on Windows, `Application Support` on macOS and the XDG
+    spec everywhere else. Windows sets that variable at login from the same
+    known folder the shell API returns, so the two are one source of truth
+    read by two roads; the home directory covers a process that was handed
+    an environment without it.
+
+    Nothing is created here. The directory is made when a router settles it,
+    which is also where a location this process cannot write to is refused.
+    """
+    base: str | Path
+
+    if platform == "win32":
+        base = _asked("LOCALAPPDATA") or Path.home() / "AppData" / "Local"
+    elif platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = _asked("XDG_DATA_HOME") or Path.home() / ".local" / "share"
+
+    return Path(base) / name
+
+
+def _asked(variable: str) -> str:
+    """The variable, or nothing when it is unset or holds only blanks.
+
+    A variable exported empty is what a shell leaves behind when it means
+    nothing, and joining it would hand back a path relative to wherever the
+    process was started —which the XDG spec says to ignore, and which no
+    caller of this would ever want.
+    """
+    value = environ.get(variable, "")
+
+    return value if value.strip() else ""
+
+
+DATA_DIR: Path = _user_data_dir(NAME)
 UPLOADS_DIR: Path = DATA_DIR / "uploads"
 
 RETURNS_DIR: Path = Path(gettempdir()) / NAME / "returns"

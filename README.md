@@ -1,4 +1,4 @@
-# FuncToWeb 2.1.1
+# FuncToWeb 2.2.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -486,12 +486,12 @@ mini-app with the dict swapped for a store.
 
 Those three libraries are the whole stack: nested forms, recursive validation,
 streaming, the file lifecycle and the published contract are all inside these
-lines (v2.1.1, `.py`/`.js`/`.css` under `src/`).
+lines (v2.2.0, `.py`/`.js`/`.css` under `src/`).
 
 ```text
 pytypehint       1,987 lines    types, validation, defaults
 pytypehintweb    9,558 lines    plan, widgets, transport (includes the JS/CSS)
-FuncToWeb        4,834 lines    routes, execution, storage, /doc
+FuncToWeb        4,923 lines    routes, execution, storage, /doc
 total           ~16,000 lines
 ```
 
@@ -513,7 +513,7 @@ practice.
 
 ## Status
 
-2.1.1 is a stable release: the public API is the one described in
+2.2.0 is a stable release: the public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 

@@ -94,7 +94,6 @@ import json
 import os
 import pathlib
 import sys
-import tempfile
 import threading
 
 made = []
@@ -122,11 +121,6 @@ pathlib.Path.mkdir = spy_path_mkdir
 os.mkdir = spy_os_mkdir
 os.makedirs = spy_os_makedirs
 
-from platformdirs import user_data_path
-
-uploads = user_data_path("FuncToWeb", appauthor=False) / "uploads"
-returns = pathlib.Path(tempfile.gettempdir()) / "FuncToWeb" / "returns"
-
 threads_before = threading.active_count()
 stdout_before = sys.stdout
 
@@ -135,6 +129,14 @@ import func_to_web
 pathlib.Path.mkdir = path_mkdir
 os.mkdir = os_mkdir
 os.makedirs = os_makedirs
+
+# Read after the import and from the package itself: what the two defaults
+# are worth is tested in tests/unit/test_user_data_dir.py, and recomputing
+# them here would only ask this probe to agree with a copy of the same code.
+from func_to_web.config import RETURNS_DIR, UPLOADS_DIR
+
+uploads = UPLOADS_DIR
+returns = RETURNS_DIR
 
 print("PROBE" + json.dumps({
     "made": made,
@@ -148,6 +150,7 @@ print("PROBE" + json.dumps({
     "stdout_is_original": sys.stdout is sys.__stdout__,
     "stdout_type": type(sys.stdout).__name__,
     "uvicorn_imported": "uvicorn" in sys.modules,
+    "platformdirs_imported": "platformdirs" in sys.modules,
     "excepthook_is_original": sys.excepthook is sys.__excepthook__,
 }))
 '''
@@ -206,7 +209,7 @@ def test_all_is_exactly_the_own_names_plus_the_documented_reexports():
 
 
 def test_version_is_the_published_two_zero_zero():
-    assert func_to_web.__version__ == "2.1.1"
+    assert func_to_web.__version__ == "2.2.0"
 
 
 def test_theme_is_exported_and_is_the_theme_of_the_templates_module():
@@ -305,6 +308,14 @@ def test_importing_the_package_starts_no_server_and_prints_nothing(
     assert probe["threads_after"] == probe["threads_before"] == 1
     assert probe["excepthook_is_original"] is True
     assert len(lines) == 1
+
+
+def test_importing_the_package_pulls_in_no_platformdirs(tmp_path, repo_root):
+    # It is installed in the development environment, so this states that
+    # nothing in the package reaches for it, not that it is unavailable.
+    probe, _ = _clean_import(tmp_path, repo_root)
+
+    assert probe["platformdirs_imported"] is False
 
 
 @pytest.mark.parametrize(("name", "document"), DOCUMENTED_SIGNATURES)

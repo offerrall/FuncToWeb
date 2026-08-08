@@ -177,7 +177,7 @@ far it reaches.
 
 | 1.6 | 2.0 |
 | --- | --- |
-| a directory each `run()` used for its own uploads | keyword-only `str \| Path \| None` on `run()` and `router_of()`, defaulting to `UPLOADS_DIR` (`func_to_web.config`: `<user_data>/FuncToWeb/uploads`, via `platformdirs`), with `FUNCTOWEB_UPLOADS_DIR` when the argument is omitted |
+| a directory each `run()` used for its own uploads | keyword-only `str \| Path \| None` on `run()` and `router_of()`, defaulting to `UPLOADS_DIR` (`func_to_web.config`: `<user_data>/FuncToWeb/uploads`), with `FUNCTOWEB_UPLOADS_DIR` when the argument is omitted |
 | read when a file arrived | resolved, created and checked when the router is built, so a bad one is a `TypeError` or a `ValueError` before the server starts instead of a broken upload |
 | one folder per upload, so the question did not arise | it belongs to the **process**, not to the call: [one process, one policy](router.md#one-process-one-policy) |
 | the folder was deleted when the function finished | a used file stays, but an upload that no execution ever claims expires after `pending_ttl` |

@@ -135,9 +135,9 @@ still hand out downloads that live an hour. Why both default to one hour is in
 [design/router.md](design/router.md).
 
 `uploads_dir` and `returns_dir` say where each of those two directories is.
-Neither is required: uploads go to the user's data directory (`platformdirs`)
-and returned files to a folder of their own inside the system temporary
-directory. Both can also be set from outside the code, which is what a
+Neither is required: uploads go to the user's data directory of the platform
+(`%LOCALAPPDATA%`, `~/Library/Application Support` or `$XDG_DATA_HOME`) and
+returned files to a folder of their own inside the system temporary directory. Both can also be set from outside the code, which is what a
 deployment usually wants:
 
 ```text

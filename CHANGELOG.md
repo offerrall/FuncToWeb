@@ -1,5 +1,75 @@
 # Changelog
 
+## [2.2.0] - 2026-08-08
+
+One dependency less. `platformdirs` was in the install for a single call in
+`config.py` —where the default uploads directory lives— and that call asked for
+nothing the library is interesting for: no version, no roaming, no author, no
+directory creation. Of its ~1,950 lines the package was using three branches of
+one `if`, and now those three branches are fifteen lines of `config.py` that
+say the same thing.
+
+The point is not the lines saved, it is the install. None of the other four
+requirements pulls `platformdirs` in, so it really does leave the tree; and
+being a small general-purpose utility, it is the one requirement of the five
+that a user's environment is likely to want at another version. Pinned as
+`platformdirs==4.5.0`, that meeting had no solution. The stack a user installs
+is now four packages, all of which this project either writes or serves on.
+
+### Removed
+- **`platformdirs` is no longer a dependency** — the default data directory is
+  read from the platform itself: `%LOCALAPPDATA%` on Windows, falling back to
+  the home directory when the process was handed an environment without it;
+  `~/Library/Application Support` on macOS; and `$XDG_DATA_HOME`, or
+  `~/.local/share`, everywhere else. On Windows the variable and the shell API
+  the library called are the same source of truth —the system sets the first
+  from the second at login— so this is the same answer by a shorter road, and
+  one that also honours a variable someone set on purpose.
+
+### Fixed
+- **A blank directory variable no longer yields a relative path** — writing the
+  branches out surfaced a case the library did not cover either: with
+  `XDG_DATA_HOME` or `%LOCALAPPDATA%` exported as an empty or whitespace-only
+  value —what a shell leaves behind when it exports nothing— the variable was
+  joined as it was, and the default became a path relative to whatever
+  directory the process was started in. A variable that holds only blanks now
+  counts as unset, which is what the XDG spec says to do with it.
+
+### Compatibility
+- **The directory does not move** — the new code was compared against
+  `platformdirs` on the three platform classes for the call this package made,
+  in the default case and with the variables set, empty, blank and absent, and
+  the paths are identical. An existing installation finds its uploads where it
+  left them, and nothing about `uploads_dir`, `FUNCTOWEB_UPLOADS_DIR` or the
+  precedence between them changes.
+- **What is dropped is Android and an 8.3 path** — `platformdirs` recognises a
+  native Android runtime and answers with the app's private storage. That
+  detection is gone, and a genuine Android app would now get the XDG answer;
+  Termux, which is where this could realistically run, already took the XDG
+  branch inside the library and is unaffected. On Windows the library also
+  downgraded a profile with non-latin-1 characters to its short `8.3` form, a
+  Python 2 inheritance from `appdirs`: the long path is returned now, which is
+  the better one.
+- **The version is 2.2.0 and not 2.1.2** — nothing in the public API changes,
+  but a release that alters what gets installed and how a default is computed
+  is not a patch.
+
+### Internal
+- **`tests/unit/test_user_data_dir.py`** — the three platforms are faked, so
+  every branch is read on whichever machine runs the suite: the variable, its
+  absence, its blank forms, the name landing last, that asking creates nothing
+  and that the answer is absolute. One test compares the result against
+  `platformdirs` when it happens to be installed and skips itself when it is
+  not — the oracle for the change, without becoming a dependency of the tests.
+- **The clean-import probe reads the defaults from the package** — it used to
+  recompute them with `platformdirs` before importing `func_to_web`, which on
+  Windows meant the library ignored the sanitised environment the probe had
+  built and pointed at the real `AppData`: the assertion that importing creates
+  no directory was reading a path outside the sandbox. It now takes both
+  directories from `func_to_web.config` after the import, and the probe is
+  hermetic on Windows too. Where the defaults *point* is what the new file
+  above tests.
+
 ## [2.1.1] - 2026-08-03
 
 Copying a result works on a page that is not served from `localhost`. Both copy
