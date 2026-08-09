@@ -80,19 +80,19 @@ run(
 
 ## Inside an existing application
 
-When you already have a FastAPI application, what you mount is the router:
+When you already have a FastAPI application, mount the FuncToWeb ASGI app:
 
 ```python
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 
 app = FastAPI()
-app.include_router(router_of([volume, divide]), prefix="/tools")
+app.mount("/tools", app_of([volume, divide]))
 ```
 
-`run()` is for when the tool is all there is; `router_of()` is for everything
+`run()` is for when the tool is all there is; `app_of()` is for everything
 else. The contract for each is in [run.md](run.md) and
 [router.md](router.md).
 

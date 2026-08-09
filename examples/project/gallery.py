@@ -29,7 +29,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from PIL import Image
 
-from func_to_web import Download, IsPathFile, Label, Max, Min, Slider, router_of
+from func_to_web import Download, IsPathFile, Label, Max, Min, Slider, app_of
 
 Photo = Annotated[str, IsPathFile(extensions=(".png", ".jpg", ".jpeg", ".webp"))]
 
@@ -186,8 +186,7 @@ await refresh();
 """
 
 app = FastAPI()
-app.include_router(
-    router_of([add_photo, resize_photo, stats, bulk_thumbnails]), prefix="/tools")
+app.mount("/tools", app_of([add_photo, resize_photo, stats, bulk_thumbnails]))
 
 
 @app.get("/", response_class=HTMLResponse)

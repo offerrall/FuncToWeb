@@ -1,6 +1,6 @@
 """A space of functions mounted on an application built by hand.
 
-router_of() returns an APIRouter and nothing else: the host application is
+app_of() returns a Starlette/ASGI application: the host application is
 created, configured and served by whoever writes it. Serve it as a script or
 point uvicorn at the module: uvicorn examples.fastapi.basic_router:app
 """
@@ -8,7 +8,7 @@ point uvicorn at the module: uvicorn examples.fastapi.basic_router:app
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 
 def add(a: float, b: float) -> float:
@@ -28,8 +28,9 @@ def percentage(value: float, total: float) -> str:
 
 app = FastAPI()
 
-app.include_router(
-    router_of([add, divide, percentage], title="Internal tools"),
+app.mount(
+    "/tools",
+    app_of([add, divide, percentage], title="Internal tools"),
 )
 
 

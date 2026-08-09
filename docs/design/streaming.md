@@ -18,7 +18,7 @@ from then on     the dispatcher stays, forever
 ```
 
 That "forever" is the part worth being honest about: there is no uninstall,
-neither when the execution ends nor when the router shuts down. The dispatcher
+neither when the execution ends nor when the application shuts down. The dispatcher
 is transparent, since it always writes to the original and passes on any other
 attribute, so in a normal process you do not notice it. Where it does show is
 where `stdout` has more than one owner:

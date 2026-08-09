@@ -282,7 +282,7 @@ under the operating system's temporary directory:
   half-written file;
 * the physical name also carries the moment the file was stored: the file stays
   available for `returns_ttl` (one hour by default;
-  [`router_of()`](router.md), [`run()`](run.md)) and is eligible for the sweep
+  [`app_of()`](router.md), [`run()`](run.md)) and is eligible for the sweep
   afterwards, so the TTL is a guaranteed minimum lifetime and not a maximum. A
   download link is for fetching, not for keeping: there is nothing to claim and
   nothing to promote, so fetching it changes nothing;

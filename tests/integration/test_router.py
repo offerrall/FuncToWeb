@@ -1,7 +1,7 @@
 from typing import Annotated
 
 import pytest
-from fastapi.routing import APIRoute
+from starlette.routing import Route
 
 from func_to_web import (
     Download,
@@ -9,20 +9,21 @@ from func_to_web import (
     OpenForm,
     WebFunction,
     WebFunctions,
-    router_of,
+    app_of,
 )
 
 TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
 
 DOC_ROUTE = ("/doc", ("GET",))
 STATIC_ROUTE = ("/static/{name:path}", ("GET",))
+INDEX_ROUTE = ("/", ("GET",))
 UPLOAD_ROUTE = ("/upload", ("POST",))
 RETURNS_ROUTE = ("/returns/{reference}", ("GET",))
 
 
 def routes_of(app):
-    return [(route.path, tuple(sorted(route.methods)))
-            for route in app.routes if isinstance(route, APIRoute)]
+    return [(route.path, tuple(sorted(route.methods - {"HEAD"})))
+            for route in app.routes if isinstance(route, Route)]
 
 
 def paths_of(app):
@@ -99,7 +100,8 @@ def test_a_single_function_registers_only_the_five_fixed_routes(
 ):
     app = app_factory(scalar)
 
-    assert routes_of(app) == [*group_of("add"), DOC_ROUTE, STATIC_ROUTE]
+    assert routes_of(app) == [*group_of("add"), DOC_ROUTE, STATIC_ROUTE,
+                              INDEX_ROUTE]
 
 
 def test_each_function_registers_its_own_group_in_space_order(
@@ -112,6 +114,7 @@ def test_each_function_registers_its_own_group_in_space_order(
         *group_of("multiply"),
         DOC_ROUTE,
         STATIC_ROUTE,
+        INDEX_ROUTE,
     ]
 
 
@@ -224,6 +227,7 @@ def test_registration_order_is_functions_upload_returns_doc_static(
         RETURNS_ROUTE,
         DOC_ROUTE,
         STATIC_ROUTE,
+        INDEX_ROUTE,
     ]
 
 
@@ -234,7 +238,7 @@ def test_no_route_is_registered_twice(app_factory, scalar):
     registered = routes_of(app)
 
     assert len(registered) == len(set(registered))
-    assert len(registered) == 6 * 3 + 4
+    assert len(registered) == 6 * 3 + 5
 
 
 def test_no_path_carries_two_registrations_of_the_same_method(
@@ -297,12 +301,12 @@ def test_system_theme_leaves_the_html_tag_bare(client_factory, scalar,
 @pytest.mark.parametrize("theme", ["Dark", "auto", "light "])
 def test_an_unknown_theme_is_refused_when_the_router_is_built(scalar, theme):
     with pytest.raises(ValueError, match="theme must be one of"):
-        router_of(scalar, theme=theme)
+        app_of(scalar, theme=theme)
 
 
 def test_a_non_string_theme_is_refused_when_the_router_is_built(scalar):
     with pytest.raises(TypeError, match="theme must be str"):
-        router_of(scalar, theme=None)
+        app_of(scalar, theme=None)
 
 
 def test_capture_prints_does_not_change_the_route_graph(
@@ -381,27 +385,27 @@ def test_without_max_upload_bytes_the_upload_route_imposes_no_limit(
 
 def test_max_upload_bytes_is_validated_when_the_router_is_built(scalar):
     with pytest.raises(ValueError, match="greater than zero"):
-        router_of(scalar, max_upload_bytes=0)
+        app_of(scalar, max_upload_bytes=0)
 
 
 def test_a_non_integer_max_upload_bytes_is_refused(scalar):
     with pytest.raises(TypeError, match="max_upload_bytes must be int"):
-        router_of(scalar, max_upload_bytes="4")
+        app_of(scalar, max_upload_bytes="4")
 
 
 def test_the_doc_slug_is_reserved():
     with pytest.raises(ValueError, match="'doc' is reserved"):
-        router_of(doc)
+        app_of(doc)
 
 
 def test_the_static_slug_is_reserved():
     with pytest.raises(ValueError, match="'static' is reserved"):
-        router_of(static)
+        app_of(static)
 
 
 def test_an_explicit_reserved_slug_is_refused(scalar):
     with pytest.raises(ValueError, match="'doc' is reserved"):
-        router_of(WebFunction(scalar, slug="doc"))
+        app_of(WebFunction(scalar, slug="doc"))
 
 
 @pytest.mark.parametrize("slug", ["upload", "returns"])
@@ -419,7 +423,8 @@ def test_a_reserved_slug_is_refused_even_without_that_route(scalar, slug):
 def test_a_name_with_capitals_registers_the_route_with_them(app_factory):
     app = app_factory(MyTool)
 
-    assert routes_of(app) == [*group_of("MyTool"), DOC_ROUTE, STATIC_ROUTE]
+    assert routes_of(app) == [*group_of("MyTool"), DOC_ROUTE, STATIC_ROUTE,
+                              INDEX_ROUTE]
 
 
 def test_the_route_of_a_slug_is_case_sensitive(client_factory):
@@ -444,6 +449,7 @@ def test_open_form_registers_no_extra_route(app_factory):
         *group_of("edit_product"),
         DOC_ROUTE,
         STATIC_ROUTE,
+        INDEX_ROUTE,
     ]
 
 
@@ -461,7 +467,7 @@ def test_open_form_between_functions_of_the_same_space_resolves(
 
 def test_open_form_alone_in_the_space_is_refused():
     with pytest.raises(TypeError, match="not registered in this space"):
-        router_of(select_product)
+        app_of(select_product)
 
 
 def test_open_form_does_not_register_the_returns_route(app_factory):
@@ -490,8 +496,8 @@ def test_mounting_a_prepared_space_twice_does_not_alter_it(scalar):
     space = WebFunctions((WebFunction(scalar),), title="Shared")
     before = (space.functions, space.title, space.document, dict(space.forms))
 
-    router_of(space)
-    router_of(space, theme="dark")
+    app_of(space)
+    app_of(space, theme="dark")
 
     assert space.functions is before[0]
     assert space.title == before[1]
@@ -520,7 +526,7 @@ def test_the_compiled_html_of_a_shared_space_is_never_rewritten(scalar):
     space = WebFunctions((web_function,), title="Shared")
     compiled = web_function.html
 
-    router_of(space, theme="dark")
+    app_of(space, theme="dark")
 
     assert web_function.html == compiled
 
@@ -529,4 +535,4 @@ def test_a_prepared_space_refuses_a_second_title(scalar):
     space = WebFunctions((WebFunction(scalar),), title="Shared")
 
     with pytest.raises(TypeError, match="already carries its title"):
-        router_of(space, title="Other")
+        app_of(space, title="Other")

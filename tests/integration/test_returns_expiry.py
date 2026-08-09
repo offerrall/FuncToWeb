@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 import func_to_web.web.returned_files as returns_module
 import func_to_web.web.upload as upload_module
-from func_to_web import Download, IsPathFile, router_of
+from func_to_web import Download, IsPathFile, app_of
 from func_to_web.web.pending import (
     PART_SUFFIX,
     now,
@@ -90,8 +90,7 @@ def process():
         app = FastAPI()
 
         for index, ttl in enumerate(ttls):
-            app.include_router(router_of(naming("r.bin"), returns_ttl=ttl),
-                               prefix=f"/r{index}")
+            app.mount(f"/r{index}", app_of(naming("r.bin"), returns_ttl=ttl))
 
         client = TestClient(app)
         made.append(client)
@@ -397,7 +396,7 @@ def test_one_piece_of_prose_covers_both_ttls(client_factory):
     )
 
 
-def test_the_process_returns_ttl_governs_every_router_of_the_process(
+def test_the_process_returns_ttl_governs_every_app_of_the_process(
     process, returned_file
 ):
     with pytest.warns(UserWarning):
@@ -424,14 +423,14 @@ def test_a_space_without_downloads_settles_nothing(client_factory, scalar,
 def test_the_router_refuses_a_non_positive_returns_ttl(scalar, value):
     with pytest.raises(ValueError,
                        match="returns_ttl must be greater than zero"):
-        router_of(scalar, returns_ttl=value)
+        app_of(scalar, returns_ttl=value)
 
 
 @pytest.mark.parametrize("value", [True, 1.0, "60", b"60"])
 def test_the_router_refuses_a_returns_ttl_of_another_type(scalar, value):
     with pytest.raises(TypeError,
                        match="returns_ttl must be int, timedelta or None"):
-        router_of(scalar, returns_ttl=value)
+        app_of(scalar, returns_ttl=value)
 
 
 def test_the_router_normalizes_a_returns_timedelta(client_factory):

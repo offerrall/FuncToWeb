@@ -20,9 +20,9 @@ def store_document(document: TextFile) -> str:
     Three sources name that directory, and they are read in this order: the
     uploads_dir argument, the FUNCTOWEB_UPLOADS_DIR variable and the user's
     data directory. Whichever wins is made absolute and created when the
-    router is built, so a location this process cannot write to is a failure
+    application is built, so a location this process cannot write to is a failure
     of the build and never of the first request. It is settled once per
-    process, not once per router: the first space with file fields decides
+    process, not once per application: the first space with file fields decides
     for every space mounted beside it. This one derives its folder from
     __file__ because a relative path would be resolved against the working
     directory of the process, which is not where the code lives.

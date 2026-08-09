@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import Response
 from PIL import Image
 
-from func_to_web import Download, OpenForm, router_of
+from func_to_web import Download, OpenForm, app_of
 
 CASES = [
     "text",
@@ -117,12 +117,12 @@ def test_outputs_render_in_a_real_browser(verify, app_factory, case):
 def test_an_output_the_client_cannot_render_is_refused(verify):
     app = FastAPI()
 
-    @app.post("/as_broken/invoke-stream")
+    @app.post("/tools/as_broken/invoke-stream")
     async def stub() -> Response:
         return Response(STUB, media_type="text/event-stream")
 
-    app.include_router(router_of(as_broken))
+    app.mount("/tools", app_of(as_broken))
 
-    verdict, log = verify(app, "outputs.html", "invalid")
+    verdict, log = verify(app, "outputs.html", "invalid", prefix="/tools")
 
     assert verdict == "PASS", log

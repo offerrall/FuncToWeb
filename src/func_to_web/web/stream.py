@@ -3,7 +3,7 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
-from fastapi.responses import StreamingResponse
+from starlette.responses import StreamingResponse
 
 from func_to_web.models.function import WebFunction
 from func_to_web.models.functions import FormAction

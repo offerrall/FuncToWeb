@@ -258,7 +258,7 @@ html = page_of(web_function, prefill={"name": "Ana", "age": 32})
 ```
 
 Returns the complete HTML of one opening. It is meant for integrations that are
-more hands-on than `router_of()`: your own builders, custom HTML responses or
+more hands-on than `app_of()`: your own builders, custom HTML responses or
 any flow that generates the page on its own.
 
 * `web_function` must be a `WebFunction`; a bare function, a `WebFunctions` or
@@ -271,14 +271,14 @@ any flow that generates the page on its own.
 * `autorun` asks the page to submit itself once mounted; anything other than a
   `bool` raises `TypeError: autorun must be bool`. See
   [Running the opening on its own](#running-the-opening-on-its-own).
-* `theme` is the one from [`router_of()`](router.md#theme), with the same three
+* `theme` is the one from [`app_of()`](router.md#theme), with the same three
   values.
 * With no prefill, no hidden, no autorun and `theme="system"` it returns
   `WebFunction.html` unchanged.
 
-The HTML expects the space assets at `../static/...`, so it needs a router that
-serves them. `page_of()` creates no routes and no application: that is the job
-of [`router_of()`](router.md) and [`run()`](run.md).
+The HTML expects the space assets at `../static/...`, so it needs an application
+that serves them. `page_of()` creates no routes and no application: that is the
+job of [`app_of()`](router.md) and [`run()`](run.md).
 
 Related: [open-form.md](open-form.md), [sdk.md](sdk.md#embedding-a-function-page),
 [web-function.md](web-function.md), [types.md](types.md).

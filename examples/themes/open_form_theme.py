@@ -24,7 +24,7 @@ def open_loan(
 ) -> Annotated[dict, OpenForm(extend_loan, hidden=("reference",))]:
     """Open the extension form of a loan, on the theme of the space.
 
-    The opening is an ordinary GET on the target page of this same router,
+    The opening is an ordinary GET on the target page of this same application,
     so the target is served with the theme the space was built with and the
     navigation does not change the palette.
     """

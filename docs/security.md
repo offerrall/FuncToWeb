@@ -46,7 +46,7 @@ resolves against is in
 ## What belongs to the host application
 
 * **Authentication and authorization.** FuncToWeb provides none: what you mount
-  is an `APIRouter`, and it inherits whatever the host application applies.
+  is an ASGI application, and it inherits middleware wrapped around its mount.
   `run()` protects nothing.
 * **Per-file permissions** and the life cycle of what is uploaded and returned.
 * **Execution limits**: FuncToWeb imposes no maximum time, no memory limit and

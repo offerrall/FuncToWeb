@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import func_to_web.web.upload as upload_module
-from func_to_web import IsPathFile, router_of
+from func_to_web import IsPathFile, app_of
 from func_to_web.web.pending import PART_SUFFIX, now, parsed, pending_of
 from func_to_web.web.references import (
     NAME_LIMIT,
@@ -63,8 +63,7 @@ def process(file_function):
         app = FastAPI()
 
         for index, ttl in enumerate(ttls):
-            app.include_router(router_of(file_function, pending_ttl=ttl),
-                               prefix=f"/r{index}")
+            app.mount(f"/r{index}", app_of(file_function, pending_ttl=ttl))
 
         client = TestClient(app)
         made.append(client)
@@ -535,7 +534,7 @@ def test_a_router_that_lost_its_ttl_still_publishes_pending(process,
     assert PENDING_PATTERN.match(names_in(uploads_dir)[0]) is not None
 
 
-def test_the_process_ttl_governs_every_router_of_the_process(process,
+def test_the_process_ttl_governs_every_app_of_the_process(process,
                                                              pending_file,
                                                              uploads_dir):
     pending_file("a.txt", age=120)
@@ -676,17 +675,17 @@ def test_checked_ttl_rejects_what_is_not_a_whole_positive_second(value):
 @pytest.mark.parametrize("value", [0, -1, timedelta(0)])
 def test_the_router_refuses_a_non_positive_ttl(scalar, value):
     with pytest.raises(ValueError, match="greater than zero"):
-        router_of(scalar, pending_ttl=value)
+        app_of(scalar, pending_ttl=value)
 
 
 @pytest.mark.parametrize("value", [True, 1.0, "60"])
 def test_the_router_refuses_a_ttl_of_another_type(scalar, value):
     with pytest.raises(TypeError, match="pending_ttl must be int"):
-        router_of(scalar, pending_ttl=value)
+        app_of(scalar, pending_ttl=value)
 
 
 def test_the_router_accepts_a_timedelta(file_function):
-    assert router_of(file_function, pending_ttl=timedelta(hours=2)) is not None
+    assert app_of(file_function, pending_ttl=timedelta(hours=2)) is not None
 
 
 def test_a_promotion_race_falls_back_to_the_bare_name(client_factory,

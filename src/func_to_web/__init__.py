@@ -28,12 +28,12 @@ from func_to_web.models.return_parser import (
     ReturnContractError,
 )
 from func_to_web.templates.theme import Theme
-from func_to_web.web.router import router_of
+from func_to_web.web.router import app_of
 from func_to_web.web.run import run
 
 __all__ = [
     "run",
-    "router_of",
+    "app_of",
     "page_of",
     "WebFunction",
     "WebFunctions",

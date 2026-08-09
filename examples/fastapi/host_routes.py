@@ -3,7 +3,7 @@
 The JSON API of the application and the pages of the space live in the same
 FastAPI instance and share its middleware. Authentication and authorization
 are the responsibility of the host application: FuncToWeb mounts an
-APIRouter and inherits whatever the application applies to it. Serve it as a
+ASGI application and inherits middleware wrapped around its mount. Serve it as a
 script or point uvicorn at the module:
 uvicorn examples.fastapi.host_routes:app
 """
@@ -14,7 +14,7 @@ from typing import Annotated
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import Label, Min, router_of
+from func_to_web import Label, Min, app_of
 
 
 class Currency(Enum):
@@ -51,10 +51,7 @@ def rates() -> dict[str, float]:
     return {code.value: rate for code, rate in RATES.items()}
 
 
-app.include_router(
-    router_of([convert], title="Currency desk"),
-    prefix="/tools",
-)
+app.mount("/tools", app_of([convert], title="Currency desk"))
 
 
 if __name__ == "__main__":

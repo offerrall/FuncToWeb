@@ -8,7 +8,9 @@ from time import sleep
 from uuid import uuid4
 from warnings import warn
 
-from fastapi import HTTPException, Request
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from func_to_web.config import UPLOADS_DIR as UPLOADS_DIR
 from func_to_web.web import pending, returned_files
@@ -273,8 +275,8 @@ def checked_ttl(value: int | timedelta | None, name: str) -> int | None:
 
 def uploader(
     max_upload_bytes: int | None,
-) -> Callable[[Request], Awaitable[dict[str, bool]]]:
-    async def upload(request: Request) -> dict[str, bool]:
+) -> Callable[[Request], Awaitable[JSONResponse]]:
+    async def upload(request: Request) -> JSONResponse:
         try:
             target = target_of(request.headers.get("X-File-Reference"))
         except ValueError as error:
@@ -321,7 +323,7 @@ def uploader(
                 except OSError:
                     pass
 
-        return {"uploaded": True}
+        return JSONResponse({"uploaded": True})
 
     return upload
 

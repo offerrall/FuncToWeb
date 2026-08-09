@@ -14,7 +14,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from func_to_web import Download, Label, router_of
+from func_to_web import Download, Label, app_of
 
 PREFIX = "/tools"
 
@@ -88,7 +88,7 @@ SPACE = [summary, report, named_report]
 
 app = FastAPI()
 
-app.include_router(router_of(SPACE, title=TITLE), prefix=PREFIX)
+app.mount(PREFIX, app_of(SPACE, title=TITLE))
 
 
 @app.get("/", response_class=HTMLResponse)

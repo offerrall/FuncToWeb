@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from shared import warm_uvicorn
 
@@ -62,12 +63,13 @@ def open_page(page, app_factory, live_server):
         app = app_factory(fns, prefix=prefix, **options)
 
         if delay_uploads:
-            @app.middleware("http")
             async def held(request, call_next):
                 if request.url.path.endswith("/upload"):
                     await asyncio.sleep(delay_uploads)
 
                 return await call_next(request)
+
+            app.add_middleware(BaseHTTPMiddleware, dispatch=held)
 
         origin = live_server(app)
 

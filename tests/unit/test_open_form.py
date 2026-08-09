@@ -14,7 +14,7 @@ from func_to_web import (
     ReturnContractError,
     WebFunction,
     WebFunctions,
-    router_of,
+    app_of,
 )
 
 BoundedFile = Annotated[
@@ -245,7 +245,7 @@ def test_a_registered_callable_target_resolves_to_its_entry():
 
 def test_an_unregistered_target_is_a_return_contract_error():
     with pytest.raises(ReturnContractError) as error:
-        router_of([select_product])
+        app_of([select_product])
 
     assert str(error.value) == (
         "OpenForm target is not registered in this space")
@@ -253,7 +253,7 @@ def test_an_unregistered_target_is_a_return_contract_error():
 
 def test_an_ambiguous_target_is_a_return_contract_error():
     with pytest.raises(ReturnContractError) as error:
-        router_of([WebFunction(edit_product, slug="edit-a"),
+        app_of([WebFunction(edit_product, slug="edit-a"),
                    WebFunction(edit_product, slug="edit-b"),
                    emit_to_callable])
 
@@ -269,7 +269,7 @@ def test_a_web_function_target_resolves_by_identity():
 
 def test_an_equivalent_web_function_is_not_the_target():
     with pytest.raises(ReturnContractError) as error:
-        router_of([emit_to_instance, WebFunction(edit_product, slug="edit")])
+        app_of([emit_to_instance, WebFunction(edit_product, slug="edit")])
 
     assert str(error.value) == (
         "OpenForm target is not registered in this space")
@@ -291,7 +291,7 @@ def test_an_existing_hidden_name_is_accepted():
 
 def test_an_unknown_hidden_name_is_a_return_contract_error():
     with pytest.raises(ReturnContractError) as error:
-        router_of([emit_to_unknown_hidden, edit_product])
+        app_of([emit_to_unknown_hidden, edit_product])
 
     assert str(error.value) == (
         "unknown hidden field 'nope' for OpenForm target 'edit_product'")

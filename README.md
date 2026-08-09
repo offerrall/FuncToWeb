@@ -1,4 +1,4 @@
-# FuncToWeb 2.3.0
+# FuncToWeb 2.5.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -50,7 +50,7 @@ clean over HTTP: `b = 0` answers
 ```text
 === FuncToWeb ===
 
-Every path is relative to the prefix this router is mounted on; replace
+Every path is relative to the prefix this application is mounted on; replace
 <base_url> with it.
 
 Functions:
@@ -71,17 +71,17 @@ connecting to a mounted space reads it and learns how to call each function.
 
 ## FastAPI integration
 
-`router_of()` returns an `APIRouter`; the host application keeps control of
-authentication, routes, frontend and deployment.
+`app_of()` returns a mountable Starlette/ASGI application; the host keeps
+control of authentication, routes, frontend and deployment.
 
 ```python
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 
 app = FastAPI()
-app.include_router(router_of([divide]), prefix="/tools")
+app.mount("/tools", app_of([divide]))
 ```
 
 Everything lives under `/tools/`: the routes are relative to the mounted
@@ -183,7 +183,7 @@ from typing import Annotated, Literal
 
 from fastapi import FastAPI
 
-from func_to_web import Label, Max, Min, router_of
+from func_to_web import Label, Max, Min, app_of
 
 # --- the model, once -----------------------------------------------------
 
@@ -222,7 +222,7 @@ def delete_task(task_id: int) -> str:
 
 
 app = FastAPI()
-app.include_router(router_of([create_task, edit_task, delete_task]), prefix="/tools")
+app.mount("/tools", app_of([create_task, edit_task, delete_task]))
 ```
 
 Now add a field:
@@ -476,12 +476,12 @@ mini-app with the dict swapped for a store.
 
 Those three libraries are the whole stack: nested forms, recursive validation,
 streaming, the file lifecycle and the published contract are all inside these
-lines (v2.3.0, `.py`/`.js`/`.css` under `src/`).
+lines (v2.5.0, `.py`/`.js`/`.css` under `src/`).
 
 ```text
 pytypehint       1,987 lines    types, validation, defaults
-pytypehintweb    9,558 lines    plan, widgets, transport (includes the JS/CSS)
-FuncToWeb        5,050 lines    routes, execution, storage, /doc
+pytypehintweb    9,581 lines    plan, widgets, transport (includes the JS/CSS)
+FuncToWeb        5,070 lines    routes, execution, storage, /doc
 total           ~16,000 lines
 ```
 
@@ -503,7 +503,7 @@ practice.
 
 ## Status
 
-2.3.0 is a stable release: the public API is the one described in
+2.5.0 is a stable release: the public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 

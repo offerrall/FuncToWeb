@@ -121,7 +121,7 @@ POST {prefix}/{slug}/invoke   JSON   → execution
 ```
 
 `/upload` moves bytes; `/invoke` carries a JSON object in which a file is an
-ordinary string. `/upload` is registered once per router, and only if at least
+ordinary string. `/upload` is registered once per application, and only if at least
 one of its functions has a file field.
 
 ## Maximum size per file
@@ -130,7 +130,7 @@ one of its functions has a file field.
 the whole space:
 
 ```python
-router_of(functions, max_upload_bytes=50 * 1024 * 1024)
+app_of(functions, max_upload_bytes=50 * 1024 * 1024)
 ```
 
 ```text
@@ -152,7 +152,7 @@ stops, the partial file is deleted, and the response is
 A `Content-Length` that already declares more than the limit is rejected before
 any writing starts, but it is not trusted: it can be missing or wrong, and the
 real check is the one made chunk by chunk. A `max_upload_bytes` that is neither
-`int` nor `None` is a `TypeError` when the router is built, and `0` or a
+`int` nor `None` is a `TypeError` when the application is built, and `0` or a
 negative one a `ValueError`.
 
 In the interface, the upload modal shows the server message next to the file
@@ -283,9 +283,9 @@ UPLOADS_DIR/~p<date>~<reference>       ← appears whole or does not appear
 
 `UPLOADS_DIR` is the storage directory of the process: the user's data
 directory unless the `uploads_dir` argument of
-[`router_of()`](router.md#the-arguments) or the `FUNCTOWEB_UPLOADS_DIR`
+[`app_of()`](router.md#the-arguments) or the `FUNCTOWEB_UPLOADS_DIR`
 variable names another one, and it is settled
-[once per process](router.md#one-process-one-policy), not once per router.
+[once per process](router.md#one-process-one-policy), not once per application.
 
 The name it appears under carries the moment it landed, because an upload that
 no execution ever uses expires; the [next section](#pending-and-promoted-files)
@@ -406,7 +406,7 @@ being left for the sweep.
 ### Expiry
 
 A pending file that is not used within `pending_ttl` (one hour by default;
-[`router_of()`](router.md), [`run()`](run.md)) is deleted:
+[`app_of()`](router.md), [`run()`](run.md)) is deleted:
 
 ```text
 resolving an expired reference   → deleted, and the answer is the usual
@@ -416,7 +416,7 @@ never resolved at all            → a background sweep deletes it
 
 The sweep runs in one daemon thread per process, every 30 to 60 minutes,
 drawn again each cycle so that workers started together drift apart instead of
-sweeping in lockstep. It also runs once when the router is built, for
+sweeping in lockstep. It also runs once when the application is built, for
 processes too short-lived for the thread to ever wake up. It deletes expired
 pending files, anything carrying the mark that does not parse (the server
 never writes such a name), and `.part` files older than the TTL, left behind by
@@ -448,8 +448,8 @@ expires**. Uploading today and invoking tomorrow works only if the interval
 fits inside the TTL:
 
 ```python
-router_of(functions, pending_ttl=timedelta(days=7))   # a longer window
-router_of(functions, pending_ttl=None)                # no expiry at all
+app_of(functions, pending_ttl=timedelta(days=7))   # a longer window
+app_of(functions, pending_ttl=None)                # no expiry at all
 ```
 
 With `pending_ttl=None` there is no thread, no sweep and no prefix: `/upload`

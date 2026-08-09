@@ -13,7 +13,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 PAGE = """<h1>Support desk</h1>
 <p>Estimate a delivery date without leaving this page.</p>
@@ -44,10 +44,7 @@ def home() -> str:
     return PAGE
 
 
-app.include_router(
-    router_of([estimate_delivery], title="Support tools"),
-    prefix="/tools",
-)
+app.mount("/tools", app_of([estimate_delivery], title="Support tools"))
 
 
 if __name__ == "__main__":

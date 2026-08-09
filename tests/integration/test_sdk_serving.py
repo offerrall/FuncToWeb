@@ -7,7 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from func_to_web import Download, IsPathFile, Min, router_of
+from func_to_web import Download, IsPathFile, Min, app_of
 
 PREFIX = "/tools"
 
@@ -56,7 +56,7 @@ def hosted(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     app = FastAPI()
-    app.include_router(router_of(SPACE, title=TITLE), prefix=PREFIX)
+    app.mount(PREFIX, app_of(SPACE, title=TITLE))
 
     with TestClient(app) as client:
         yield client

@@ -9,7 +9,7 @@ from func_to_web import (
     ReturnContractError,
     WebFunction,
     WebFunctions,
-    router_of,
+    app_of,
 )
 from func_to_web.models.functions import (
     DEFAULT_TITLE,
@@ -72,8 +72,8 @@ def index_slugs(html):
 def page_routes(space):
     return [
         route.path.removesuffix("/")
-        for route in router_of(space).routes
-        if route.path.endswith("/")
+        for route in app_of(space).routes
+        if route.path != "/" and route.path.endswith("/")
     ]
 
 

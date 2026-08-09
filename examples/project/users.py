@@ -22,7 +22,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 import uvicorn
 
-from func_to_web import Email, IsPathFile, Label, Min, Max, router_of
+from func_to_web import Email, IsPathFile, Label, Min, Max, app_of
 
 
 @dataclass
@@ -135,7 +135,7 @@ await refresh();
 """
 
 app = FastAPI()
-app.include_router(router_of([create_user, edit_user, delete_user]), prefix="/tools")
+app.mount("/tools", app_of([create_user, edit_user, delete_user]))
 
 
 @app.get("/", response_class=HTMLResponse)

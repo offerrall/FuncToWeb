@@ -9,9 +9,9 @@ It is not a Python function and there is nothing to generate: it is one more
 `{prefix}/static/sdk.js`.
 
 ```python
-from func_to_web import router_of
+from func_to_web import app_of
 
-app.include_router(router_of([add, divide]), prefix="/tools")
+app.mount("/tools", app_of([add, divide]))
 ```
 
 ```javascript
@@ -124,7 +124,7 @@ Responses carry no headers that prevent embedding, and the URLs the page
 requests are relative, so the page works under any mounted prefix. The host
 application does not rebuild the form and knows nothing about the widget
 system; the iframe keeps its HTML, CSS, and JavaScript isolated. Static assets
-are shared by every function on the same router, so the browser downloads them
+are shared by every function on the same application, so the browser downloads them
 once. The [index that `run()` adds](run.md#the-space-index) uses exactly this
 mechanism: links and an iframe pointing at the pages that already exist.
 

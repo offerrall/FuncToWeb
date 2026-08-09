@@ -6,7 +6,7 @@ WebFunctions = a prepared space of functions
 ```
 
 Both are imported from `func_to_web` and are used by
-[`page_of()`](prefill.md), [`router_of()`](router.md) and [`run()`](run.md).
+[`page_of()`](prefill.md), [`app_of()`](router.md) and [`run()`](run.md).
 Preparing them by hand is optional: the last two build whatever is missing from
 the individual functions you pass in.
 
@@ -134,7 +134,7 @@ inheriting whatever the space decides.
 On construction it compiles three fields that are part of the public contract
 and can be read: `schema`, the core's `Signature`; `plan`, the web plan the
 browser consumes and `/doc` publishes; and `html`, the base page. Together with
-the already normalized metadata, they are everything `page_of()`, `router_of()`
+the already normalized metadata, they are everything `page_of()`, `app_of()`
 and `/doc` need.
 
 `schema` is exactly what the core returns, with `fn.__name__` and the docstring
@@ -191,7 +191,7 @@ The slug is a function's identity inside the space: it is its route and what
 
 `title` names the space. It must be `str`, is stored with `strip()` and cannot
 end up empty; if it is omitted, the title is `"FuncToWeb"`. An already prepared
-space carries its own title, so passing one again to `router_of()` or `run()` is
+space carries its own title, so passing one again to `app_of()` or `run()` is
 a `TypeError`, not an override that wins.
 
 `document` is the text `/doc` serves, generated once when the space is built.
@@ -199,11 +199,11 @@ See [api-docs.md](api-docs.md).
 
 The dataclass is `frozen` and keeps no mounting state, with the same
 immutability caveat as `WebFunction`: the same space can be mounted in several
-routers, and none of them alters it.
+applications, and none of them alters it.
 
 ```python
-app.include_router(router_of(space), prefix="/a")
-other_app.include_router(router_of(space), prefix="/b")
+app.mount("/a", app_of(space))
+other_app.mount("/b", app_of(space))
 ```
 
 Related: [router.md](router.md), [run.md](run.md), [prefill.md](prefill.md),

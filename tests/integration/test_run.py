@@ -2,9 +2,9 @@ from typing import Annotated
 
 import pytest
 import uvicorn
-from fastapi import FastAPI
-from fastapi.routing import APIRoute
-from fastapi.testclient import TestClient
+from starlette.applications import Starlette
+from starlette.routing import Route
+from starlette.testclient import TestClient
 
 from func_to_web import (
     Download,
@@ -66,8 +66,8 @@ def options_of(calls):
 
 
 def routes_of(app):
-    return [(route.path, tuple(sorted(route.methods)))
-            for route in app.routes if isinstance(route, APIRoute)]
+    return [(route.path, tuple(sorted(route.methods - {"HEAD"})))
+            for route in app.routes if isinstance(route, Route)]
 
 
 def paths_of(app):
@@ -115,10 +115,10 @@ def test_the_space_order_is_kept(served):
     ]
 
 
-def test_a_fastapi_application_is_built(served):
+def test_a_starlette_application_is_built(served):
     run(add)
 
-    assert isinstance(application_of(served), FastAPI)
+    assert isinstance(application_of(served), Starlette)
 
 
 def test_the_router_is_mounted_at_the_root(served):
@@ -298,15 +298,6 @@ def test_an_unusable_storage_directory_is_refused_before_uvicorn_runs(served,
     assert served == []
 
 
-def test_fastapi_kwargs_are_forwarded(served):
-    run(add, fastapi_kwargs={"docs_url": None, "version": "9.9.9"})
-
-    app = application_of(served)
-
-    assert app.docs_url is None
-    assert app.version == "9.9.9"
-
-
 def test_uvicorn_kwargs_are_forwarded(served):
     run(add, uvicorn_kwargs={"log_level": "debug", "workers": 1})
 
@@ -319,18 +310,11 @@ def test_uvicorn_kwargs_are_forwarded(served):
 
 
 def test_the_caller_mappings_are_never_modified(served):
-    app_options = {"version": "9.9.9"}
     server_options = {"log_level": "debug"}
 
-    run(add, fastapi_kwargs=app_options, uvicorn_kwargs=server_options)
+    run(add, uvicorn_kwargs=server_options)
 
-    assert app_options == {"version": "9.9.9"}
     assert server_options == {"log_level": "debug"}
-
-
-def test_title_in_fastapi_kwargs_is_refused(served):
-    with pytest.raises(TypeError, match="cannot contain 'title'"):
-        run(add, fastapi_kwargs={"title": "Other"})
 
 
 def test_host_in_uvicorn_kwargs_is_refused(served):
@@ -345,11 +329,10 @@ def test_port_in_uvicorn_kwargs_is_refused(served):
 
 def test_app_in_uvicorn_kwargs_is_refused(served):
     with pytest.raises(TypeError, match="cannot contain 'app'"):
-        run(add, uvicorn_kwargs={"app": FastAPI()})
+        run(add, uvicorn_kwargs={"app": Starlette()})
 
 
 @pytest.mark.parametrize("options", [
-    {"fastapi_kwargs": {"title": "Other"}},
     {"uvicorn_kwargs": {"host": "0.0.0.0"}},
     {"uvicorn_kwargs": {"port": 9000}},
     {"uvicorn_kwargs": {"app": "x"}},

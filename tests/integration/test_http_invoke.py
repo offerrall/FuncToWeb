@@ -42,6 +42,9 @@ NOT_AN_OBJECT = [
     ("null", b"null"),
     ("loose text", b"hello"),
     ("empty", b""),
+    ("utf-16 bom", b"\xff\xfe"),
+    ("invalid utf-8", b"\xff"),
+    ("invalid utf-8 inside a string", b'{"a": "\xff"}'),
 ]
 
 
@@ -91,41 +94,62 @@ def test_unknown_extra_field_breaks_the_contract(adder):
 
 
 @pytest.mark.parametrize(("label", "raw"), NOT_AN_OBJECT)
-def test_body_that_is_not_a_json_object_gets_the_fastapi_error(adder, label, raw):
+def test_body_that_is_not_a_json_object_gets_a_transport_error(adder, label, raw):
     response = json_post(adder, "/add/invoke", raw)
 
     assert response.status_code == 422
     assert set(response.json()) == {"detail"}
-    assert type(response.json()["detail"]) is list
+    assert response.json()["detail"] in {
+        "body must be valid JSON",
+        "body must be a JSON object",
+    }
 
 
-def test_fastapi_error_and_contract_error_are_different_shapes(adder):
-    fastapi_error = json_post(adder, "/add/invoke", b"[1, 2]")
+def test_transport_error_and_contract_error_are_different_shapes(adder):
+    transport_error = json_post(adder, "/add/invoke", b"[1, 2]")
     contract_error = adder.post("/add/invoke", json={})
 
-    assert fastapi_error.status_code == contract_error.status_code == 422
-    assert "error" not in fastapi_error.json()
+    assert transport_error.status_code == contract_error.status_code == 422
+    assert "error" not in transport_error.json()
     assert "detail" not in contract_error.json()
 
 
 def test_empty_body_reports_a_missing_body(adder):
     detail = json_post(adder, "/add/invoke", b"").json()["detail"]
 
-    assert detail[0]["type"] == "missing"
-    assert detail[0]["loc"] == ["body"]
+    assert detail == "body must be valid JSON"
+
+
+# json.loads decodes the bytes itself, so a body that is not UTF-8 raises
+# UnicodeDecodeError and not JSONDecodeError. b"\xff\xfe" is not one of them:
+# it is the UTF-16 BOM, which json.detect_encoding reads and answers for. These
+# three do reach the decoder, and an uncaught one is a 500.
+@pytest.mark.parametrize("raw", [b"\xff", b"\x80\x81", b'{"a": "\xff"}'])
+def test_body_that_is_not_utf_8_reports_invalid_json(adder, raw):
+    response = json_post(adder, "/add/invoke", raw)
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "body must be valid JSON"}
+
+
+@pytest.mark.parametrize("raw", [b"\xff", b"\x80\x81", b'{"a": "\xff"}'])
+def test_a_body_that_is_not_utf_8_is_refused_by_the_stream_route_too(adder, raw):
+    response = json_post(adder, "/add/invoke-stream", raw)
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "body must be valid JSON"}
 
 
 def test_loose_text_body_reports_invalid_json(adder):
     detail = json_post(adder, "/add/invoke", b"hello").json()["detail"]
 
-    assert detail[0]["type"] == "json_invalid"
+    assert detail == "body must be valid JSON"
 
 
 def test_array_body_reports_a_wrong_body_type(adder):
     detail = json_post(adder, "/add/invoke", b"[1, 2]").json()["detail"]
 
-    assert detail[0]["type"] == "dict_type"
-    assert detail[0]["input"] == [1, 2]
+    assert detail == "body must be a JSON object"
 
 
 def test_json_content_type_is_accepted(adder):
@@ -141,12 +165,11 @@ def test_absent_content_type_is_accepted(adder):
     assert response.json() == {"result": {"type": "text", "value": "3"}}
 
 
-def test_text_content_type_is_read_as_a_json_string(adder):
+def test_text_content_type_does_not_override_a_valid_json_body(adder):
     response = json_post(adder, "/add/invoke", b'{"a": 1}',
                          content_type="text/plain")
 
-    assert response.status_code == 422
-    assert response.json()["detail"][0]["type"] == "dict_type"
+    assert response.status_code == 200
 
 
 def test_get_is_not_allowed_on_the_route(adder):

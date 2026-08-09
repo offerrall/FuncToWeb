@@ -11,7 +11,7 @@ from func_to_web import (
     IsPathFile,
     OpenForm,
     WebFunction,
-    router_of,
+    app_of,
 )
 
 TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
@@ -283,11 +283,8 @@ def test_nothing_of_the_space_answers_outside_its_prefix(client_factory,
 
 def test_two_prefixes_in_one_application_do_not_collide():
     app = FastAPI()
-    app.include_router(router_of(add), prefix="/a")
-    app.include_router(
-        router_of(WebFunction(times_ten, name="add", slug="add")),
-        prefix="/b",
-    )
+    app.mount("/a", app_of(add))
+    app.mount("/b", app_of(WebFunction(times_ten, name="add", slug="add")))
 
     with TestClient(app) as client:
         first = client.post("/a/add/invoke", json={"a": 1, "b": 2})
@@ -299,8 +296,8 @@ def test_two_prefixes_in_one_application_do_not_collide():
 
 def test_two_prefixes_in_one_application_keep_their_own_pages(html_root):
     app = FastAPI()
-    app.include_router(router_of(add, theme="light"), prefix="/a")
-    app.include_router(router_of(add, theme="dark"), prefix="/b")
+    app.mount("/a", app_of(add, theme="light"))
+    app.mount("/b", app_of(add, theme="dark"))
 
     with TestClient(app) as client:
         light = client.get("/a/add/").text
@@ -312,8 +309,8 @@ def test_two_prefixes_in_one_application_keep_their_own_pages(html_root):
 
 def test_two_prefixes_in_one_application_keep_their_own_documents():
     app = FastAPI()
-    app.include_router(router_of(add, title="First"), prefix="/a")
-    app.include_router(router_of(read, title="Second"), prefix="/b")
+    app.mount("/a", app_of(add, title="First"))
+    app.mount("/b", app_of(read, title="Second"))
 
     with TestClient(app) as client:
         first = client.get("/a/doc").text
@@ -327,8 +324,8 @@ def test_two_prefixes_in_one_application_keep_their_own_documents():
 
 def test_two_prefixes_in_one_application_keep_their_own_upload_limits():
     app = FastAPI()
-    app.include_router(router_of(read, max_upload_bytes=2), prefix="/a")
-    app.include_router(router_of(read), prefix="/b")
+    app.mount("/a", app_of(read, max_upload_bytes=2))
+    app.mount("/b", app_of(read))
 
     with TestClient(app) as client:
         strict = client.post("/a/upload", content=b"hello",

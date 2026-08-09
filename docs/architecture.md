@@ -78,7 +78,7 @@ against.
 Resolving the return value is not part of that contract.
 `WebFunction.return_parser` holds what `Download` and `OpenForm` declared, and
 `WebFunctions.forms` holds which function each already-resolved opening jumps
-to. Both fields have public names and can be inspected, because the router
+to. Both fields have public names and can be inspected, because the application
 needs them, but a public name is not an importable API. Their types,
 `ReturnParser` and `FormAction`, and the `has_download()` that queries them,
 live in their own modules and are not re-exported from `func_to_web`; neither

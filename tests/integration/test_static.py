@@ -46,12 +46,15 @@ EXPECTED_TYPES = {
     ".svg": "image/svg+xml",
 }
 
+# ".." and "../" are absent on purpose: httpx resolves them in the client, so
+# GET /static/.. leaves as GET /, which is the index and answers 200. The server
+# never sees the dot segment, and refusing it is the job of the DefensivePaths
+# middleware — proven in tests/unit/test_defensive_paths.py, where the scope is
+# built by hand. "../router.py" stays because it leaves as /router.py, a 404.
 REJECTED_PATHS = (
     "unknown.js",
     "icons",
     "",
-    "..",
-    "../",
     "../router.py",
     "%2e%2e",
     "%2e%2e/router.py",

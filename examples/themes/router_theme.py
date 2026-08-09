@@ -1,9 +1,9 @@
-"""The theme belongs to the space: two themes are two routers."""
+"""The theme belongs to the space: two themes are two applications."""
 
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 HOST = "127.0.0.1"
 PORT = 8000
@@ -15,22 +15,16 @@ def word_count(text: str = "Two themes, one function") -> str:
 
 
 def build_app() -> FastAPI:
-    """Mount the same function twice, one router per forced theme.
+    """Mount the same function twice, one application per forced theme.
 
     The theme belongs to the space and not to the function, so two themes
-    need two routers. A WebFunction compiles its page once and without
+    need two applications. A WebFunction compiles its page once and without
     knowing where it will be mounted, which is why it carries no theme.
     """
     app = FastAPI()
 
-    app.include_router(
-        router_of(word_count, title="Light space", theme="light"),
-        prefix="/light",
-    )
-    app.include_router(
-        router_of(word_count, title="Dark space", theme="dark"),
-        prefix="/dark",
-    )
+    app.mount("/light", app_of(word_count, title="Light space", theme="light"))
+    app.mount("/dark", app_of(word_count, title="Dark space", theme="dark"))
 
     return app
 

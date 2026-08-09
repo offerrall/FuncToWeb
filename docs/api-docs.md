@@ -15,7 +15,7 @@ Three sections and nothing else:
 ```text
 === <space title> ===
 
-Every path is relative to the prefix this router is mounted on; replace
+Every path is relative to the prefix this application is mounted on; replace
 <base_url> with it.
 
 Functions:
@@ -45,7 +45,7 @@ without going into the transport: that is covered in
 
 ## It only describes the routes that exist
 
-`router_of()` registers `/upload` only if at least one function declares a file
+`app_of()` registers `/upload` only if at least one function declares a file
 parameter, and `/returns/<reference>` only if at least one function declares a
 `Download`. The document follows the same rule:
 
@@ -73,7 +73,7 @@ is why it is enough to build a correct call.
 
 ## Paths are relative to the mount
 
-The document does not know where the router is mounted, and it does not try to:
+The document does not know where the application is mounted, and it does not try to:
 it writes `<base_url>` and tells you to replace it with the real prefix.
 Mounting the space on `/tools` or on `/admin` does not change a single character
 of the document.
@@ -85,7 +85,7 @@ The text is composed when the space is prepared, inside
 field. Every request returns that same string: it is not recomputed, it is not
 parameterized, and it does not depend on who asks. The one thing that does
 depend on the space — which routes exist — is already resolved by the time the
-text is composed. Two routers that mount the same space serve the same text.
+text is composed. Two applications that mount the same space serve the same text.
 
 ## There is no structured API
 
@@ -94,9 +94,11 @@ publishes the same thing in another format. The text is meant to be read; the
 plan it carries inside is the structured part, and that is what you read to
 build the call.
 
-A host application that mounts the router also keeps its own FastAPI
-`/openapi.json`, which describes the registered routes but not the type
-contract of each function.
+A FastAPI host that mounts the application keeps its own `/openapi.json`, but
+that document does not describe the mounted space: a mount is one ASGI
+application inside another, and FastAPI only documents the routes it registers
+itself. The description of the space is `/doc`, under the prefix it was mounted
+on.
 
 Related: [http.md](http.md), [web-function.md](web-function.md),
 [router.md](router.md), [outputs.md](outputs.md).

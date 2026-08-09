@@ -60,7 +60,7 @@ capture observes `stdout`; it does not hijack it.
 Capture is turned off per function or per space:
 
 ```python
-router_of(
+app_of(
     [
         normal_task,
         WebFunction(noisy_task, capture_prints=False),
@@ -71,8 +71,8 @@ router_of(
 
 ```text
 WebFunction.capture_prints set        → wins
-WebFunction.capture_prints not set    → inherits from router/run
-router/run not set                    → True
+WebFunction.capture_prints not set    → inherits from application/run
+application/run not set               → True
 ```
 
 That is why the field is `bool | None`: `None` means "inherit", not

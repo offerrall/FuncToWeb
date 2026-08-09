@@ -26,7 +26,7 @@ from func_to_web import (
     WebFunction,
     WebFunctions,
     page_of,
-    router_of,
+    app_of,
     run,
 )
 
@@ -429,7 +429,7 @@ def test_the_documentation_imports_cover_a_real_part_of_the_public_api():
                 for block in IMPORTING_BLOCKS
                 for name in imported_from_func_to_web(block.code)}
 
-    assert {"run", "router_of", "page_of", "WebFunction", "WebFunctions",
+    assert {"run", "app_of", "page_of", "WebFunction", "WebFunctions",
             "OpenForm", "Download"} <= imported
 
 
@@ -437,7 +437,7 @@ def test_the_documentation_imports_cover_a_real_part_of_the_public_api():
     ("page", "name", "target"),
     [
         ("docs/run.md", "run", run),
-        ("docs/router.md", "router_of", router_of),
+        ("docs/router.md", "app_of", app_of),
         ("docs/prefill.md", "page_of", page_of),
         ("docs/web-function.md", "WebFunction", WebFunction),
     ],
@@ -525,7 +525,7 @@ def test_the_getting_started_curl_answer_is_still_true(client_factory):
 
 def test_the_readme_fastapi_integration_snippet_works(clients):
     app = FastAPI()
-    app.include_router(router_of([add, divide]), prefix="/tools")
+    app.mount("/tools", app_of([add, divide]))
     client = clients(app)
     page = client.get("/tools/add/").text
     asset = STATIC_REFERENCE.search(page).group(1)
@@ -576,16 +576,17 @@ def test_the_web_function_metadata_snippet_still_applies():
 
 def test_the_web_function_named_space_is_reachable(clients):
     app = FastAPI()
-    app.include_router(router_of(
+    app.mount("/tools", app_of(
         [volume, WebFunction(divide, name="Dividir", slug="division")],
         title="Herramientas internas",
     ))
     client = clients(app)
 
-    assert client.get("/division/").status_code == 200
-    assert client.post("/division/invoke", json={"a": 6, "b": 3}).status_code == 200
-    assert client.get("/doc").text.startswith("=== Herramientas internas ===")
-    assert client.get("/divide/").status_code == 404
+    assert client.get("/tools/division/").status_code == 200
+    assert client.post("/tools/division/invoke",
+                       json={"a": 6, "b": 3}).status_code == 200
+    assert client.get("/tools/doc").text.startswith("=== Herramientas internas ===")
+    assert client.get("/tools/divide/").status_code == 404
 
 
 def test_the_web_functions_snippet_builds_a_prepared_space(clients):
@@ -597,8 +598,8 @@ def test_the_web_functions_snippet_builds_a_prepared_space(clients):
         title="Herramientas internas",
     )
     app = FastAPI()
-    app.include_router(router_of(space), prefix="/a")
-    app.include_router(router_of(space), prefix="/b")
+    app.mount("/a", app_of(space))
+    app.mount("/b", app_of(space))
     client = clients(app)
 
     assert space.title == "Herramientas internas"
@@ -608,13 +609,12 @@ def test_the_web_functions_snippet_builds_a_prepared_space(clients):
 
     with pytest.raises(TypeError,
                        match="the prepared space already carries its title"):
-        router_of(space, title="Otro")
+        app_of(space, title="Otro")
 
 
 def test_the_open_form_snippet_opens_the_target_prefilled(clients):
     app = FastAPI()
-    app.include_router(router_of([select_product, edit_product]),
-                       prefix="/tools")
+    app.mount("/tools", app_of([select_product, edit_product]))
     client = clients(app)
     result = client.post("/tools/select_product/invoke",
                          json={"product_id": 7}).json()["result"]
@@ -638,11 +638,11 @@ def test_the_open_form_target_must_be_registered():
 
     with pytest.raises(ReturnContractError,
                        match="OpenForm target is not registered in this space"):
-        router_of([select_product])
+        app_of([select_product])
 
     with pytest.raises(ReturnContractError,
                        match="matches more than one registered function"):
-        router_of([
+        app_of([
             WebFunction(edit_product, slug="edit-a"),
             WebFunction(edit_product, slug="edit-b"),
             select_product,
@@ -693,9 +693,9 @@ def test_the_multiple_download_snippet_keeps_the_return_order(
 
 def test_the_theme_snippet_writes_the_documented_html_root(clients, html_root):
     app = FastAPI()
-    app.include_router(router_of([add, divide]), prefix="/system")
-    app.include_router(router_of([add, divide], theme="light"), prefix="/light")
-    app.include_router(router_of([add, divide], theme="dark"), prefix="/dark")
+    app.mount("/system", app_of([add, divide]))
+    app.mount("/light", app_of([add, divide], theme="light"))
+    app.mount("/dark", app_of([add, divide], theme="dark"))
     client = clients(app)
 
     assert html_root(client.get("/system/add/").text) == "<html>"
@@ -711,10 +711,10 @@ def test_the_theme_snippet_errors_are_the_documented_ones():
     with pytest.raises(ValueError,
                        match=r"theme must be one of system, light, dark; "
                              r"got 'Dark'"):
-        router_of([add, divide], theme="Dark")
+        app_of([add, divide], theme="Dark")
 
     with pytest.raises(TypeError, match="theme must be str"):
-        router_of([add, divide], theme=None)
+        app_of([add, divide], theme=None)
 
 
 def test_the_file_field_snippet_uploads_once_and_invokes_many_times(
@@ -848,7 +848,7 @@ def test_the_http_snippet_status_codes_are_the_documented_ones(client_factory):
 
 def test_the_streaming_snippet_switches_capture_per_function(clients, sse):
     app = FastAPI()
-    app.include_router(router_of(
+    app.mount("/", app_of(
         [
             normal_task,
             WebFunction(noisy_task, capture_prints=False),
@@ -895,11 +895,6 @@ def test_the_types_snippets_validate_before_calling(client_factory):
 
 def test_the_run_reserved_kwargs_raise_the_documented_errors():
     with pytest.raises(TypeError,
-                       match="fastapi_kwargs cannot contain 'title'; "
-                             "use the title argument"):
-        run(divide, fastapi_kwargs={"title": "Otro"})
-
-    with pytest.raises(TypeError,
                        match="uvicorn_kwargs cannot contain 'host'; "
                              "use the host argument"):
         run(divide, uvicorn_kwargs={"host": "0.0.0.0"})
@@ -913,22 +908,22 @@ def test_the_run_reserved_kwargs_raise_the_documented_errors():
 def test_the_router_error_table_of_the_documentation_holds():
     with pytest.raises(ValueError,
                        match="at least one function is required"):
-        router_of([])
+        app_of([])
 
     for entry in (None, 3, "add", {"a": add}):
         with pytest.raises(TypeError,
                            match="entries must be callables or WebFunction "
                                  "instances"):
-            router_of(entry)
+            app_of(entry)
 
     with pytest.raises(TypeError,
                        match="entries must be callables or WebFunction "
                              "instances"):
-        router_of([add, 3])
+        app_of([add, 3])
 
     with pytest.raises(ValueError,
                        match="two functions share the slug 'add'"):
-        router_of([add, WebFunction(divide, slug="add")])
+        app_of([add, WebFunction(divide, slug="add")])
 
 
 def test_the_documented_reserved_slugs_are_still_reserved():

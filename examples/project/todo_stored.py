@@ -27,7 +27,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pytypehintstore import store_of
 
-from func_to_web import Label, Max, Min, router_of
+from func_to_web import Label, Max, Min, app_of
 
 
 @dataclass
@@ -143,7 +143,7 @@ await refresh();
 """
 
 app = FastAPI()
-app.include_router(router_of([create_task, edit_task, delete_task]), prefix="/tools")
+app.mount("/tools", app_of([create_task, edit_task, delete_task]))
 
 
 @app.get("/", response_class=HTMLResponse)

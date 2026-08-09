@@ -43,8 +43,8 @@ contract lives; this page only lists them.
 | There is no deduplication by content, no hash and no invalidation: reuse depends on keeping the reference | [files.md](files.md) |
 | An upload that no execution or prefill ever uses is eligible for the sweep after `pending_ttl`, one hour by default; `pending_ttl=None` keeps everything | [files.md](files.md) |
 | A file that has been used once is never cleaned up: deciding when that goes is the host application's job | [files.md](files.md) |
-| `uploads_dir`/`pending_ttl` and `returns_dir`/`returns_ttl` are per process, not per router: the first router that needs a pair settles it, a later one asking for something different gets a `UserWarning`, and two directories, or two TTLs, need two processes | [files.md](files.md), [router.md](router.md) |
-| A space with no file fields settles no uploads directory and one with no `Download` settles no returns directory, but both are validated and created when any router is built | [files.md](files.md) |
+| `uploads_dir`/`pending_ttl` and `returns_dir`/`returns_ttl` are per process, not per application: the first application that needs a pair settles it, a later one asking for something different gets a `UserWarning`, and two directories, or two TTLs, need two processes | [files.md](files.md), [router.md](router.md) |
+| A space with no file fields settles no uploads directory and one with no `Download` settles no returns directory, but both are validated and created when any application is built | [files.md](files.md) |
 | The length limit of a reference guards what is written, not what is read: a name already in the storage directory that is longer than the limit still resolves, but it cannot be uploaded | [files.md](files.md) |
 
 ## Theme
@@ -52,7 +52,7 @@ contract lives; this page only lists them.
 | Limit | Where |
 | --- | --- |
 | The theme is chosen by whoever mounts the space, not by the user: no visible selector, no persistence, no cookies and no theme-switching JavaScript | [router.md](router.md#theme) |
-| The theme belongs to the whole space: two different themes mean two routers | [router.md](router.md#theme) |
+| The theme belongs to the whole space: two different themes mean two applications | [router.md](router.md#theme) |
 | A host application cannot impose its theme on a page embedded in an iframe: the attribute lives in the `<html>` of that page | [router.md](router.md#theme), [sdk.md](sdk.md#embedding-a-function-page) |
 
 ## Results
@@ -83,6 +83,6 @@ contract lives; this page only lists them.
 | Limit | Where |
 | --- | --- |
 | FuncToWeb does not provide authentication, permissions, middleware or CORS: they belong to the host application | [security.md](security.md) |
-| There is no configuration model for a space beyond the arguments of `router_of()` and `run()`, and the two variables that name the storage directories, `FUNCTOWEB_UPLOADS_DIR` and `FUNCTOWEB_RETURNS_DIR` | [router.md](router.md), [run.md](run.md) |
+| There is no configuration model for a space beyond the arguments of `app_of()` and `run()`, and the two variables that name the storage directories, `FUNCTOWEB_UPLOADS_DIR` and `FUNCTOWEB_RETURNS_DIR` | [router.md](router.md), [run.md](run.md) |
 | There is no deployment guide: reload, workers, SSL and graceful shutdown belong to whichever server is used | [run.md](run.md) |
 

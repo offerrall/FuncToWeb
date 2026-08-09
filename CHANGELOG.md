@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.5.0] - 2026-08-08
+
+FuncToWeb now depends directly on Starlette instead of FastAPI. `app_of()`
+returns a mountable Starlette/ASGI application, and `run()` serves that same
+application with Uvicorn. FastAPI remains a naturally compatible host through
+`app.mount(...)`, but is no longer a runtime dependency. There is no 2.4.0: the
+numbering goes from 2.3.0 straight to 2.5.0.
+
+### Changed
+- **Breaking:** `router_of()` is replaced by `app_of()` and
+  `include_router(..., prefix=...)` becomes `mount(prefix, app_of(...))`.
+- **Breaking:** `fastapi_kwargs` is removed from `run()`; `uvicorn_kwargs`
+  remains unchanged.
+- **Breaking:** the per-router dependencies of
+  `include_router(..., dependencies=[Depends(...)])` have nowhere to go, because
+  a mount is an application inside another and not a router: `mount()` takes no
+  `dependencies` and raises `TypeError` for it. A host that authenticated the
+  space that way applies the same check as middleware around the mount, wrapping
+  `app_of(...)` before mounting it. Dropping the argument to get past the
+  `TypeError` leaves the space mounted and unauthenticated.
+- A `POST` carrying `Content-Type: text/plain` with a valid JSON body now
+  answers `200`. FastAPI read the declared content type first and took the body
+  for a string, which was a `422`; the body is parsed as JSON whatever the
+  header says.
+- A route that answers `GET` now answers `HEAD` as well, which is the behaviour
+  of `starlette.routing.Route`; with FastAPI's own router `HEAD` was a `405`.
+- Invalid or non-object JSON keeps status `422` but now uses a small
+  FuncToWeb transport error instead of FastAPI/Pydantic's validation payload.
+- The application index at `/` is part of `app_of()` as well as standalone
+  `run()`.
+
+### Dependencies
+- Replaced `fastapi==0.121.1` with `starlette==0.49.3` at runtime.
+- FastAPI is retained only in the test extra to verify host compatibility.
+
 ## [2.3.0] - 2026-08-08
 
 Three things about the page a host opens. A function that prints in a loop no

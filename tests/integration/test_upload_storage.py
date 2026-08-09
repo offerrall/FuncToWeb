@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import func_to_web.web.upload as upload_module
-from func_to_web import router_of
+from func_to_web import app_of
 from func_to_web.web.pending import parsed, pending_of, stamps_of
 from func_to_web.web.references import (
     NAME_LIMIT,
@@ -203,23 +203,23 @@ def test_checked_limit_rejects_str(value):
 
 
 def test_router_accepts_no_limit(file_function):
-    assert router_of(file_function, max_upload_bytes=None) is not None
+    assert app_of(file_function, max_upload_bytes=None) is not None
 
 
 def test_router_accepts_positive_limit(file_function):
-    assert router_of(file_function, max_upload_bytes=4096) is not None
+    assert app_of(file_function, max_upload_bytes=4096) is not None
 
 
 @pytest.mark.parametrize("value", [True, False, 1.0, "10", b"10"])
 def test_router_rejects_non_int_limit(file_function, value):
     with pytest.raises(TypeError, match="int or None"):
-        router_of(file_function, max_upload_bytes=value)
+        app_of(file_function, max_upload_bytes=value)
 
 
 @pytest.mark.parametrize("value", [0, -1])
 def test_router_rejects_non_positive_limit(file_function, value):
     with pytest.raises(ValueError, match="greater than zero"):
-        router_of(file_function, max_upload_bytes=value)
+        app_of(file_function, max_upload_bytes=value)
 
 
 def test_valid_reference_is_accepted(uploader_client, uploads_dir):

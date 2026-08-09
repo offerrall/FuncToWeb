@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from shared import carries
-from func_to_web import router_of
+from func_to_web import app_of
 from func_to_web.config import RETURNS_VARIABLE, UPLOADS_VARIABLE
 from func_to_web.web import returned_files
 from func_to_web.web import upload as upload_module
@@ -112,19 +112,19 @@ def test_the_returns_default_is_used_when_nothing_asks(returning, tmp_path,
 def test_an_uploads_dir_of_another_type_is_refused(file_function, value):
     with pytest.raises(TypeError,
                        match="uploads_dir must be str, Path or None"):
-        router_of(file_function, uploads_dir=value)
+        app_of(file_function, uploads_dir=value)
 
 
 @pytest.mark.parametrize("value", WRONG_TYPES)
 def test_a_returns_dir_of_another_type_is_refused(file_function, value):
     with pytest.raises(TypeError,
                        match="returns_dir must be str, Path or None"):
-        router_of(file_function, returns_dir=value)
+        app_of(file_function, returns_dir=value)
 
 
 def test_a_type_is_refused_even_for_a_space_that_stores_nothing(scalar):
     with pytest.raises(TypeError, match="uploads_dir must be"):
-        router_of(scalar, uploads_dir=3)
+        app_of(scalar, uploads_dir=3)
 
 
 def test_a_path_that_is_not_a_directory_is_refused(file_function, tmp_path):
@@ -132,10 +132,10 @@ def test_a_path_that_is_not_a_directory_is_refused(file_function, tmp_path):
     occupied.write_bytes(b"x")
 
     with pytest.raises(ValueError, match="uploads_dir is not a directory"):
-        router_of(file_function, uploads_dir=occupied)
+        app_of(file_function, uploads_dir=occupied)
 
     with pytest.raises(ValueError, match="returns_dir is not a directory"):
-        router_of(file_function, returns_dir=occupied)
+        app_of(file_function, returns_dir=occupied)
 
 
 def test_a_missing_directory_is_created_when_the_router_is_built(
@@ -143,14 +143,14 @@ def test_a_missing_directory_is_created_when_the_router_is_built(
 ):
     target = tmp_path / "deep" / "nested" / "uploads"
 
-    router_of(file_function, uploads_dir=target)
+    app_of(file_function, uploads_dir=target)
 
     assert target.is_dir()
 
 
 def test_both_directories_are_created_by_a_space_that_stores_nothing(scalar,
                                                                      tmp_path):
-    router_of(scalar, uploads_dir=tmp_path / "u", returns_dir=tmp_path / "r")
+    app_of(scalar, uploads_dir=tmp_path / "u", returns_dir=tmp_path / "r")
 
     assert (tmp_path / "u").is_dir()
     assert (tmp_path / "r").is_dir()
@@ -176,7 +176,7 @@ def test_a_directory_that_cannot_be_created_fails_the_build(file_function,
     monkeypatch.setattr(Path, "mkdir", refuse)
 
     with pytest.raises(PermissionError):
-        router_of(file_function, uploads_dir=tmp_path / "denied")
+        app_of(file_function, uploads_dir=tmp_path / "denied")
 
 
 def test_a_string_is_accepted(uploading, tmp_path):

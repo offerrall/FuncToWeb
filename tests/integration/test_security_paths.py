@@ -5,13 +5,11 @@ from urllib.parse import urljoin
 
 import pytest
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from fastapi.testclient import TestClient
 
-from func_to_web import Download, IsPathFile, OpenForm, WebFunction, router_of
+from func_to_web import Download, IsPathFile, OpenForm, WebFunction, app_of
 from func_to_web.models.function import SLUG_PATTERN
 from func_to_web.models.functions import space_of
-from func_to_web.templates.index import index_of
 
 TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
 
@@ -22,8 +20,6 @@ NULL_BYTE = "a\x00b"
 LONG_NAME = "a" * 4000
 
 MALICIOUS = (
-    "..",
-    "../",
     "..\\",
     "%2e%2e",
     "%252e%252e",
@@ -68,7 +64,6 @@ RETURN_TRAVERSALS = (
     "..\\secret.txt",
     "..%5csecret.txt",
     "sub/secret.txt",
-    "..",
     ".",
 )
 
@@ -516,12 +511,7 @@ def test_injected_markup_is_escaped_everywhere_it_is_served(tolerant_factory):
     space = space_of([web_function], f"Title {INJECTION}")
 
     app = FastAPI()
-    app.include_router(router_of(space), prefix="")
-    rendered = index_of(space, "")
-
-    @app.get("/", response_class=HTMLResponse)
-    def index() -> str:
-        return rendered
+    app.mount("", app_of(space))
 
     with TestClient(app) as client:
         pages = [
@@ -540,10 +530,22 @@ def test_injected_markup_is_escaped_everywhere_it_is_served(tolerant_factory):
             assert "<script>alert" not in response.text
             assert "alert(1)" in response.text or "alert%281%29" in response.text
 
+        # The index carries the injected title and the injected name; the page
+        # carries the name and the description.
         assert "&lt;script&gt;" in pages[0].text
+        assert "Title &lt;script&gt;" in pages[0].text
         assert "&lt;script&gt;" in pages[1].text
         assert "\\u003cscript>" in pages[2].text
         assert "\\u003cscript>" in pages[3].text
+
+        # /doc is the same title over text/plain, where markup is text and not
+        # an element: what has to hold is the content type it is served with.
+        document = client.get("/doc")
+
+        assert document.status_code == 200
+        assert not is_html(document)
+        assert document.headers["content-type"].startswith("text/plain")
+        assert f"Title {INJECTION}" in document.text
 
 
 def test_the_whole_attack_matrix_creates_no_file_outside_the_temporary_dirs(

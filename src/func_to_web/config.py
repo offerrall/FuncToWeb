@@ -3,7 +3,7 @@ from pathlib import Path
 from sys import platform
 from tempfile import gettempdir
 
-__version__ = "2.3.0"
+__version__ = "2.5.0"
 
 NAME: str = "".join(part.title() for part in __name__.split(".")[0].split("_"))
 

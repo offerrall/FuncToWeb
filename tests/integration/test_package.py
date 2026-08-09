@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.package, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "src" / "func_to_web"
-VERSION = "2.3.0"
+VERSION = "2.5.0"
 WHEEL_NAME = f"func_to_web-{VERSION}-py3-none-any.whl"
 SDIST_NAME = f"func_to_web-{VERSION}.tar.gz"
 SDIST_PREFIX = f"func_to_web-{VERSION}/"
@@ -72,7 +72,7 @@ EXPECTED_CLASSIFIERS = (
 # arrives with it and pinning it twice is one more place to keep in step.
 EXPECTED_RUNTIME_REQUIREMENTS = (
     "pytypehintweb==0.0.5",
-    "fastapi==0.121.1",
+    "starlette==0.49.3",
     "uvicorn==0.38.0",
 )
 
@@ -253,17 +253,14 @@ print(json.dumps({
 ROUTER_PROBE = DEMO_SOURCE + '''
 import json
 
-from fastapi import APIRouter, FastAPI
-from func_to_web import router_of
+from starlette.applications import Starlette
+from func_to_web import app_of
 
-router = router_of(demo)
-
-app = FastAPI()
-app.include_router(router)
+router = app_of(demo)
 
 print(json.dumps({
     "type": type(router).__name__,
-    "is_api_router": isinstance(router, APIRouter),
+    "is_starlette": isinstance(router, Starlette),
     "routes": sorted(route.path for route in router.routes),
 }))
 '''
@@ -271,12 +268,10 @@ print(json.dumps({
 PAGE_PROBE = DEMO_SOURCE + '''
 import json
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from func_to_web import router_of
+from starlette.testclient import TestClient
+from func_to_web import app_of
 
-app = FastAPI()
-app.include_router(router_of(demo))
+app = app_of(demo)
 
 with TestClient(app) as client:
     page = client.get("/demo/")
@@ -295,16 +290,14 @@ import json
 import re
 from urllib.parse import urljoin
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from func_to_web import router_of
+from starlette.testclient import TestClient
+from func_to_web import app_of
 
 HTML_REFERENCE = re.compile(r'(?:href|src)="([^"]+)"')
 SCRIPT_REFERENCE = re.compile(r'(?:from|import)\\s*\\(?\\s*"([^"]+)"')
 STYLE_REFERENCE = re.compile(r'url\\(\\s*["\\\']?([^"\\\')]+)["\\\']?\\s*\\)')
 
-app = FastAPI()
-app.include_router(router_of(demo))
+app = app_of(demo)
 
 seen = {}
 pending = ["/demo/"]
@@ -565,8 +558,8 @@ def test_clean_install_exports_the_whole_public_api(installed_python, tmp_path):
 def test_clean_install_builds_a_router(installed_python, tmp_path):
     payload = run_in_venv(installed_python, ROUTER_PROBE, tmp_path)
 
-    assert payload["is_api_router"]
-    assert payload["type"] == "APIRouter"
+    assert payload["is_starlette"]
+    assert payload["type"] == "Starlette"
     assert "/demo/" in payload["routes"]
     assert "/doc" in payload["routes"]
     assert "/static/{name:path}" in payload["routes"]

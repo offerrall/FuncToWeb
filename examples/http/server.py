@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import FastAPI
 
-from func_to_web import Choices, IsPathFile, Max, Min, router_of, run
+from func_to_web import Choices, IsPathFile, Max, Min, app_of, run
 
 TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
 
@@ -59,7 +59,7 @@ TITLE = "HTTP demo"
 def app_with_prefix(prefix: str) -> FastAPI:
     """Build an application serving the same space under a mount prefix."""
     app = FastAPI()
-    app.include_router(router_of(FUNCTIONS, title=TITLE), prefix=prefix)
+    app.mount(prefix, app_of(FUNCTIONS, title=TITLE))
 
     return app
 

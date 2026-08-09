@@ -21,6 +21,13 @@ ENCODED = ["%2e%2e%2fsecret.txt", "..%2Fsecret.txt", "%2e%2e%5csecret.txt"]
 
 TRAVERSALS = SEPARATORS + ENCODED
 
+# A bare ".." never survives the client: httpx resolves the dot segments as RFC
+# 3986 asks, so GET /returns/.. leaves as GET /, which is the index of the
+# application and answers 200. Refusing it is the job of the DefensivePaths
+# middleware, and tests/unit/test_defensive_paths.py is where that is proven,
+# building the scope by hand so that no client can normalize it away.
+OVER_HTTP = [reference for reference in TRAVERSALS if reference != ".."]
+
 
 def path_function(source):
     def send_file(times: int = 1) -> Annotated[Path, Download()]:
@@ -300,7 +307,7 @@ def test_unknown_reference_answers_404(client_factory, sized_file):
     assert client.get("/returns/deadbeef.report.txt").status_code == 404
 
 
-@pytest.mark.parametrize("reference", TRAVERSALS)
+@pytest.mark.parametrize("reference", OVER_HTTP)
 def test_traversal_answers_404(client_factory, sized_file, reference):
     source = sized_file("report.txt", data=b"payload")
     client = client_factory(path_function(source))

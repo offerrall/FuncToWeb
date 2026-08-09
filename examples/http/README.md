@@ -47,7 +47,7 @@ input contract, and `500` that the function raised an exception.
 
 ## Under a prefix
 
-Mounted with `app.include_router(router_of(...), prefix="/tools")`, the routes
+Mounted with `app.mount("/tools", app_of(...))`, the routes
 become `/tools/greet/invoke`, `/tools/upload` and `/tools/doc`. The clients only
 need to change their `PREFIX` constant to `"/tools"`; `upload_client.py` takes
 that constant from `invoke_client.py`, together with `invoke()`.

@@ -13,7 +13,7 @@ from func_to_web import (
     WebFunction,
     WebFunctions,
     page_of,
-    router_of,
+    app_of,
     run,
 )
 from func_to_web.templates.index import index_of
@@ -126,18 +126,18 @@ def test_checked_theme_rejects_an_unknown_string_with_value_error(value):
 
 
 @pytest.mark.parametrize("value", NOT_STRINGS)
-def test_router_of_rejects_a_non_string_theme_when_it_is_built(scalar, value):
+def test_app_of_rejects_a_non_string_theme_when_it_is_built(scalar, value):
     with pytest.raises(TypeError):
-        router_of(scalar, theme=value)
+        app_of(scalar, theme=value)
 
 
 @pytest.mark.parametrize("value", INVALID_STRINGS)
-def test_router_of_rejects_an_unknown_theme_string_when_it_is_built(
+def test_app_of_rejects_an_unknown_theme_string_when_it_is_built(
     scalar,
     value,
 ):
     with pytest.raises(ValueError):
-        router_of(scalar, theme=value)
+        app_of(scalar, theme=value)
 
 
 @pytest.mark.parametrize("value", NOT_STRINGS)

@@ -29,7 +29,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from func_to_web import Label, Max, Min, OptionalToggle, Slider, router_of
+from func_to_web import Label, Max, Min, OptionalToggle, Slider, app_of
 
 
 class Room(Enum):
@@ -170,8 +170,7 @@ await refresh();
 """
 
 app = FastAPI()
-app.include_router(
-    router_of([create_booking, edit_booking, delete_booking]), prefix="/tools")
+app.mount("/tools", app_of([create_booking, edit_booking, delete_booking]))
 
 
 @app.get("/", response_class=HTMLResponse)

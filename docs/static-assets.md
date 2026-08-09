@@ -1,9 +1,9 @@
 # Static assets
 
 `GET /static/{path}` serves the assets that every function in a space shares. It
-is a router route, like [`/doc`](api-docs.md), not a per-function route: there is
-one per space, and every page in that space pulls from it, so they share the
-download and the cache. That is why `static` is a reserved slug.
+is an application route, like [`/doc`](api-docs.md), not a per-function route:
+there is one per space, and every page in that space pulls from it, so they
+share the download and the cache. That is why `static` is a reserved slug.
 
 ## Two sources, in order
 
@@ -72,15 +72,18 @@ any `prefix`. What that rules out, and why →
 
 Icons are not a special case. **Everything** a function page requests, it
 requests relatively: `../static`, `../upload`, `../returns/…`, `./icons/*.svg`.
-That way the router prefix is inherited from the page's own URL, and nothing the
+That way the application prefix is inherited from the page's own URL, and nothing the
 page loads has to know where the space was mounted. See [router.md](router.md).
 
-The [index that `run()` adds](run.md#the-space-index) is the exception: its three
-prefixed references — the style sheet, `/doc`, and the `src` of each iframe —
-are built by prepending the prefix rather than relatively. That is not a problem
-because `run()` always mounts at the root and passes the index an empty prefix;
-the index is not part of the router, so it does not go with the router to
-another mount.
+The [index](run.md#the-space-index) is no exception either. It is part of
+`app_of()`, served at the `/` of the space, and it is built with `"."` as its
+prefix, so its three prefixed references — the style sheet, `/doc`, and the
+`src` of each iframe — come out as `./static/widgets.css`, `./doc` and
+`./{slug}/`. They resolve against the URL of the index itself, and a request
+for the mount point without its trailing slash is redirected to it first, so
+the base always ends in `/` and every reference lands inside the prefix. The
+index therefore travels with the application to whatever mount it is given,
+exactly like a function page does.
 
 ## Theme
 
@@ -91,7 +94,7 @@ outputs, and upload modal) reads the same tokens by inheritance and paints a
 single surface.
 
 The server writes `data-pth-theme` on the `<html>` element from the `theme` of
-[`router_of()`](router.md#theme), as part of the initial markup, and
+[`app_of()`](router.md#theme), as part of the initial markup, and
 `widgets.css` resolves the three values in pure CSS: there is nothing to run in
 `<head>` and no preference to restore
 ([design/router.md](design/router.md#why-the-theme-is-pure-css)).

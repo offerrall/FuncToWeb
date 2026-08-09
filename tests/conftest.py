@@ -5,15 +5,15 @@ from functools import partial
 from pathlib import Path
 from typing import Annotated
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from func_to_web import Description, Download, Label, Max, Min, router_of
-
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tests"))
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pytest
+from starlette.applications import Starlette
+from starlette.testclient import TestClient
+
+from func_to_web import Description, Download, Label, Max, Min, app_of
 
 from shared import (  # noqa: E402
     Address,
@@ -204,8 +204,12 @@ def sized_file(tmp_path):
 @pytest.fixture
 def app_factory():
     def make(fns, prefix="", **options):
-        app = FastAPI()
-        app.include_router(router_of(fns, **options), prefix=prefix)
+        child = app_of(fns, **options)
+        if not prefix:
+            return child
+
+        app = Starlette()
+        app.mount(prefix, child)
         return app
 
     return make

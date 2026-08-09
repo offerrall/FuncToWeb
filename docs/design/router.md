@@ -1,4 +1,4 @@
-# The router
+# The application
 
 Why the storage defaults and the theme are what they are. The contract — the
 signature, the errors, the routes and the one-process-one-policy rule — is in
@@ -19,8 +19,8 @@ in any of the three cases: `system` is resolved by `widgets.css` with
 `prefers-color-scheme`, in pure CSS, and the other two arrive already decided.
 
 A `WebFunction` carries no theme of its own, because it compiles its HTML once,
-without knowing which router it will end up in. That is why the theme belongs
-to the space and two themes need two routers.
+without knowing which application it will end up in. That is why the theme belongs
+to the space and two themes need two applications.
 
 > Today the theme is set by whoever mounts the space. Letting the user
 > choose it, and remembering that choice, will come in a future version: that is

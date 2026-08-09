@@ -1,6 +1,6 @@
 """A mounted space with a file field and a maximum upload size.
 
-max_upload_bytes is the ceiling of the /upload endpoint of this router, per
+max_upload_bytes is the ceiling of the /upload endpoint of this application, per
 file and per request: anything bigger is answered with 413 and nothing is
 written to disk. The lifetime of what gets stored is the responsibility of
 the host application. Serve it as a script or point uvicorn at the module:
@@ -12,7 +12,7 @@ from typing import Annotated
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import IsPathFile, router_of
+from func_to_web import IsPathFile, app_of
 
 MAX_UPLOAD_BYTES = 256 * 1024
 
@@ -29,14 +29,11 @@ def count_lines(document: TextFile) -> str:
 
 app = FastAPI()
 
-app.include_router(
-    router_of(
-        [count_lines],
-        title="Documents",
-        max_upload_bytes=MAX_UPLOAD_BYTES,
-    ),
-    prefix="/documents",
-)
+app.mount("/documents", app_of(
+    [count_lines],
+    title="Documents",
+    max_upload_bytes=MAX_UPLOAD_BYTES,
+))
 
 
 if __name__ == "__main__":

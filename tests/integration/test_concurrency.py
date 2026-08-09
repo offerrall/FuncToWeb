@@ -12,7 +12,7 @@ from func_to_web import (
     IsPathFile,
     OpenForm,
     WebFunction,
-    router_of,
+    app_of,
 )
 
 TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
@@ -374,10 +374,10 @@ def test_two_concurrent_downloads_are_both_served_whole(client_factory, gate):
     assert first.headers["content-disposition"].endswith('filename="report.bin"')
 
 
-def test_each_router_of_one_app_keeps_its_own_theme(clients, scalar, html_root):
+def test_each_app_of_one_app_keeps_its_own_theme(clients, scalar, html_root):
     app = FastAPI()
-    app.include_router(router_of(scalar, theme="light"), prefix="/light")
-    app.include_router(router_of(scalar, theme="dark"), prefix="/dark")
+    app.mount("/light", app_of(scalar, theme="light"))
+    app.mount("/dark", app_of(scalar, theme="dark"))
     client = clients(app)
 
     light, dark = gathered([
@@ -391,8 +391,8 @@ def test_each_router_of_one_app_keeps_its_own_theme(clients, scalar, html_root):
 
 def test_a_third_router_can_stay_on_the_system_theme(clients, scalar, html_root):
     app = FastAPI()
-    app.include_router(router_of(scalar, theme="light"), prefix="/light")
-    app.include_router(router_of(scalar), prefix="/plain")
+    app.mount("/light", app_of(scalar, theme="light"))
+    app.mount("/plain", app_of(scalar))
     client = clients(app)
 
     assert html_root(client.get("/plain/add/").text) == "<html>"
@@ -405,8 +405,8 @@ def test_two_routers_in_one_app_do_not_shadow_each_other(
     clients, scalar, printing, gate
 ):
     app = FastAPI()
-    app.include_router(router_of(scalar, title="Adders"), prefix="/first")
-    app.include_router(router_of(printing, title="Chatters"), prefix="/second")
+    app.mount("/first", app_of(scalar, title="Adders"))
+    app.mount("/second", app_of(printing, title="Chatters"))
     client = clients(app)
 
     first, second = gathered([
@@ -426,8 +426,8 @@ def test_two_routers_in_one_app_do_not_shadow_each_other(
 
 def test_two_spaces_can_serve_the_same_slug(clients, gate):
     app = FastAPI()
-    app.include_router(router_of(shifted_adder(1)), prefix="/first")
-    app.include_router(router_of(shifted_adder(1000)), prefix="/second")
+    app.mount("/first", app_of(shifted_adder(1)))
+    app.mount("/second", app_of(shifted_adder(1000)))
     client = clients(app)
 
     first, second = gathered([
@@ -441,20 +441,14 @@ def test_two_spaces_can_serve_the_same_slug(clients, gate):
 
 def test_an_open_form_resolves_inside_its_own_space(clients, gate):
     app = FastAPI()
-    app.include_router(
-        router_of([
-            WebFunction(pick_alpha, slug="pick"),
-            WebFunction(edit_alpha, slug="edit"),
-        ]),
-        prefix="/first",
-    )
-    app.include_router(
-        router_of([
-            WebFunction(pick_beta, slug="pick"),
-            WebFunction(edit_beta, slug="edit"),
-        ]),
-        prefix="/second",
-    )
+    app.mount("/first", app_of([
+        WebFunction(pick_alpha, slug="pick"),
+        WebFunction(edit_alpha, slug="edit"),
+    ]))
+    app.mount("/second", app_of([
+        WebFunction(pick_beta, slug="pick"),
+        WebFunction(edit_beta, slug="edit"),
+    ]))
     client = clients(app)
 
     first, second = gathered([
@@ -476,20 +470,14 @@ def test_an_open_form_resolves_inside_its_own_space(clients, gate):
 
 def test_an_open_form_target_of_one_space_is_unknown_to_the_other(clients):
     app = FastAPI()
-    app.include_router(
-        router_of([
-            WebFunction(pick_alpha, slug="pick"),
-            WebFunction(edit_alpha, slug="edit"),
-        ]),
-        prefix="/first",
-    )
-    app.include_router(
-        router_of([
-            WebFunction(pick_beta, slug="pick"),
-            WebFunction(edit_beta, slug="edit"),
-        ]),
-        prefix="/second",
-    )
+    app.mount("/first", app_of([
+        WebFunction(pick_alpha, slug="pick"),
+        WebFunction(edit_alpha, slug="edit"),
+    ]))
+    app.mount("/second", app_of([
+        WebFunction(pick_beta, slug="pick"),
+        WebFunction(edit_beta, slug="edit"),
+    ]))
     client = clients(app)
 
     assert client.post("/first/edit/invoke", json={"alpha": 5}).json() == {

@@ -9,7 +9,7 @@ Technical reference for the project. For an overview, see the
 * [Getting started](getting-started.md) — install, write your first function
   and run it.
 * [`run()`](run.md) — the standalone application and the space index.
-* [`router_of()`](router.md) — mounting the router in an existing FastAPI host
+* [`app_of()`](router.md) — mounting the application in an existing FastAPI host
   application.
 
 ## Inputs and forms

@@ -1,8 +1,8 @@
-"""Two routers over the same functions, one per theme.
+"""Two applications over the same functions, one per theme.
 
 The theme belongs to the space and is written into the <html> that the server
 sends, so it is resolved before the first paint. A WebFunction carries no
-theme of its own: two themes need two routers, one per mount point. Serve it
+theme of its own: two themes need two applications, one per mount point. Serve it
 as a script or point uvicorn at the module:
 uvicorn examples.fastapi.themed_router:app
 """
@@ -10,7 +10,7 @@ uvicorn examples.fastapi.themed_router:app
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 
 def word_count(text: str) -> str:
@@ -20,20 +20,11 @@ def word_count(text: str) -> str:
 
 app = FastAPI()
 
-app.include_router(
-    router_of([word_count], title="Daylight tools", theme="light"),
-    prefix="/light",
-)
+app.mount("/light", app_of([word_count], title="Daylight tools", theme="light"))
 
-app.include_router(
-    router_of([word_count], title="Night tools", theme="dark"),
-    prefix="/dark",
-)
+app.mount("/dark", app_of([word_count], title="Night tools", theme="dark"))
 
-app.include_router(
-    router_of([word_count], title="System tools"),
-    prefix="/system",
-)
+app.mount("/system", app_of([word_count], title="System tools"))
 
 
 if __name__ == "__main__":

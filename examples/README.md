@@ -35,19 +35,20 @@ Examples and mini-apps alike serve at <http://127.0.0.1:8000> and block until
 | [`outputs/`](outputs/) | text, multiple outputs, errors and `Download` | [outputs](../docs/outputs.md) |
 | [`outputs_optional/`](outputs_optional/) | images and tables with optional dependencies | [outputs](../docs/outputs.md) |
 | [`streaming/`](streaming/) | live `print()`, progress and `capture_prints` | [streaming](../docs/streaming.md) |
-| [`fastapi/`](fastapi/) | `router_of()`, prefixes, your own routes, iframes, `sdk.js` and modals that run themselves | [router](../docs/router.md), [sdk](../docs/sdk.md) |
-| [`themes/`](themes/) | `system`, `light` and `dark` in `run()` and `router_of()` | [static-assets](../docs/static-assets.md) |
+| [`fastapi/`](fastapi/) | `app_of()`, prefixes, your own routes, iframes, `sdk.js` and modals that run themselves | [application](../docs/router.md), [sdk](../docs/sdk.md) |
+| [`themes/`](themes/) | `system`, `light` and `dark` in `run()` and `app_of()` | [static-assets](../docs/static-assets.md) |
 | [`http/`](http/) | `/invoke`, `/invoke-stream`, `/upload` and `/doc` from a client | [http](../docs/http.md), [api-docs](../docs/api-docs.md) |
 
 ## Mini-apps
 
 | Mini-app | What it combines | Documentation |
 | --- | --- | --- |
-| [`project/todo.py`](project/todo.py) | one dataclass model reused by three functions, `router_of()` under a prefix, a hand-written route of your own | [types](../docs/types.md), [router](../docs/router.md) |
-| [`project/todo_stored.py`](project/todo_stored.py) | the same mini-app whose tasks survive the restart: the dict becomes a store and the model that draws the forms is what the JSON file holds | [types](../docs/types.md), [router](../docs/router.md) |
+| [`project/todo.py`](project/todo.py) | one dataclass model reused by three functions, `app_of()` under a prefix, a hand-written route of your own | [types](../docs/types.md), [application](../docs/router.md) |
+| [`project/todo_stored.py`](project/todo_stored.py) | the same mini-app whose tasks survive the restart: the dict becomes a store and the model that draws the forms is what the JSON file holds | [types](../docs/types.md), [application](../docs/router.md) |
 
 A mini-app is still short enough to read in one sitting, and it is still an
-ordinary FastAPI application: the library contributes a router, never the host.
+ordinary FastAPI application: the library contributes an application, never the
+host.
 
 ## Dependencies
 

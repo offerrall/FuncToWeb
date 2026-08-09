@@ -28,13 +28,13 @@ print(type(sys.stdout).__name__)
 
 BUILD_ROUTER = """
 import sys
-from func_to_web import router_of
+from func_to_web import app_of
 
 def chatty(times: int = 1) -> str:
     print("hello")
     return "done"
 
-router_of(chatty, capture_prints=True)
+app_of(chatty, capture_prints=True)
 print(type(sys.stdout).__name__)
 """
 
@@ -42,14 +42,14 @@ PLAIN_INVOKE = """
 import sys
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from func_to_web import router_of
+from func_to_web import app_of
 
 def chatty(times: int = 1) -> str:
     print("hello")
     return "done"
 
 app = FastAPI()
-app.include_router(router_of(chatty, capture_prints=True))
+app.mount("/", app_of(chatty, capture_prints=True))
 TestClient(app).post("/chatty/invoke", json={"times": 1})
 print(type(sys.stdout).__name__)
 """
@@ -58,14 +58,14 @@ STREAM_WITHOUT_CAPTURE = """
 import sys
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from func_to_web import router_of
+from func_to_web import app_of
 
 def chatty(times: int = 1) -> str:
     print("hello")
     return "done"
 
 app = FastAPI()
-app.include_router(router_of(chatty, capture_prints=False))
+app.mount("/", app_of(chatty, capture_prints=False))
 TestClient(app).post("/chatty/invoke-stream", json={"times": 1})
 print(type(sys.stdout).__name__)
 """
@@ -74,14 +74,14 @@ STREAM_WITH_CAPTURE = """
 import sys
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from func_to_web import router_of
+from func_to_web import app_of
 
 def chatty(times: int = 1) -> str:
     print("hello")
     return "done"
 
 app = FastAPI()
-app.include_router(router_of(chatty, capture_prints=True))
+app.mount("/", app_of(chatty, capture_prints=True))
 TestClient(app).post("/chatty/invoke-stream", json={"times": 1})
 print(type(sys.stdout).__name__)
 """

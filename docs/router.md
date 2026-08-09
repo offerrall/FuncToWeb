@@ -1,10 +1,10 @@
-# `router_of()`
+# `app_of()`
 
-Turns a space of functions into an `APIRouter` that you can mount in any FastAPI
-host application.
+Turns a space of functions into a Starlette application that can be mounted by
+a compatible ASGI host.
 
 ```python
-router_of(
+app_of(
     fns,
     *,
     title: str | None = None,
@@ -15,21 +15,21 @@ router_of(
     uploads_dir: str | Path | None = None,
     returns_dir: str | Path | None = None,
     theme: Theme = "system",
-) -> APIRouter
+) -> Starlette
 ```
 
 ```python
 from fastapi import FastAPI
 
-from func_to_web import router_of
+from func_to_web import app_of
 
 
 app = FastAPI()
-app.include_router(router_of([add, divide]), prefix="/tools")
+app.mount("/tools", app_of([add, divide]))
 ```
 
-The prefix belongs to `include_router()`, not to the router: all of the router's
-routes are relative, so the space works under any mounted prefix.
+The prefix belongs to `mount()`: all routes are relative, so the space works
+under any mounted prefix.
 
 ## What it accepts
 
@@ -65,17 +65,19 @@ GET  /doc                    the document of the space
 GET  /static/{path}          the shared assets
 POST /upload                 only if some function has a file field
 GET  /returns/{ref}          only if some function declares a Download
+GET  /                       index of the registered functions
 ```
 
-The first five are always there; `invoke-stream` also exists for functions that
-print nothing. The last two are registered only when some function needs them,
-so a space without input files does not expose `/upload`, and one without output
-files does not expose `/returns`. That is why four slugs are reserved: `doc`,
-`static`, `upload` and `returns`. All four are always rejected, even in a space
-that registers neither of the two conditional routes:
+Six of them are always there, the index at `/` among them; `invoke-stream` also
+exists for functions that print nothing. `/upload` and `/returns` are registered
+only when some function needs them, so a space without input files does not
+expose `/upload`, and one without output files does not expose `/returns`. That
+is why four slugs are reserved: `doc`, `static`, `upload` and `returns`. All
+four are always rejected, even in a space that registers neither of the two
+conditional routes:
 
 ```python
-router_of([WebFunction(add, slug="upload")])
+app_of([WebFunction(add, slug="upload")])
 # ValueError: slug 'upload' is reserved
 ```
 
@@ -91,7 +93,7 @@ already prepared `WebFunctions` carries its own title, so passing a title again
 is an error:
 
 ```python
-router_of(space, title="Other")
+app_of(space, title="Other")
 # TypeError: the prepared space already carries its title;
 # set the title when creating WebFunctions
 ```
@@ -101,8 +103,8 @@ is streamed over [`/invoke-stream`](streaming.md). If you do not set it, output
 is captured; a value declared by a `WebFunction` overrides it.
 
 `max_upload_bytes` is the maximum size, in bytes, of each file accepted by the
-`/upload` route of this router. If you do not set it, FuncToWeb imposes no
-limit. It is validated when the router is built. See [files.md](files.md).
+`/upload` route of this application. If you do not set it, FuncToWeb imposes no
+limit. It is validated when the application is built. See [files.md](files.md).
 
 `pending_ttl` is how long an uploaded file survives without being used: an
 upload nothing ever [promotes](files.md#pending-and-promoted-files) is deleted
@@ -116,7 +118,7 @@ is simpler, because there is nothing to promote — a download is fetched or it
 is not, and neither makes it permanent, so there is one state and one date.
 With `None` there is no date in the name of the returned file either.
 
-Both take the same values, are validated when the router is built, like the
+Both take the same values, are validated when the application is built, like the
 limit, and raise the same two errors, each with its own name in them:
 
 | Value | What it means for either setting |
@@ -150,10 +152,10 @@ naming a directory in the call means it and leaving it out lets the
 environment decide:
 
 ```python
-router_of(functions, uploads_dir="/srv/functoweb/uploads")
+app_of(functions, uploads_dir="/srv/functoweb/uploads")
 ```
 
-Whichever of the three wins is checked when the router is built: it is made
+Whichever of the three wins is checked when the application is built: it is made
 absolute, it is created if it is missing, and whatever stops that from
 happening —a permission, a full disk, a name already taken by a file— is
 raised there. The first request never meets a directory this process cannot
@@ -172,24 +174,24 @@ about the returns.
 ### One process, one policy
 
 One process is one storage directory, so it is one policy: what the first
-router settles governs everything afterwards —where `/upload` publishes, what
+application settles governs everything afterwards —where `/upload` publishes, what
 the resolver expires and what the single sweeping thread deletes in either
 directory— for every space mounted in that process.
 
 | Settled by | Settings |
 | --- | --- |
-| the first router with file fields | `uploads_dir` and `pending_ttl` |
-| the first router with a `Download` | `returns_dir` and `returns_ttl` |
+| the first application with file fields | `uploads_dir` and `pending_ttl` |
+| the first application with a `Download` | `returns_dir` and `returns_ttl` |
 
-A later router asking for a different one does not get it, and is told so
+A later application asking for a different one does not get it, and is told so
 rather than left guessing:
 
 ```python
-router_of(reports, pending_ttl=3600)
-router_of(invoices, pending_ttl=None)
+app_of(reports, pending_ttl=3600)
+app_of(invoices, pending_ttl=None)
 # UserWarning: pending_ttl=None is ignored: this process already stores its
-# files with pending_ttl=3600, settled by an earlier router. Storage is one
-# policy per process, not one per router.
+# files with pending_ttl=3600, settled by an earlier application. Storage is one
+# policy per process, not one per application.
 ```
 
 The warning reads the same for `returns_ttl`, for `uploads_dir` and for
@@ -213,13 +215,13 @@ values:
 ```
 
 There is no coercion: `"Dark"`, `"auto"`, `"light "`, `None` or a `bool` fail
-when the router is built, not on the first request.
+when the application is built, not on the first request.
 
 ```python
-router_of([add, divide], theme="Dark")
+app_of([add, divide], theme="Dark")
 # ValueError: theme must be one of system, light, dark; got 'Dark'
 
-router_of([add, divide], theme=None)
+app_of([add, divide], theme=None)
 # TypeError: theme must be str
 ```
 
@@ -236,24 +238,22 @@ and **there is no flicker**.
 
 The theme belongs to the **space**, not to each function: all of its pages share
 a single theme, and opening a form with `prefill` or `hidden` preserves it. Two
-themes need two routers.
+themes need two applications.
 
 See [static-assets.md](static-assets.md#theme) and
 [design/router.md](design/router.md).
 
-## Everything is prepared when the router is built
+## Everything is prepared when the application is built
 
 Each entry compiles its metadata, its schema, its plan and its base HTML at that
 point, not per request. An inconsistent definition fails at startup, before the
-first request is accepted. Building the router does not call any function: it
+first request is accepted. Building the application does not call any function: it
 only reads their signatures.
 
 ## What it does not do
 
 * It does not create the application or start a server: that is [`run()`](run.md).
 * It does not decide the mounted prefix.
-* It does not register an index at `/`. That page is built by `run()`; a mounted
-  router exposes the functions, not a menu.
 * It does not provide authentication, middleware or CORS: whatever applies comes
   from the host application. See [security.md](security.md).
 

@@ -1,5 +1,16 @@
 # Migrating from 1.6 to 2.0
 
+This guide takes 1.6 to **2.0**, and it is written in the API of that release.
+Two of the names it uses no longer exist as of 2.5.0: `router_of()`, which
+returned an `APIRouter`, was replaced by [`app_of()`](router.md), which returns
+a mountable Starlette application, so `include_router(router_of(...),
+prefix=...)` is now `mount(prefix, app_of(...))`; and `fastapi_kwargs` was
+removed from `run()`, where `uvicorn_kwargs` stays. The index at `/`, which the
+table below gives to `run()` alone, is part of the mounted application as well
+since 2.5.0. Follow this guide to reach 2.0, then read
+[router.md](router.md) and the 2.5.0 entry of
+[CHANGELOG.md](../CHANGELOG.md) for that last step.
+
 2.0 is not just one more release: it is a different library built on the same
 idea. The layers underneath change (`pytypeinput` and `pytypeinputweb` give way
 to [`pytypehint`](https://github.com/offerrall/pytypehint) and `pytypehintweb`),

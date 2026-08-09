@@ -20,12 +20,12 @@ from func_to_web.models.return_parser import (
     ReturnContractError as _ReturnContractError,
 )
 from func_to_web.templates.theme import Theme as _Theme
-from func_to_web.web.router import router_of as _router_of
+from func_to_web.web.router import app_of as _app_of
 from func_to_web.web.run import run as _run
 
 OWN_NAMES = (
     "run",
-    "router_of",
+    "app_of",
     "page_of",
     "WebFunction",
     "WebFunctions",
@@ -74,13 +74,13 @@ PYTYPEHINTWEB_NAMES = (
 
 DOCUMENTED_SIGNATURES = (
     ("run", "run.md"),
-    ("router_of", "router.md"),
+    ("app_of", "router.md"),
     ("page_of", "prefill.md"),
 )
 
 DOCSTRING_OWNERS = (
     "run",
-    "router_of",
+    "app_of",
     "page_of",
     "WebFunction",
     "WebFunctions",
@@ -208,15 +208,15 @@ def test_all_is_exactly_the_own_names_plus_the_documented_reexports():
     assert set(func_to_web.__all__) == expected
 
 
-def test_version_is_the_published_two_zero_zero():
-    assert func_to_web.__version__ == "2.3.0"
+def test_version_is_the_published_two_five_zero():
+    assert func_to_web.__version__ == "2.5.0"
 
 
 def test_theme_is_exported_and_is_the_theme_of_the_templates_module():
     assert func_to_web.Theme is _Theme
 
 
-@pytest.mark.parametrize("name", ("run", "router_of", "page_of"))
+@pytest.mark.parametrize("name", ("run", "app_of", "page_of"))
 def test_the_three_entry_points_are_callable(name):
     assert callable(getattr(func_to_web, name))
 
@@ -225,7 +225,7 @@ def test_the_three_entry_points_are_callable(name):
     ("name", "expected"),
     (
         ("run", _run),
-        ("router_of", _router_of),
+        ("app_of", _app_of),
         ("page_of", _page_of),
         ("WebFunction", _WebFunction),
         ("WebFunctions", _WebFunctions),

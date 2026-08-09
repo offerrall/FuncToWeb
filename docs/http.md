@@ -114,10 +114,10 @@ started by the time the function fails.
 ## The edge outside the envelope
 
 A body that is not a JSON object (a list, a number, text or nothing at all)
-gets a `422` in FastAPI's own format, `{"detail": [...]}`, and not in the format
-of the contract. This happens before the request reaches the function, when
-FastAPI validates the body. A client that reads `result`/`error` has to account
-for it.
+gets `422 {"detail": "body must be valid JSON"}` or
+`422 {"detail": "body must be a JSON object"}`. This happens before the
+request reaches the function. A client that reads `result`/`error` has to
+account for it.
 
 Related: [outputs.md](outputs.md), [streaming.md](streaming.md),
 [files.md](files.md), [api-docs.md](api-docs.md), [types.md](types.md).

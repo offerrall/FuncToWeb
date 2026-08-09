@@ -88,10 +88,10 @@ With a **callable**, the target is the registered entry whose `fn` is that same
 object. If there is no such entry, or more than one, it is an error:
 
 ```python
-router_of([select_product])
+app_of([select_product])
 # ReturnContractError: OpenForm target is not registered in this space
 
-router_of([
+app_of([
     WebFunction(edit_product, slug="edit-a"),
     WebFunction(edit_product, slug="edit-b"),
     select_product,
@@ -112,7 +112,7 @@ def select_product(
     return database.product(product_id)
 
 
-router_of([select_product, edit])
+app_of([select_product, edit])
 ```
 
 The lookup is neither by slug nor by callable, so another equivalent instance
@@ -120,7 +120,7 @@ does not work: it describes the same thing, but it is not the one the `OpenForm`
 points at.
 
 ```python
-router_of([
+app_of([
     select_product,
     WebFunction(edit_product, slug="edit-product"),
 ])

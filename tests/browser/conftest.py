@@ -7,7 +7,8 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import pytest
-from fastapi.staticfiles import StaticFiles
+from starlette.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
 
 from shared import warm_uvicorn
 
@@ -45,11 +46,13 @@ def verify(live_server, chrome, tmp_path):
     def run(app, page, case, *, prefix="", flags=(), query=None):
         profile = tmp_path / f"chrome-profile-{next(launches)}"
 
-        async def held(ms: int = 40) -> dict[str, int]:
+        async def held(request):
+            value = request.query_params.get("ms", "40")
+            ms = int(value) if value.isdigit() else 40
             await asyncio.sleep(min(max(ms, 0), 500) / 1000)
-            return {"ms": ms}
+            return JSONResponse({"ms": ms})
 
-        app.add_api_route("/harness-hold", held, methods=["GET"])
+        app.add_route("/harness-hold", held, methods=["GET"])
         app.mount("/harness", StaticFiles(directory=HERE), name="harness")
 
         origin = live_server(app)

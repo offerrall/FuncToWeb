@@ -6,7 +6,7 @@ from func_to_web.models.function import WebFunction
 HEADER: str = """\
 === __TITLE__ ===
 
-Every path is relative to the prefix this router is mounted on; replace
+Every path is relative to the prefix this application is mounted on; replace
 <base_url> with it.
 
 Functions:
@@ -26,7 +26,9 @@ nested object.
 500  {"error": "<ExceptionType>: <message>"}  the function or return failed
 
 The answer carries "result" or "error", never both. A body that is not a JSON
-object gets FastAPI's own 422 with {"detail": [...]}.
+object gets 422 with {"detail": "body must be valid JSON"} if it does not parse
+at all, or {"detail": "body must be a JSON object"} if it parses into something
+that is not an object.
 
 "result" holds one output, or a list of outputs in return order:
 

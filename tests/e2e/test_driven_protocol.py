@@ -1,7 +1,7 @@
 from typing import Annotated
 
 import pytest
-from fastapi.responses import HTMLResponse
+from starlette.responses import HTMLResponse
 
 from func_to_web import Min
 
@@ -56,9 +56,10 @@ def host(page, app_factory, live_server):
     def opened():
         app = app_factory([add, boom], prefix=PREFIX)
 
-        @app.get("/", response_class=HTMLResponse)
-        def home() -> str:
-            return HOST
+        def home(request) -> HTMLResponse:
+            return HTMLResponse(HOST)
+
+        app.add_route("/", home, methods=["GET"])
 
         page.goto(f"{live_server(app)}/")
         page.wait_for_function("window.probe !== undefined")
