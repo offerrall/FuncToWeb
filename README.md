@@ -495,6 +495,24 @@ machines.
 Few lines means little surface to hide in: what the documentation promises can
 be checked by reading the code.
 
+The dependency tree is as small as the code. There are three direct
+dependencies, and on Python 3.13 a clean install is nine packages in total,
+FuncToWeb included:
+
+```text
+func-to-web
+├── pytypehintweb → pytypehint
+├── starlette     → anyio → idna
+└── uvicorn       → click, h11
+```
+
+On Windows `click` adds `colorama`, and on Python 3.11 and 3.12 `starlette` and
+`anyio` add `typing-extensions`; the whole set stays under 750 kB of wheels.
+There is no pydantic, no template engine and no build step: Starlette and
+Uvicorn carry the HTTP, and the two pytypehint layers carry the contract.
+Everything else in the list is what those four need to run. `pip install
+func-to-web && pip freeze` in an empty virtualenv prints exactly this.
+
 ## Documentation
 
 [docs/index.md](docs/index.md) is the complete index, organized by what you
