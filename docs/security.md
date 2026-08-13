@@ -23,7 +23,7 @@ explicit.
   `400`, an `OpenForm` answers `500`, and a signature default makes the
   `WebFunction` impossible to build. A rejection names the file and not where
   it is kept: the storage directory is cut out of the message before it is
-  emitted, so a `422` or a `400` from `IsPathFile` reads
+  emitted, so a `422` or a `400` from `FileHint` reads
   `not an accepted file type: 'notas.bin'`. See [files.md](files.md).
 * **A published reference is immutable**: `/upload` responds `409` to any
   attempt to write it again —whether the file was already used or not— so
@@ -49,6 +49,14 @@ resolves against is in
   is an ASGI application, and it inherits middleware wrapped around its mount.
   `run()` protects nothing.
 * **Per-file permissions** and the life cycle of what is uploaded and returned.
+* **Any rule about the size of stored content.** `max_upload_bytes` is a real
+  ceiling —it counts the bytes as they arrive at `/upload`, and no client talks
+  it out of the number— but it is the only one. The `min_size`/`max_size` of a
+  `FileHint` are applied by the browser to the file the user picks, and by
+  nothing on the server, so a reference sent by a script, or a file whose bytes
+  changed after it was uploaded, is never weighed. A bound that has to hold
+  against any client belongs to the function or to the host application. See
+  [files.md](files.md#what-filehint-checks-and-where).
 * **Execution limits**: FuncToWeb imposes no maximum time, no memory limit and
   no per-client concurrency limit.
 * **Exposure of error messages**: the message of an exception travels to the

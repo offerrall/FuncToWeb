@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, Max, Min, run
+from func_to_web import FileHint, Label, Max, Min, run
 
-TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
+TextFile = Annotated[str, FileHint(extensions=(".txt", ".md"))]
 
 
 @dataclass

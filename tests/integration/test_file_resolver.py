@@ -7,18 +7,23 @@ import pytest
 
 import func_to_web.web.execution as execution_module
 import func_to_web.web.upload as upload_module
-from func_to_web import IsPathFile
+from func_to_web import FileHint
 from func_to_web.web.references import stored_of
 from func_to_web.web.upload import reference_of
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
-AnyFile = Annotated[str, IsPathFile()]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
+AnyFile = Annotated[str, FileHint()]
 
 
 @dataclass
 class Box:
     document: TxtFile
     tag: str = "t"
+
+
+@dataclass
+class Card:
+    note: str = "n"
 
 
 def resolve(reference):
@@ -445,6 +450,92 @@ def test_resolver_reaches_a_list_of_dataclasses(client_factory, stored_file,
     assert captured == [[Box(str((uploads_dir / "b.txt").resolve())),
                          Box(str((uploads_dir / "a.txt").resolve()))]]
     assert [reference for reference, _ in resolver_calls] == ["b.txt", "a.txt"]
+
+
+# A union whose options share one runtime type keeps the discriminated
+# wrapper the browser sends, and the walk has to descend through it: the
+# resolver is owed the files of the branch $type names, and owed nothing at
+# all on any other. test_transport.py pins what each shape means; these four
+# pin which nodes the resolver is handed.
+def test_resolver_reaches_inside_the_branch_a_wrapper_names(client_factory,
+                                                            stored_file,
+                                                            uploads_dir,
+                                                            resolver_calls):
+    stored_file("a.txt", data=b"one")
+    stored_file("b.txt", data=b"two")
+    captured = []
+
+    def keep(items: list[TxtFile] | list[int]) -> str:
+        captured.append(items)
+        return "ok"
+
+    client = client_factory(keep)
+    response = client.post(
+        "/keep/invoke",
+        json={"items": {"$type": "list[str]", "$value": ["a.txt", "b.txt"]}})
+
+    assert response.status_code == 200
+    assert captured == [[str((uploads_dir / name).resolve())
+                         for name in ("a.txt", "b.txt")]]
+    assert [reference for reference, _ in resolver_calls] == ["a.txt", "b.txt"]
+
+
+def test_resolver_never_sees_the_branch_a_wrapper_does_not_name(
+        client_factory, stored_file, resolver_calls):
+    stored_file("a.txt")
+    captured = []
+
+    def keep(items: list[TxtFile] | list[int]) -> str:
+        captured.append(items)
+        return "ok"
+
+    client = client_factory(keep)
+    response = client.post("/keep/invoke",
+                           json={"items": {"$type": "list[int]",
+                                           "$value": [1, 2]}})
+
+    assert response.status_code == 200
+    assert captured == [[1, 2]]
+    assert resolver_calls == []
+
+
+def test_resolver_reaches_the_file_of_the_inline_class_that_is_named(
+        client_factory, stored_file, uploads_dir, resolver_calls):
+    stored_file("a.txt", data=b"body")
+    captured = []
+
+    def keep(row: Box | Card) -> str:
+        captured.append(row)
+        return "ok"
+
+    client = client_factory(keep)
+    response = client.post(
+        "/keep/invoke",
+        json={"row": {"$type": "Box", "document": "a.txt", "tag": "z"}})
+
+    assert response.status_code == 200
+    assert captured == [Box(str((uploads_dir / "a.txt").resolve()), "z")]
+    assert [reference for reference, _ in resolver_calls] == ["a.txt"]
+
+
+def test_resolver_never_sees_the_inline_class_that_is_not_named(
+        client_factory, resolver_calls):
+    # A reference that resolves to nothing proves it: the field of the class
+    # $type names is a plain str, so the walk stops before the resolver, and
+    # the call runs on a name no storage would have found.
+    captured = []
+
+    def keep(row: Box | Card) -> str:
+        captured.append(row)
+        return "ok"
+
+    client = client_factory(keep)
+    response = client.post("/keep/invoke",
+                           json={"row": {"$type": "Card", "note": "ghost.txt"}})
+
+    assert response.status_code == 200
+    assert captured == [Card("ghost.txt")]
+    assert resolver_calls == []
 
 
 def test_resolver_is_not_called_for_a_plain_string_field(client_factory,

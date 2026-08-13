@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Annotated
 
-from func_to_web import IsPathFile, Min
+from func_to_web import FileHint, Min
 
 
 def warm_uvicorn() -> None:
@@ -40,8 +40,8 @@ def carries(text: str, path) -> bool:
                             repr(rendered)[1:-1]))
 
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
-AnyFile = Annotated[str, IsPathFile()]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
+AnyFile = Annotated[str, FileHint()]
 
 
 class Priority(Enum):

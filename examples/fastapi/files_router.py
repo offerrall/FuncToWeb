@@ -12,11 +12,11 @@ from typing import Annotated
 import uvicorn
 from fastapi import FastAPI
 
-from func_to_web import IsPathFile, app_of
+from func_to_web import FileHint, app_of
 
 MAX_UPLOAD_BYTES = 256 * 1024
 
-TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md", ".csv"))]
+TextFile = Annotated[str, FileHint(extensions=(".txt", ".md", ".csv"))]
 
 
 def count_lines(document: TextFile) -> str:

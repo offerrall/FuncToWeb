@@ -8,13 +8,13 @@ from starlette.testclient import TestClient
 
 from func_to_web import (
     Download,
-    IsPathFile,
+    FileHint,
     WebFunction,
     WebFunctions,
     run,
 )
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 
 def add(a: int, b: int = 2) -> int:

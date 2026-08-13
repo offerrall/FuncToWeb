@@ -5,14 +5,14 @@ from starlette.routing import Route
 
 from func_to_web import (
     Download,
-    IsPathFile,
+    FileHint,
     OpenForm,
     WebFunction,
     WebFunctions,
     app_of,
 )
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 DOC_ROUTE = ("/doc", ("GET",))
 STATIC_ROUTE = ("/static/{name:path}", ("GET",))

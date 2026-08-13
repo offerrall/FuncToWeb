@@ -12,9 +12,9 @@ from typing import Annotated
 
 from fastapi import FastAPI
 
-from func_to_web import Choices, IsPathFile, Max, Min, app_of, run
+from func_to_web import Choices, FileHint, Max, Min, app_of, run
 
-TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
+TextFile = Annotated[str, FileHint(extensions=(".txt", ".md"))]
 
 
 def greet(name: str = "world") -> str:

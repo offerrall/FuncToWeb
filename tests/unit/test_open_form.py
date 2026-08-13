@@ -9,7 +9,7 @@ import pytest
 
 from shared import Address, Attachment, Priority, TxtFile, carries
 from func_to_web import (
-    IsPathFile,
+    FileHint,
     OpenForm,
     ReturnContractError,
     WebFunction,
@@ -19,7 +19,7 @@ from func_to_web import (
 
 BoundedFile = Annotated[
     str,
-    IsPathFile(extensions=(".txt",), min_size=2, max_size=16),
+    FileHint(extensions=(".txt",), min_size=2, max_size=16),
 ]
 
 
@@ -98,6 +98,13 @@ def collect_task() -> Annotated[dict, OpenForm(store_task)]:
 
 
 def pick(document: TxtFile) -> Annotated[dict, OpenForm(describe)]:
+    return {"document": document}
+
+
+def pick_hidden(document: TxtFile) -> Annotated[
+    dict,
+    OpenForm(describe, hidden=("document",)),
+]:
     return {"document": document}
 
 
@@ -362,6 +369,39 @@ def test_a_chained_file_opens_the_destination(client_factory, stored_file):
     assert page.status_code == 200
 
 
+def test_a_hidden_file_completes_the_chain_without_a_second_upload(
+        client_factory, stored_file, uploads_dir, plan_of_page):
+    """A file picked for A reaches B as a reference, and B runs on it.
+
+    The whole point of a hidden file field: the visitor never sees it, never
+    picks it again, and the page it lands on carries the name storage knows
+    the file by, never the path the server resolved it to.
+    """
+    stored_file("a.txt", data=b"payload")
+    client = client_factory([pick_hidden, describe])
+    before = sorted(entry.name for entry in uploads_dir.iterdir())
+
+    opened = client.post("/pick_hidden/invoke", json={"document": "a.txt"})
+    href = href_of(opened)
+    page = destination(client, "/pick_hidden/", href)
+    served = {field["name"]: field.get("default")
+              for field in plan_of_page(page.text)["fields"]}
+
+    assert query_of(href)["prefill"] == {"document": "a.txt"}
+    assert query_of(href)["hidden"] == ["document"]
+    assert page.status_code == 200
+    assert served["document"] == "a.txt"
+    assert hidden_of(page.text) == ["document"]
+    assert not leaks(opened, uploads_dir)
+    assert not carries(page.text, uploads_dir)
+
+    ran = client.post("/describe/invoke",
+                      json={"document": served["document"], "note": "n"})
+
+    assert ran.status_code == 200
+    assert sorted(entry.name for entry in uploads_dir.iterdir()) == before
+
+
 def test_a_file_with_bounds_travels_and_opens(client_factory, stored_file,
                                               uploads_dir):
     stored_file("a.txt", size=4)
@@ -538,3 +578,407 @@ def test_the_opening_also_arrives_over_the_stream(client_factory, sse):
 
     assert [name for name, _ in events] == ["start", "result"]
     assert events[-1][1]["result"]["type"] == "form"
+
+
+# ---------------------------------------------------------------------------
+# Unions
+# ---------------------------------------------------------------------------
+#
+# A plan writes a union default as {"branch": index, "value": ...}, and that is
+# the plan's grammar rather than the transport: the destination reads a prefill
+# the way it reads a submit. Before 2.6.0 the opening published the plan form
+# as if it were transport, and every union of two or more branches answered
+# 400 — "expected int | str, got dict" for a plain one, "wrap it as $type" for
+# an ambiguous one. What is pinned here is the browser's contract, one case per
+# mode, in both directions: what leaves in the query, and what the destination
+# builds from it.
+
+
+@dataclass
+class Note:
+    text: str = "n"
+
+
+@dataclass
+class Memo:
+    body: str = "m"
+
+
+@dataclass
+class Cell:
+    content: int | str = 0
+
+
+def told(value):
+    """A value with the type it arrived as, so a branch cannot be mistaken.
+
+    A list spells out its items: list[str] and list[int] are one JSON array,
+    and telling them apart is the whole of what these tests are about.
+    """
+    if type(value) is list:
+        return "[" + "|".join(told(item) for item in value) + "]"
+
+    return f"{type(value).__name__}:{value!r}"
+
+
+def take_mix(mix: int | str) -> str:
+    """int and str never collide on the wire, so both branches travel plain."""
+    return told(mix)
+
+
+def take_items(items: list[str] | list[int]) -> str:
+    """One JSON array for both branches: the wrapped mode."""
+    return told(items)
+
+
+def take_when(when: date | str) -> str:
+    """A date travels as text, so it collides with str and is wrapped."""
+    return told(when)
+
+
+def take_level(level: Priority | str) -> str:
+    """An enum travels as its name, which is text, so it is wrapped too."""
+    return told(level)
+
+
+def take_row(row: Note | Memo) -> str:
+    """Dataclasses share the dict and name themselves inline."""
+    return told(row)
+
+
+def take_pick(pick: int | date | Priority) -> str:
+    """Three branches, mixed modes: one plain, two sharing the string."""
+    return told(pick)
+
+
+def take_cell(cell: Cell) -> str:
+    """A union reached through a dataclass field."""
+    return told(cell.content)
+
+
+def take_cells(cells: list[int | str]) -> str:
+    """A plain union reached through a list item."""
+    return told(cells)
+
+
+def take_moments(moments: list[date | str]) -> str:
+    """A wrapped union reached through a list item."""
+    return told(moments)
+
+
+def take_maybe(maybe: int | None) -> str:
+    """One real branch, so plan_of() compiles no choice at all."""
+    return told(maybe)
+
+
+def take_branch_files(items: list[TxtFile] | list[int]) -> str:
+    """A file reference inside a wrapped branch."""
+    return told([Path(item).name if type(item) is str else item
+                 for item in items])
+
+
+def open_mix_int() -> Annotated[dict, OpenForm(take_mix)]:
+    return {"mix": 7}
+
+
+def open_mix_str() -> Annotated[dict, OpenForm(take_mix)]:
+    return {"mix": "seven"}
+
+
+def open_mix_hidden() -> Annotated[
+    dict,
+    OpenForm(take_mix, hidden=("mix",)),
+]:
+    return {"mix": 7}
+
+
+def open_items_str() -> Annotated[dict, OpenForm(take_items)]:
+    return {"items": ["a", "b"]}
+
+
+def open_items_int() -> Annotated[dict, OpenForm(take_items)]:
+    return {"items": [1, 2]}
+
+
+def open_when_date() -> Annotated[dict, OpenForm(take_when)]:
+    return {"when": date(2026, 8, 1)}
+
+
+def open_when_str() -> Annotated[dict, OpenForm(take_when)]:
+    return {"when": "soon"}
+
+
+def open_level_enum() -> Annotated[dict, OpenForm(take_level)]:
+    return {"level": Priority.HIGH}
+
+
+def open_level_str() -> Annotated[dict, OpenForm(take_level)]:
+    return {"level": "urgent"}
+
+
+def open_row_note() -> Annotated[dict, OpenForm(take_row)]:
+    return {"row": Note("hola")}
+
+
+def open_row_memo() -> Annotated[dict, OpenForm(take_row)]:
+    return {"row": Memo("adios")}
+
+
+def open_pick_first() -> Annotated[dict, OpenForm(take_pick)]:
+    return {"pick": 3}
+
+
+def open_pick_second() -> Annotated[dict, OpenForm(take_pick)]:
+    return {"pick": date(2026, 8, 1)}
+
+
+def open_pick_third() -> Annotated[dict, OpenForm(take_pick)]:
+    return {"pick": Priority.LOW}
+
+
+def open_cell() -> Annotated[dict, OpenForm(take_cell)]:
+    return {"cell": Cell("inner")}
+
+
+def open_cells() -> Annotated[dict, OpenForm(take_cells)]:
+    return {"cells": [1, "a"]}
+
+
+def open_moments() -> Annotated[dict, OpenForm(take_moments)]:
+    return {"moments": [date(2026, 8, 1), "soon"]}
+
+
+def open_maybe() -> Annotated[dict, OpenForm(take_maybe)]:
+    return {"maybe": 5}
+
+
+def open_maybe_none() -> Annotated[dict, OpenForm(take_maybe)]:
+    return {"maybe": None}
+
+
+def pick_branch_files(documents: list[TxtFile]) -> Annotated[
+    dict,
+    OpenForm(take_branch_files),
+]:
+    return {"items": documents}
+
+
+# (opener, target, what the query carries, what the destination's own plan
+# publishes back, what the destination builds). The fourth column is the plan
+# grammar and the third is the transport: keeping both in one row is what
+# states that they differ and that the branch is the same in each.
+UNIONS = [
+    (open_mix_int, take_mix,
+     {"mix": 7},
+     {"mix": {"branch": 0, "value": 7}},
+     "int:7"),
+    (open_mix_str, take_mix,
+     {"mix": "seven"},
+     {"mix": {"branch": 1, "value": "seven"}},
+     "str:'seven'"),
+    (open_items_str, take_items,
+     {"items": {"$type": "list[str]", "$value": ["a", "b"]}},
+     {"items": {"branch": 0, "value": ["a", "b"]}},
+     "[str:'a'|str:'b']"),
+    (open_items_int, take_items,
+     {"items": {"$type": "list[int]", "$value": [1, 2]}},
+     {"items": {"branch": 1, "value": [1, 2]}},
+     "[int:1|int:2]"),
+    (open_when_date, take_when,
+     {"when": {"$type": "date", "$value": "2026-08-01"}},
+     {"when": {"branch": 0, "value": "2026-08-01"}},
+     "date:datetime.date(2026, 8, 1)"),
+    (open_when_str, take_when,
+     {"when": {"$type": "str", "$value": "soon"}},
+     {"when": {"branch": 1, "value": "soon"}},
+     "str:'soon'"),
+    (open_level_enum, take_level,
+     {"level": {"$type": "Priority", "$value": "HIGH"}},
+     {"level": {"branch": 0, "value": "HIGH"}},
+     "Priority:<Priority.HIGH: 'high'>"),
+    (open_level_str, take_level,
+     {"level": {"$type": "str", "$value": "urgent"}},
+     {"level": {"branch": 1, "value": "urgent"}},
+     "str:'urgent'"),
+    (open_row_note, take_row,
+     {"row": {"$type": "Note", "text": "hola"}},
+     {"row": {"branch": 0, "value": {"text": "hola"}}},
+     "Note:Note(text='hola')"),
+    (open_row_memo, take_row,
+     {"row": {"$type": "Memo", "body": "adios"}},
+     {"row": {"branch": 1, "value": {"body": "adios"}}},
+     "Memo:Memo(body='adios')"),
+    (open_pick_first, take_pick,
+     {"pick": 3},
+     {"pick": {"branch": 0, "value": 3}},
+     "int:3"),
+    (open_pick_second, take_pick,
+     {"pick": {"$type": "date", "$value": "2026-08-01"}},
+     {"pick": {"branch": 1, "value": "2026-08-01"}},
+     "date:datetime.date(2026, 8, 1)"),
+    (open_pick_third, take_pick,
+     {"pick": {"$type": "Priority", "$value": "LOW"}},
+     {"pick": {"branch": 2, "value": "LOW"}},
+     "Priority:<Priority.LOW: 'low'>"),
+    (open_cell, take_cell,
+     {"cell": {"content": "inner"}},
+     {"cell": {"content": {"branch": 1, "value": "inner"}}},
+     "str:'inner'"),
+    (open_cells, take_cells,
+     {"cells": [1, "a"]},
+     {"cells": [{"branch": 0, "value": 1}, {"branch": 1, "value": "a"}]},
+     "[int:1|str:'a']"),
+    (open_moments, take_moments,
+     {"moments": [{"$type": "date", "$value": "2026-08-01"},
+                  {"$type": "str", "$value": "soon"}]},
+     {"moments": [{"branch": 0, "value": "2026-08-01"},
+                  {"branch": 1, "value": "soon"}]},
+     "[date:datetime.date(2026, 8, 1)|str:'soon']"),
+    # X | None has a single real branch, so plan_of() compiles no choice node
+    # and the two grammars already agree. It is here to stay that way.
+    (open_maybe, take_maybe, {"maybe": 5}, {"maybe": 5}, "int:5"),
+    (open_maybe_none, take_maybe,
+     {"maybe": None}, {"maybe": None}, "NoneType:None"),
+]
+
+UNION_IDS = [opener.__name__ for opener, *_ in UNIONS]
+
+
+def plan_shaped(value):
+    """Whether a plan's union representation survives anywhere inside value.
+
+    The barrier the fix exists for. {"branch": ..., "value": ...} is what a
+    plan publishes and what no query may carry, at any depth: through a list,
+    through a dataclass, or inside another branch.
+    """
+    if type(value) is dict:
+        return (set(value) == {"branch", "value"}
+                or any(plan_shaped(item) for item in value.values()))
+
+    if type(value) is list:
+        return any(plan_shaped(item) for item in value)
+
+    return False
+
+
+def opened(client, opener):
+    response = client.post(f"/{opener.__name__}/invoke", json={})
+
+    assert response.status_code == 200
+
+    return response
+
+
+@pytest.mark.parametrize("opener, target, transport, published, built", UNIONS,
+                         ids=UNION_IDS)
+def test_a_union_default_travels_in_the_transport_a_submit_sends(
+        client_factory, opener, target, transport, published, built):
+    client = client_factory([opener, target])
+
+    response = opened(client, opener)
+
+    assert query_of(href_of(response))["prefill"] == transport
+
+
+@pytest.mark.parametrize("opener, target, transport, published, built", UNIONS,
+                         ids=UNION_IDS)
+def test_a_union_opening_carries_no_plan_representation(
+        client_factory, opener, target, transport, published, built):
+    client = client_factory([opener, target])
+
+    response = opened(client, opener)
+
+    assert not plan_shaped(query_of(href_of(response))["prefill"])
+
+
+@pytest.mark.parametrize("opener, target, transport, published, built", UNIONS,
+                         ids=UNION_IDS)
+def test_the_destination_of_a_union_opening_really_opens(
+        client_factory, opener, target, transport, published, built):
+    client = client_factory([opener, target])
+    response = opened(client, opener)
+
+    page = destination(client, f"/{opener.__name__}/", href_of(response))
+
+    assert page.status_code == 200
+
+
+@pytest.mark.parametrize("opener, target, transport, published, built", UNIONS,
+                         ids=UNION_IDS)
+def test_the_destination_page_opens_on_the_branch_the_opener_chose(
+        client_factory, plan_of_page, opener, target, transport, published,
+        built):
+    """Plan, transport, plan again: the branch index comes back the same.
+
+    The page the destination renders publishes a plan of its own, so the mode
+    the switcher opens on is readable. This is the round trip the conversion
+    has to be faithful across, and the column it compares against is the plan
+    grammar the query is no longer allowed to carry.
+    """
+    client = client_factory([opener, target])
+    response = opened(client, opener)
+
+    page = destination(client, f"/{opener.__name__}/", href_of(response))
+    served = {field["name"]: field.get("default")
+              for field in plan_of_page(page.text)["fields"]}
+
+    assert page.status_code == 200
+    assert served == published
+
+
+@pytest.mark.parametrize("opener, target, transport, published, built", UNIONS,
+                         ids=UNION_IDS)
+def test_a_union_opening_rebuilds_the_value_it_was_given(
+        client_factory, opener, target, transport, published, built):
+    """The branch survives the trip, which a status code does not say.
+
+    list[str] and list[int] both parse; what says the right one was chosen is
+    the value the destination builds out of the prefill it was handed.
+    """
+    client = client_factory([opener, target])
+    response = opened(client, opener)
+
+    ran = client.post(f"/{target.__name__}/invoke",
+                      json=query_of(href_of(response))["prefill"])
+
+    assert ran.status_code == 200
+    assert ran.json()["result"]["value"] == built
+
+
+def test_a_hidden_union_field_travels_and_opens(client_factory):
+    client = client_factory([open_mix_hidden, take_mix])
+
+    response = opened(client, open_mix_hidden)
+    href = href_of(response)
+    page = destination(client, "/open_mix_hidden/", href)
+
+    assert query_of(href)["prefill"] == {"mix": 7}
+    assert query_of(href)["hidden"] == ["mix"]
+    assert page.status_code == 200
+    assert hidden_of(page.text) == ["mix"]
+
+
+def test_a_file_reference_inside_a_wrapped_branch_travels_and_runs(
+        client_factory, stored_file, uploads_dir):
+    """The two walks of an opening meet here, and neither may undo the other.
+
+    with_references() rewrites the file default in the plan's grammar and the
+    transport conversion runs after it, so the reference has to survive the
+    wrapping and the wrapping has to survive the reference.
+    """
+    stored_file("a.txt")
+    client = client_factory([pick_branch_files, take_branch_files])
+
+    response = client.post("/pick_branch_files/invoke",
+                           json={"documents": ["a.txt"]})
+    href = href_of(response)
+
+    assert query_of(href)["prefill"] == {
+        "items": {"$type": "list[str]", "$value": ["a.txt"]}}
+    assert not leaks(response, uploads_dir)
+
+    ran = client.post("/take_branch_files/invoke",
+                      json=query_of(href)["prefill"])
+
+    assert ran.status_code == 200
+    assert ran.json()["result"]["value"] == "[str:'a.txt']"

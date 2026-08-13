@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Min, OpenForm, run
+from func_to_web import FileHint, Min, OpenForm, run
 
-ReportPath = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
+ReportPath = Annotated[str, FileHint(extensions=(".txt", ".md"))]
 
 
 def summarise_report(

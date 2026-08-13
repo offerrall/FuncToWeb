@@ -6,10 +6,11 @@ from func_to_web.web import returned_files, upload
 def without_storage_paths(text: str) -> str:
     """The same message with the storage directories cut out of any path.
 
-    A certification message names the file the core inspected, and what the
-    core inspected is the path the resolver returned, so this is the one place
-    a local path would still reach the client. Only the directory goes: what
-    is left is the file name, which is the reference the client already sent.
+    When the core refuses a file for its extension it quotes the value it was
+    given, and that value is the path the resolver returned, so this is the one
+    place a local path would still reach the client. Only the directory goes:
+    what is left is the file name, which is the reference the client already
+    sent.
 
     The core writes the path with !r, so it also travels with its separators
     doubled; both renderings are cut, and the comparison folds case because

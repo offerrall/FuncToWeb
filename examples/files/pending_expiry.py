@@ -3,13 +3,13 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, run
+from func_to_web import FileHint, Label, run
 
 PENDING_TTL = 60
 
 TextFile = Annotated[
     str,
-    IsPathFile(extensions=(".txt", ".md")),
+    FileHint(extensions=(".txt", ".md")),
     Label("Document"),
 ]
 

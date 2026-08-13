@@ -2,9 +2,9 @@
 
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, Min, run
+from func_to_web import FileHint, Label, Min, run
 
-AnyFile = Annotated[str, IsPathFile()]
+AnyFile = Annotated[str, FileHint()]
 
 Dropped = Annotated[list[AnyFile], Min(1), Label("Files to send")]
 

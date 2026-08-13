@@ -5,9 +5,9 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from func_to_web import Download, IsPathFile, Min, OpenForm
+from func_to_web import Download, FileHint, Min, OpenForm
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 
 def adding(a: int, b: int = 2) -> int:

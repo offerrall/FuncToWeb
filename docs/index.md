@@ -18,7 +18,8 @@ Technical reference for the project. For an overview, see the
   optionals and defaults.
 * [Prefill and hidden parameters](prefill.md) — open a form with initial
   values, from Python or from the URL.
-* [Files](files.md) — uploads, reusable file references and the size limit.
+* [Files](files.md) — uploads, reusable file references, and which layer
+  applies each limit.
 * [`WebFunction`](web-function.md) — the name, description and slug of a
   function; prepared spaces.
 

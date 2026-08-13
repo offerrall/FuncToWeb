@@ -8,13 +8,13 @@ from fastapi.testclient import TestClient
 
 from func_to_web import (
     Download,
-    IsPathFile,
+    FileHint,
     OpenForm,
     WebFunction,
     app_of,
 )
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 PREFIXES = ["", "/tools", "/a/b/c"]
 

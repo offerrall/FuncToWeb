@@ -52,8 +52,25 @@ it every other request the server is handling. See
 The `file_resolver` is the only piece of that path that belongs to FuncToWeb,
 and it is the same resolver in both endpoints and in the prefill: `decode()`
 decides **where** a file is, walking the structure to any depth, while
-FuncToWeb decides **what** counts as a valid file for this server. Neither
-layer duplicates the other's work.
+FuncToWeb decides **what** counts as a valid file for this server.
+
+That division is the whole story for a file, and no layer repeats another's
+work:
+
+```text
+browser         the extension and the size of the File the user just picked,
+                from the plan, before anything is uploaded
+POST /upload    the bytes on the wire, against max_upload_bytes
+file_resolver   the reference belongs to the storage directory, no traversal
+                and no symlink escape, the file is there → a local path
+pytypehint      the extension of that path, and the arguments themselves
+the function    receives the local path
+```
+
+Because nothing is checked twice, nothing can be dropped either — and the
+converse holds as well: what no layer checks is not checked at all. The byte
+bounds of a `FileHint` are the browser's alone; see
+[files.md](files.md#what-filehint-checks-and-where).
 
 ## Where it is mounted
 

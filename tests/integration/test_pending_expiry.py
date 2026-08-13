@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import func_to_web.web.upload as upload_module
-from func_to_web import IsPathFile, app_of
+from func_to_web import FileHint, app_of
 from func_to_web.web.pending import PART_SUFFIX, now, parsed, pending_of
 from func_to_web.web.references import (
     NAME_LIMIT,
@@ -24,7 +24,7 @@ PENDING_PATTERN = re.compile(r"^~p(?P<stamp>\d{10})~(?P<reference>.+)$")
 
 BRACKETS = "report[1].txt"
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 
 def send(client, reference, content=b"body", prefix=""):

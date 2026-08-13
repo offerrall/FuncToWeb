@@ -164,9 +164,9 @@ A function that receives a file can pass it on to the next one: the file reaches
 the function as a local path, and the function hands that same local path back.
 
 ```python
-from func_to_web import IsPathFile
+from func_to_web import FileHint
 
-DocumentPath = Annotated[str, IsPathFile()]
+DocumentPath = Annotated[str, FileHint()]
 
 
 def pick(document: DocumentPath) -> Annotated[dict, OpenForm(describe)]:

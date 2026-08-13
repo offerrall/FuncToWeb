@@ -31,7 +31,7 @@ Examples and mini-apps alike serve at <http://127.0.0.1:8000> and block until
 | [`types/`](types/) | scalars, `date`, `time`, enums, optionals, lists, unions, dataclasses | [types](../docs/types.md) |
 | [`validation/`](validation/) | `Min`, `Max`, `MultipleOf`, `Choices`, `Pattern`, `Slider`, `Rows`, `IsPassword`, `Color`, `Email`… | [types](../docs/types.md) |
 | [`forms/`](forms/) | `OpenForm`, hidden fields and prefill via the URL | [prefill](../docs/prefill.md), [open-form](../docs/open-form.md) |
-| [`files/`](files/) | `IsPathFile`, extensions, sizes, lists, references, storage on arrival, `max_upload_bytes`, expiry, storage location | [files](../docs/files.md) |
+| [`files/`](files/) | `FileHint`, extensions, sizes, lists, references, storage on arrival, `max_upload_bytes`, expiry, storage location | [files](../docs/files.md) |
 | [`outputs/`](outputs/) | text, multiple outputs, errors and `Download` | [outputs](../docs/outputs.md) |
 | [`outputs_optional/`](outputs_optional/) | images and tables with optional dependencies | [outputs](../docs/outputs.md) |
 | [`streaming/`](streaming/) | live `print()`, progress and `capture_prints` | [streaming](../docs/streaming.md) |

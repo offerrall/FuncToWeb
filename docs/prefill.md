@@ -91,19 +91,19 @@ opening.
 
 A file field can be prefilled too, and it follows the same path as any other
 value, with one extra step at each end: the reference is resolved against the
-storage before the core certifies it, and it is the reference again —never the
+storage before the core reads it, and it is the reference again —never the
 resolved path— that is written into the plan.
 
 ```text
-reference → file_resolver → real path → the core certifies
+reference → file_resolver → real path → the core reads its extension
                                       → the reference is the temporary default
                                       → the widget shows it as the current
                                          file, with no pending upload
 ```
 
-The local path certifies and is dropped there: it never reaches the browser,
-not in the URL, not in the body and not in the message of a rejection, which
-names the file and not where it is kept.
+The local path exists only for that step and is dropped there: it never reaches
+the browser, not in the URL, not in the body and not in the message of a
+rejection, which names the file and not where it is kept.
 
 Like the rest of the prefill, it fails **before** the page is served:
 
@@ -115,12 +115,18 @@ Like the rest of the prefill, it fails **before** the page is served:
 | `prefill={"document": "/etc/passwd"}` | `400 invalid file reference '/etc/passwd': is not a file of the storage directory` |
 | `prefill={"document": "notas.txt"}` | `400 document: not an accepted file type: 'notas.txt', expected one of ('.pdf',)` |
 
+Those are the two questions asked: does storage own the file, and does the
+extension match. The `min_size`/`max_size` of a
+[`FileHint`](files.md#what-filehint-checks-and-where) are not among them — they
+are the browser's, applied to a file it is handed, and a prefill hands it a
+reference — so a stored file outside those bounds opens the form with a `200`.
+
 From Python the same rule applies to the value itself, and there the failure is
 an exception, since `page_of()` takes a real path and there is no resolver to
 turn one into a reference:
 
 ```text
-ValueError: document: default: file is not in the storage directory: 'x.pdf'
+SchemaValueError: document: default: file is not in the storage directory: 'x.pdf'
 ```
 
 It works at any depth (`list[File]`, dataclasses with a file, lists of

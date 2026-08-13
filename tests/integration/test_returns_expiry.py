@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 import func_to_web.web.returned_files as returns_module
 import func_to_web.web.upload as upload_module
-from func_to_web import Download, IsPathFile, app_of
+from func_to_web import Download, FileHint, app_of
 from func_to_web.web.pending import (
     PART_SUFFIX,
     now,
@@ -40,7 +40,7 @@ RESERVED = f"cannot start with the reserved prefix '{RETURNS_MARKER}'"
 
 TOKEN = "0" * 32
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 
 def naming(filename):

@@ -7,7 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from func_to_web import Download, IsPathFile, Min, app_of
+from func_to_web import Download, FileHint, Min, app_of
 
 PREFIX = "/tools"
 
@@ -34,7 +34,7 @@ def divide(a: float, b: float) -> float:
     return a / b
 
 
-def count_lines(source: Annotated[str, IsPathFile(extensions=(".csv",))]) -> str:
+def count_lines(source: Annotated[str, FileHint(extensions=(".csv",))]) -> str:
     """Count the lines of a file."""
     return str(len(Path(source).read_text(encoding="utf-8").splitlines()))
 

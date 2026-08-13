@@ -7,8 +7,14 @@ a mountable Starlette application, so `include_router(router_of(...),
 prefix=...)` is now `mount(prefix, app_of(...))`; and `fastapi_kwargs` was
 removed from `run()`, where `uvicorn_kwargs` stays. The index at `/`, which the
 table below gives to `run()` alone, is part of the mounted application as well
-since 2.5.0. Follow this guide to reach 2.0, then read
-[router.md](router.md) and the 2.5.0 entry of
+since 2.5.0. One more name changed after that: the file atom this guide calls
+`FileHint` shipped as `IsPathFile` from 2.0 to 2.5, and 2.6.0 renamed it with no
+alias left behind, so a signature written against those releases needs the new
+name. It also stopped meaning quite the same thing — the extension is still
+checked when the arguments are built, while `min_size`/`max_size` are now
+applied by the browser and by nothing on the server, which
+[files.md](files.md#what-filehint-checks-and-where) spells out. Follow this
+guide to reach 2.0, then read [router.md](router.md) and the 2.5.0 entry of
 [CHANGELOG.md](../CHANGELOG.md) for that last step.
 
 2.0 is not just one more release: it is a different library built on the same
@@ -32,7 +38,7 @@ The guide is organized by area. If you only want to migrate code, jump to
 | pydantic's `Field(ge=…)` → `Min`/`Max` | [types](#types-constraints-and-validation) |
 | `from func_to_web.types import …` → `from func_to_web import …` | [types](#types-constraints-and-validation) |
 | `Params` → a plain `@dataclass` | [types](#types-constraints-and-validation) |
-| `ImageFile`, `TextFile`, … → `IsPathFile(extensions=…)` | [files](#input-files) |
+| `ImageFile`, `TextFile`, … → `FileHint(extensions=…)` | [files](#input-files) |
 | `return FileResponse(...)` → `-> Annotated[…, Download(…)]` | [results](#results-and-downloads) |
 | `list[dict]` is no longer rendered as a table | [results](#results-and-downloads) |
 | `create_app()` → `router_of()`, which returns an `APIRouter` | [startup](#startup-mounting-and-the-function-space) |
@@ -114,7 +120,7 @@ which `func_to_web` re-exports, and a `Field` in the signature fails when buildi
 | `Label`, `Description`, `Placeholder`, `Step`, `Slider`, `IsPassword`, `Rows` | same name, from `func_to_web` | Frozen dataclasses whose field is called `value`, so `Rows(count=5)` and `Label(text=…)` fail; `Step()` has no default, and `Slider` and `Choices` are kw_only |
 | `Color`, `Email` | from `func_to_web` | `COLOR_PATTERN` requires 6 digits: `#f53` is no longer valid |
 | `Params` | a plain `@dataclass` | `frozen=True` is no longer required, it can nest others and be optional, and it no longer flattens its fields in the form, so names no longer collide. `__post_init__` is still the place for cross-field validation, and its `ValueError` surfaces as a **422** |
-| `ImageFile`, `File`, … | `IsPathFile(...)` | See the files section |
+| `ImageFile`, `File`, … | `FileHint(...)` | See the files section |
 
 ### Confirmed pitfalls
 
@@ -142,13 +148,13 @@ deleted when the function finished; in 2.0 the file remains, ready to be reused.
 ### The aliases are gone
 
 There is no `func_to_web.types`: a file field is a `str` annotated with
-`IsPathFile(...)`, so `def blur(image: ImageFile)` becomes
-`ImagePath = Annotated[str, IsPathFile(extensions=(".png", ".jpg"))]`. These are the
+`FileHint(...)`, so `def blur(image: ImageFile)` becomes
+`ImagePath = Annotated[str, FileHint(extensions=(".png", ".jpg"))]`. These are the
 exact extensions of each alias (`pytypeinput/types.py`, `*_FILE_PATTERN`).
 
-| 1.6 | `IsPathFile(...)` in 2.0 |
+| 1.6 | `FileHint(...)` today |
 |---|---|
-| `File` | `IsPathFile()` — no `extensions`, any file |
+| `File` | `FileHint()` — no `extensions`, any file |
 | `TextFile` | `extensions=(".txt", ".md", ".log", ".rtf")` |
 | `AudioFile` | `extensions=(".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a")` |
 | `DataFile` | `extensions=(".csv", ".xlsx", ".xls", ".json", ".xml", ".yaml", ".yml")` |
@@ -169,17 +175,21 @@ file is uploaded only once and re-running with a different parameter does not se
 again. A malformed reference gives `400` on `/upload`; one that does not exist gives
 `422` on `/invoke`.
 
-### Three limits, not one
+### Four limits, not one
 
 | Limit | What it measures | Where it is checked | Rejection |
 |---|---|---|---|
 | `max_file_size` (1.6, in `run()`) | each uploaded file | while writing, in `/submit` | a form error |
-| `max_upload_bytes` (2.0, in `router_of()`/`run()`) | each request to `/upload` | `POST /upload` | `413 {"detail": "uploaded file exceeds the maximum size of N bytes"}` |
-| `IsPathFile(min_size=…, max_size=…)` (2.0) | the file for *that* field | `/invoke`, at build time | `422 {"error": "SchemaValueError: doc: file too large: 500 bytes, maximum 200"}` |
+| `max_upload_bytes` (2.0, in `router_of()`/`run()`) | each request to `/upload` | `POST /upload`, on the bytes as they arrive | `413 {"detail": "uploaded file exceeds the maximum size of N bytes"}` |
+| `FileHint(min_size=…, max_size=…)` (2.0) | the file the user picks for *that* field | in the browser, before anything is uploaded | the form does not upload and does not submit |
+| `FileHint(extensions=…)` | the text of the value | in the browser, and again when the arguments are built | `422 {"error": "SchemaValueError: doc: not an accepted file type: 'notas.txt', expected one of ('.pdf',)"}` |
 
-`max_upload_bytes` replaces `max_file_size`: a global transport ceiling. The field's
-`min_size`/`max_size` are new and `/upload` does not apply them; the extension check
-works the same way.
+`max_upload_bytes` replaces `max_file_size`: a global transport ceiling, and the only
+byte limit no client can skip. The field's `min_size`/`max_size` are new, `/upload`
+does not apply them and neither does anything else on the server, so a reference that
+arrives from a script is never weighed — do not read that row as a `422` you can rely
+on. The extension check works as it did in 1.6, and it is the one thing about a file
+the server does check on every call.
 
 ### `uploads_dir` changes shape
 
@@ -348,7 +358,7 @@ cosmetic stripping.
    field an `int` or drop the slider. `Dropdown` has no direct
    replacement: you have to **redesign the field by hand** with fixed options.
 4. Turn the `Params` subclasses into plain dataclasses.
-5. **Replace** the file aliases with `IsPathFile(...)` and **rename**
+5. **Replace** the file aliases with `FileHint(...)` and **rename**
    `max_file_size` to `max_upload_bytes`.
 6. **Move** the downloads into the return annotation with `Download`, and wrap in
    a `DataFrame` anything that used to render as a table because it was a

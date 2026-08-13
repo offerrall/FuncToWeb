@@ -3,11 +3,11 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import Description, IsPathFile, Label, run
+from func_to_web import Description, FileHint, Label, run
 
 TextFile = Annotated[
     str,
-    IsPathFile(extensions=(".txt", ".md")),
+    FileHint(extensions=(".txt", ".md")),
     Label("Document"),
     Description("A plain text document to measure"),
 ]

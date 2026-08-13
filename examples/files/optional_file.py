@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, OptionalToggle, run
+from func_to_web import FileHint, Label, OptionalToggle, run
 
-TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
+TextFile = Annotated[str, FileHint(extensions=(".txt", ".md"))]
 
 Attachment = Annotated[
     TextFile | None,

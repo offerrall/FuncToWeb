@@ -1,9 +1,9 @@
-"""min_size and max_size bound the file itself, and are checked twice."""
+"""min_size and max_size bound the file itself, before it is sent."""
 
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import Description, IsPathFile, Label, Max, Min, run
+from func_to_web import Description, FileHint, Label, Max, Min, run
 
 MINIMUM = 100
 
@@ -11,7 +11,7 @@ MAXIMUM = 2 * 1024 * 1024
 
 DataFile = Annotated[
     str,
-    IsPathFile(extensions=(".csv",), min_size=MINIMUM, max_size=MAXIMUM),
+    FileHint(extensions=(".csv",), min_size=MINIMUM, max_size=MAXIMUM),
     Label("Table"),
     Description("Between 100 bytes and 2 MB of comma separated values"),
 ]
@@ -23,12 +23,15 @@ def preview_table(
 ) -> str:
     """Show the first rows of a size bounded CSV file.
 
-    The bound is enforced at two independent points. The browser weighs the
-    chosen file before uploading it, so a file outside the bound never leaves
-    the machine and the transfer is saved. The core then weighs the real file
-    that arrived, when it builds the arguments: that second measurement is
-    the verdict, it answers 422 before the function runs, and no hand written
-    HTTP call can skip it.
+    The bound belongs to the field and travels to the page inside the plan,
+    so the browser weighs the file the user just picked and refuses it
+    there: a file outside the bound never leaves the machine and the
+    transfer is saved. That is the only place it is weighed. Building the
+    arguments looks at the extension of the path, never at its length, and
+    a file already in storage, chosen by its reference, has no bytes for
+    the browser to weigh either, so nothing bounds its size. The one byte
+    count the server performs is max_upload_bytes, the ceiling of the
+    upload endpoint, which limits the space rather than this field.
     """
     lines = Path(table).read_text(encoding="utf-8").splitlines()
 

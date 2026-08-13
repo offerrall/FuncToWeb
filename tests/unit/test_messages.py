@@ -8,9 +8,11 @@ def message_of(root, name):
 
 
 def test_a_plain_path_loses_its_directory(uploads_dir):
-    text = f"file does not exist: {uploads_dir}{os.sep}notes.bin"
+    # Not every path arrives written with !r: what the called function raises
+    # is prose of its own, and it reaches the client through here as well.
+    text = f"cannot open {uploads_dir}{os.sep}notes.bin"
 
-    assert without_storage_paths(text) == "file does not exist: notes.bin"
+    assert without_storage_paths(text) == "cannot open notes.bin"
 
 
 def test_a_repr_escaped_path_loses_its_directory(uploads_dir):

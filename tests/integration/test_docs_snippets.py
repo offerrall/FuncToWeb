@@ -17,7 +17,7 @@ from func_to_web import (
     Color,
     Description,
     Download,
-    IsPathFile,
+    FileHint,
     Label,
     Max,
     Min,
@@ -50,7 +50,7 @@ DOCUMENTED_PAGES = (
 
 DELIBERATE_FRAGMENTS = {
     ("README.md", 231),
-    ("docs/prefill.md", 241),
+    ("docs/prefill.md", 247),
     ("docs/router.md", 7),
     ("docs/run.md", 7),
 }
@@ -59,7 +59,7 @@ FENCE = re.compile(r"^```(\S*)\s*$")
 
 STATIC_REFERENCE = re.compile(r'\.\./static/([A-Za-z0-9_./-]+)')
 
-ImagePath = Annotated[str, IsPathFile(extensions=(".png", ".jpg", ".jpeg"))]
+ImagePath = Annotated[str, FileHint(extensions=(".png", ".jpg", ".jpeg"))]
 
 DISK_REPORTS: list[Path] = []
 MEMORY_REPORTS: list[bytes] = []

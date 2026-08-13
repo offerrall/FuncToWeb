@@ -1,23 +1,23 @@
-"""Accepted extensions: the tuple declared by IsPathFile is the filter."""
+"""Accepted extensions: the tuple declared by FileHint is the filter."""
 
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, run
+from func_to_web import FileHint, Label, run
 
 ImageFile = Annotated[
     str,
-    IsPathFile(extensions=(".png", ".jpg", ".jpeg")),
+    FileHint(extensions=(".png", ".jpg", ".jpeg")),
     Label("Picture"),
 ]
 
 ArchiveFile = Annotated[
     str,
-    IsPathFile(extensions=(".tar.gz",)),
+    FileHint(extensions=(".tar.gz",)),
     Label("Compressed bundle"),
 ]
 
-AnyFile = Annotated[str, IsPathFile(), Label("Anything else")]
+AnyFile = Annotated[str, FileHint(), Label("Anything else")]
 
 
 def describe_uploads(
@@ -30,7 +30,10 @@ def describe_uploads(
     Extensions are declared in lowercase and matched case insensitively, so
     a picture named IMAGE.PNG is accepted. A compound extension such as
     ".tar.gz" matches the whole tail, while an empty tuple accepts any name,
-    even one without a suffix.
+    even one without a suffix. What is compared is always the name, never
+    the content: the browser filters what can be picked, and the extension
+    of the path is checked once more when the arguments are built, so a
+    handwritten call cannot smuggle in a type the field does not accept.
     """
     sizes = [
         f"{Path(path).suffix or 'no suffix'}: "

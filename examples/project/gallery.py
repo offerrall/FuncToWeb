@@ -29,9 +29,9 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from PIL import Image
 
-from func_to_web import Download, IsPathFile, Label, Max, Min, Slider, app_of
+from func_to_web import Download, FileHint, Label, Max, Min, Slider, app_of
 
-Photo = Annotated[str, IsPathFile(extensions=(".png", ".jpg", ".jpeg", ".webp"))]
+Photo = Annotated[str, FileHint(extensions=(".png", ".jpg", ".jpeg", ".webp"))]
 
 PHOTOS: dict[int, str] = {}
 _ids = count(1)

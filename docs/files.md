@@ -1,19 +1,21 @@
 # Files
 
-A `str` annotated with `IsPathFile(...)` declares a file reference: which
-extensions it accepts and, optionally, how large it may be. The core certifies
-the real file that arrives, `pytypehintweb` generates the widget and the
-transport, and FuncToWeb provides the upload channel and the storage.
+A `str` annotated with `FileHint(...)` declares a file reference: which
+extensions it accepts and, optionally, how large it may be. The core reads the
+extension and builds the argument, `pytypehintweb` generates the widget and the
+transport and applies the size bounds to the file the user picks, and FuncToWeb
+provides the upload channel, the storage and the resolution from reference to
+local path.
 
 ```python
 from typing import Annotated
 
 from PIL import Image
 
-from func_to_web import IsPathFile, Max, Min
+from func_to_web import FileHint, Max, Min
 
 
-ImagePath = Annotated[str, IsPathFile(extensions=(".png", ".jpg", ".jpeg"))]
+ImagePath = Annotated[str, FileHint(extensions=(".png", ".jpg", ".jpeg"))]
 
 
 def blur(image: ImagePath, radius: int = 8) -> str:
@@ -34,24 +36,31 @@ in transport      → unique reference (a str)
 in the function   → str with the full local path
 ```
 
-## What `IsPathFile` certifies
+## What `FileHint` checks, and where
 
-The annotation describes more than the widget. When `schema.build()` builds the
-arguments, the core inspects the actual file at that path:
+The annotation describes more than the widget, but no single layer applies all
+of it. Each half is enforced where the information it needs actually lives:
 
 ```text
-extension       one of those declared, compared in lowercase
-existence       the path is there
-regular file    not a directory, not a device
-size            within min_size and max_size, when they are declared
+extension    pytypehint, on the text of the value, compared in lowercase
+             — both for a path written in the signature and for whatever
+               the resolver returned
+min_size     the browser, on the local File it has just been handed
+max_size     the browser, on that same File
 ```
+
+`Signature.build()` reads the value as a string. It does not open the file, it
+does not stat it and it does not ask whether it is there: existence and
+confinement to the storage directory are FuncToWeb's rules, applied by the
+resolver before the core ever sees the value →
+[From reference to path](#from-reference-to-path).
 
 ```python
 MEGABYTE = 1024 * 1024
 
 DataFile = Annotated[
     str,
-    IsPathFile(extensions=(".csv",), min_size=100, max_size=2 * MEGABYTE),
+    FileHint(extensions=(".csv",), min_size=100, max_size=2 * MEGABYTE),
 ]
 
 
@@ -62,8 +71,9 @@ def preview(table: DataFile) -> str:
 Both limits are in bytes and apply **per file**, never as a total: three 4 MB
 files under a `max_size` of 5 MB are three valid files, and counting them is
 still the job of the list's `Min`/`Max`. A file exactly at the limit is inside;
-one byte more is outside. The declaration is checked when the `WebFunction` is
-compiled:
+one byte more is outside. They travel in the plan as `minSize` and `maxSize`,
+which is how the browser comes to know them, and the declaration itself is
+checked when the atom is built:
 
 | Declaration | Error |
 | --- | --- |
@@ -71,23 +81,32 @@ compiled:
 | a negative limit | `ValueError` |
 | a `min_size` greater than `max_size` | `ValueError` |
 
-The check happens before the function is called, so over HTTP it is a `422` with
-the core's message:
+The extension check happens before the function is called, so over HTTP it is a
+`422` with the core's message:
 
 ```text
-{"error": "SchemaValueError: table: file too small: 99 bytes, minimum 100"}
 {"error": "SchemaValueError: table: not an accepted file type: 'notas.txt', expected one of ('.csv',)"}
 ```
 
+There is no equivalent `422` for the byte bounds, and there is no server-side
+check behind the browser's. A reference the browser never weighed —one typed by
+hand, one restored with [`setValue()`](#putting-a-reference-back-setvalue), one
+sent by a script— reaches the function whatever its size, and a file whose
+bytes change on disk after it was uploaded is never measured again. What a size
+bound buys is a form that refuses to upload; a guarantee that has to hold
+against any client belongs to the function itself, or to the host application.
+Why the split falls there →
+[design/files.md](design/files.md#why-upload-does-not-apply-filehintmax_size).
+
 ### Declaring a file default
 
-A default written in the signature is certified at compile time, when there is
-still no resolver to convert anything, so it is written as a real path on the
-server —and that path has to be a file sitting directly in `UPLOADS_DIR`, the
+A default written in the signature is read at compile time, when there is still
+no resolver to convert anything, so it is written as a real path on the server
+—and that path has to name a file sitting directly in `UPLOADS_DIR`, the
 storage directory `run()` announces at startup:
 
 ```python
-DataFile = Annotated[str, IsPathFile(extensions=(".csv",))]
+DataFile = Annotated[str, FileHint(extensions=(".csv",))]
 
 STORED = "/home/ana/.local/share/FuncToWeb/uploads/baseline-1234.csv"
 
@@ -96,14 +115,17 @@ def preview(table: DataFile = STORED) -> str:
     ...
 ```
 
-Either condition breaks the build, before any page exists:
+Two things break the build, before any page exists:
 
 ```text
-SchemaValueError: table: default: file does not exist: 'tabla.csv'
+SchemaValueError: table: default: not an accepted file type: '/home/ana/.local/share/FuncToWeb/uploads/notas.txt', expected one of ('.csv',)
 SchemaValueError: table: default: file is not in the storage directory: 'baseline.csv'
 ```
 
-Why the two quote different things is a matter of when each happens →
+Neither of them opens the file. A default naming a `.csv` that is not on disk
+compiles, the page offers it as the current file, and the failure arrives on
+the first execution as the resolver's `File not found`. Why the two quote
+different things is a matter of who speaks →
 [design/files.md](design/files.md#the-two-messages-of-a-file-default).
 
 Putting the file there is the author's step: copy it into `UPLOADS_DIR` by
@@ -158,12 +180,15 @@ negative one a `ValueError`.
 In the interface, the upload modal shows the server message next to the file
 that failed, and anything still pending is retried with Submit.
 
-The `IsPathFile` limits belong to the parameter, and `/upload` does **not**
-apply them:
+The `FileHint` limits belong to the parameter, and `/upload` does **not** apply
+them:
 
 ```text
-max_upload_bytes          operational ceiling of the endpoint, cuts early
-IsPathFile.min/max_size   parameter constraint, validated on invocation
+max_upload_bytes         operational ceiling of the endpoint, counts the real
+                         bytes as they arrive, cuts early
+FileHint.min/max_size    parameter constraint, applied by the browser to the
+                         File it is holding, and by nobody once that file has
+                         become a reference
 ```
 
 Which of the two rejects a file decides the answer you get:
@@ -172,11 +197,13 @@ Which of the two rejects a file decides the answer you get:
 | --- | --- |
 | Upload too large for the server | `/upload` responds `413` |
 | A local `File` that breaks the field's bound | the form neither uploads nor sends it |
-| A reference from outside that breaks the bound | `/upload` accepts it, `/invoke` responds `422` |
-| A file below the field's `min_size` | `/invoke` responds `422` |
+| A reference from outside that breaks the bound | `/upload` accepts it and `/invoke` runs the function |
+| A reference that names nothing in storage | `/invoke` responds `422` |
 
-Why the endpoint does not apply the field limit is a deliberate split →
-[design/files.md](design/files.md#why-the-endpoint-does-not-apply-the-field-limit).
+`max_upload_bytes` is the only byte ceiling no client can skip, and that is
+deliberate rather than an omission: why the endpoint does not apply the field
+limit, and why nothing behind it does either →
+[design/files.md](design/files.md#why-upload-does-not-apply-filehintmax_size).
 
 ## Reusable references
 
@@ -304,7 +331,7 @@ retried on Windows, is that race written out →
 ### One transfer, many executions
 
 ```python
-PdfPath = Annotated[str, IsPathFile(extensions=(".pdf",))]
+PdfPath = Annotated[str, FileHint(extensions=(".pdf",))]
 
 
 def analyse(document: PdfPath, threshold: float) -> str:
@@ -349,8 +376,8 @@ and it belongs to the widget, not to this layer. The full value is what `read()`
 returns and what travels to `/invoke`.
 
 That same mechanism is what lets a [prefill](prefill.md) supply a file: the
-value travels as a reference, it is certified before the page is served, and it
-reaches the widget as the current file.
+value travels as a reference, it is resolved and its extension checked before
+the page is served, and it reaches the widget as the current file.
 
 ```text
 GET /describe/?prefill={"document": "annual-report-<uuid>.pdf"}
@@ -460,7 +487,7 @@ retroactively and the migration needs no step.
 ## From reference to path
 
 The reference is transport; the function never sees it. The swap is done by
-`decode()`, the same pass that already prepares dates, floats and enums.
+`decode()`, the same call that already prepares dates, floats and enums.
 FuncToWeb hands it a `file_resolver`, and `decode()` calls it on every value
 that belongs to a file field, at any depth: a plain field, a list element by
 element, inside a dataclass, or in the active branch of a union. What decides
@@ -478,10 +505,12 @@ under `UPLOADS_DIR`, it has to land directly inside it, and the file must exist
 ```
 
 It is the same resolver in both execution endpoints and in the prefill, so the
-storage rule is written only once. The resolver and the core both check that the
-file exists, and the message you see on this path is the resolver's; why neither
-check is redundant →
-[design/files.md](design/files.md#why-the-resolver-speaks-first).
+storage rule is written only once — and it is the only place existence is
+checked at all. What comes out of it is a local path that keeps the extension
+of the reference, which is exactly what the core then reads; a value the
+resolver refuses never reaches the core. Why nothing behind it checks the same
+thing again →
+[design/files.md](design/files.md#why-existence-belongs-to-the-resolver).
 
 A reference is a bare file name, reading and writing alike: a path, absolute or
 with separators, is not a reference and the resolver refuses it. What decides is

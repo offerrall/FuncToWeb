@@ -13,6 +13,7 @@ from func_to_web.models.file_defaults import with_references
 from func_to_web.models.function import WebFunction, signature_with_prefill
 from func_to_web.models.functions import FormAction
 from func_to_web.models.return_parser import ReturnContractError, _ReturnedFile
+from func_to_web.models.submit_defaults import as_submitted
 from func_to_web.outputs import (
     DownloadOutput,
     download_output,
@@ -74,7 +75,12 @@ def _opening(form: FormAction, value: Any) -> str:
 
     with_references(plan, _returned_reference)
 
-    transport = {field["name"]: field["default"]
+    # The plan is built only to be read back: plan_of() is what writes a value
+    # in its browser form, so the opening travels the same date text, enum name
+    # and file reference the page itself would. What it writes it in is the
+    # plan's grammar, and the destination reads the prefill as a submit, so
+    # as_submitted() carries the one place the two spell a value differently.
+    transport = {field["name"]: as_submitted(field["node"], field["default"])
                  for field in plan["fields"]
                  if field["name"] in values}
 

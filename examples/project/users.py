@@ -22,14 +22,14 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 import uvicorn
 
-from func_to_web import Email, IsPathFile, Label, Min, Max, app_of
+from func_to_web import Email, FileHint, Label, Min, Max, app_of
 
 
 @dataclass
 class User:
     name: Annotated[str, Min(1), Max(60), Label("Name")]
     email: Email
-    photo: Annotated[str, IsPathFile(extensions=(".png", ".jpg", ".jpeg", ".webp"))]
+    photo: Annotated[str, FileHint(extensions=(".png", ".jpg", ".jpeg", ".webp"))]
 
 
 USERS: dict[int, User] = {}

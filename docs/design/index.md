@@ -10,9 +10,10 @@ library.
 * [architecture.md](architecture.md) — why the line between the public API and
   the merely visible internals falls where it does. →
   [architecture.md](../architecture.md)
-* [files.md](files.md) — why `/upload` does not apply the field limit, why a
-  second upload of the same reference is a `409`, and where custody of a
-  promoted file ends up. → [files.md](../files.md)
+* [files.md](files.md) — why `/upload` does not apply `FileHint.max_size`, why
+  existence is the resolver's question alone, why a second upload of the same
+  reference is a `409`, and where custody of a promoted file ends up. →
+  [files.md](../files.md)
 * [frontend.md](frontend.md) — why the content type is decided rather than
   guessed, why every icon is a file, and why the page adds almost no color of
   its own. → [static-assets.md](../static-assets.md)

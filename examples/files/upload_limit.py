@@ -3,13 +3,13 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, run
+from func_to_web import FileHint, Label, run
 
 CEILING = 2 * 1024 * 1024
 
 ArchiveFile = Annotated[
     str,
-    IsPathFile(extensions=(".zip", ".tar.gz")),
+    FileHint(extensions=(".zip", ".tar.gz")),
     Label("Backup"),
 ]
 
@@ -20,8 +20,10 @@ def inspect_backup(archive: ArchiveFile, note: str = "") -> str:
     max_upload_bytes is a global transport limit: it caps every single file
     the upload endpoint receives, for every function of the space, and it is
     counted per request, so a form with two files checks each one on its
-    own. It is unrelated to the min_size and max_size of a field, which
-    belong to the parameter and are decided when the call is built.
+    own. Real bytes are counted as they arrive, which is why it is the one
+    size limit the server itself enforces. It is unrelated to the min_size
+    and max_size of a field: those belong to the parameter and are applied
+    by the browser to the file it is about to send.
     """
     size = Path(archive).stat().st_size
     tail = f" ({note})" if note else ""

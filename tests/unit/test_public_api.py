@@ -51,7 +51,7 @@ PYTYPEHINT_NAMES = (
     "Choices",
     "MultipleOf",
     "Pattern",
-    "IsPathFile",
+    "FileHint",
     "Label",
     "Description",
     "Placeholder",
@@ -63,6 +63,11 @@ PYTYPEHINT_NAMES = (
     "OptionalToggle",
     "SchemaTypeError",
     "SchemaValueError",
+)
+
+# Names FuncToWeb used to re-export and must never re-export again.
+RETIRED_NAMES = (
+    "IsPathFile",
 )
 
 PYTYPEHINTWEB_NAMES = (
@@ -208,8 +213,23 @@ def test_all_is_exactly_the_own_names_plus_the_documented_reexports():
     assert set(func_to_web.__all__) == expected
 
 
-def test_version_is_the_published_two_five_zero():
-    assert func_to_web.__version__ == "2.5.0"
+def test_version_is_the_published_two_six_zero():
+    assert func_to_web.__version__ == "2.6.0"
+
+
+@pytest.mark.parametrize("name", RETIRED_NAMES)
+def test_a_retired_reexport_is_gone_from_the_public_api(name):
+    # 2.6.0 renamed pytypehint.IsPathFile to pytypehint.FileHint with a clean
+    # cut: no alias, no shim. A name that quietly reappeared would let code
+    # written against 1.x keep importing it and believing the old contract.
+    assert name not in func_to_web.__all__
+    assert not hasattr(func_to_web, name)
+    assert not hasattr(pytypehint, name)
+
+
+def test_file_hint_is_the_public_name_of_the_file_marker():
+    assert "FileHint" in func_to_web.__all__
+    assert func_to_web.FileHint is pytypehint.FileHint
 
 
 def test_theme_is_exported_and_is_the_theme_of_the_templates_module():

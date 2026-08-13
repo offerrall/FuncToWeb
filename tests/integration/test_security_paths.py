@@ -7,11 +7,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from func_to_web import Download, IsPathFile, OpenForm, WebFunction, app_of
+from func_to_web import Download, FileHint, OpenForm, WebFunction, app_of
 from func_to_web.models.function import SLUG_PATTERN
 from func_to_web.models.functions import space_of
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 INJECTION = "<script>alert(1)</script>"
 

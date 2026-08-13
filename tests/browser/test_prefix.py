@@ -3,13 +3,13 @@ from typing import Annotated
 
 import pytest
 
-from func_to_web import Download, IsPathFile
+from func_to_web import Download, FileHint
 
 CASES = ["page", "assets", "submit", "upload", "download", "outside"]
 
 PREFIX = "/tools/anidado"
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 
 def add(a: int, b: int = 2) -> int:

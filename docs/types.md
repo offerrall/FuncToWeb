@@ -8,7 +8,7 @@ reaches the web.
 
 FuncToWeb re-exports every piece, so you never have to import from the lower
 layers: the constraint atoms (`Min`, `Max`, `Choices`, `MultipleOf`, `Pattern`,
-`IsPathFile`), the annotation atoms (`Label`, `Description`, `Placeholder`,
+`FileHint`), the annotation atoms (`Label`, `Description`, `Placeholder`,
 `Step`, `Slider`, `IsPassword`, `Rows`, `Extra`, `OptionalToggle`), the
 convenience types (`Color`, `Email`) and the errors (`SchemaTypeError`,
 `SchemaValueError`).
@@ -127,9 +127,12 @@ def set_color(color: Color) -> str:
 `Email` works the same way with its own pattern, and both are imported from
 `func_to_web` alongside `COLOR_PATTERN` and `EMAIL_PATTERN`.
 
-A `str` annotated with `IsPathFile(...)` declares a file reference with its
-accepted extensions and, optionally, its size limits; the full contract is in
-[files.md](files.md).
+A `str` annotated with `FileHint(...)` declares a file reference with its
+accepted extensions and, optionally, its size limits. It is the one atom whose
+halves are not all applied by the core: the extension is, on every execution,
+while the size limits are the browser's, applied to the file the user picks and
+to nothing else. The full contract, and which layer holds which piece, is in
+[files.md](files.md#what-filehint-checks-and-where).
 
 ## What happens when the contract is broken
 

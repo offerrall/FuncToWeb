@@ -6,13 +6,20 @@ from typing import Annotated
 import pytest
 
 from shared import Address, Attachment, Priority, TxtFile, carries
-from func_to_web import IsPathFile, Max, Min, WebFunction, page_of
+from func_to_web import (
+    FileHint,
+    Max,
+    Min,
+    SchemaValueError,
+    WebFunction,
+    page_of,
+)
 from func_to_web.models.function import build_prefill
 from func_to_web.web.upload import stored_file as resolve_reference
 
 BoundedFile = Annotated[
     str,
-    IsPathFile(extensions=(".txt",), min_size=4, max_size=8),
+    FileHint(extensions=(".txt",), min_size=4, max_size=8),
 ]
 
 ABSENT = object()
@@ -69,6 +76,16 @@ def read_grouped_documents(documents: list[list[TxtFile]]) -> str:
 
 
 def read_attachments(rows: list[Attachment]) -> str:
+    return "ok"
+
+
+def edit_report(
+    title: Annotated[str, Min(3)],
+    cover: TxtFile,
+    row: Attachment,
+    rows: list[Attachment],
+    documents: list[TxtFile],
+) -> str:
     return "ok"
 
 
@@ -295,7 +312,7 @@ def test_the_served_page_carries_no_local_path(stored_file, uploads_dir,
 def test_a_prefilled_file_outside_the_storage_is_refused(sized_file):
     outside = sized_file("loose.txt")
 
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(SchemaValueError) as error:
         page_of(WebFunction(read_document), prefill={"document": str(outside)})
 
     assert str(error.value) == (
@@ -310,6 +327,82 @@ def test_partial_nested_dataclass_prefill_fills_its_own_defaults(plan_of_page):
 
     assert defaults_of(plan)["where"] == {"street": "Gran Via",
                                           "city": "Madrid"}
+
+
+# build_prefill hands decode() a Signature it has just trimmed to the fields
+# the prefill names, so the schema decode() reads is never the function's own.
+# That trimmed signature is what supplies the fields of the walk, and a file
+# node that survived the trim has to keep being resolved through whatever
+# nests it, while a file the trim dropped must not be looked for at all: it
+# has no value to look for. The cases below are the trims where the file is
+# not a parameter of its own.
+def test_a_partial_prefill_resolves_a_file_inside_a_dataclass(stored_file,
+                                                              uploads_dir,
+                                                              plan_of_page):
+    stored_file("a.txt")
+
+    web_function, values = resolved(edit_report, {"row": {"document": "a.txt"}})
+
+    assert values == {"row": Attachment(str((uploads_dir / "a.txt").resolve()))}
+    assert defaults_of(plan_of_page(page_of(web_function, prefill=values)))[
+        "row"] == {"document": "a.txt", "tag": "t"}
+
+
+def test_a_partial_prefill_resolves_a_file_inside_a_list(stored_file,
+                                                         uploads_dir):
+    stored_file("a.txt")
+    stored_file("b.txt")
+
+    _, values = resolved(edit_report, {"documents": ["a.txt", "b.txt"]})
+
+    assert values == {"documents": [str((uploads_dir / name).resolve())
+                                    for name in ("a.txt", "b.txt")]}
+
+
+def test_a_partial_prefill_resolves_a_file_inside_a_list_of_dataclasses(
+        stored_file, uploads_dir):
+    stored_file("a.txt")
+
+    _, values = resolved(edit_report,
+                         {"rows": [{"document": "a.txt", "tag": "z"}]})
+
+    assert values == {
+        "rows": [Attachment(str((uploads_dir / "a.txt").resolve()), "z")]}
+
+
+def test_a_partial_prefill_asks_the_resolver_only_for_what_it_names(
+        stored_file):
+    stored_file("a.txt")
+    asked = []
+
+    def spy(reference):
+        asked.append(reference)
+        return resolve_reference(reference)
+
+    resolved(edit_report, {"rows": [{"document": "a.txt"}]}, resolver=spy)
+
+    assert asked == ["a.txt"]
+
+
+def test_a_partial_prefill_of_a_nested_file_leaves_the_rest_without_defaults(
+        stored_file, plan_of_page):
+    stored_file("a.txt")
+
+    web_function, values = resolved(edit_report, {"row": {"document": "a.txt"}})
+    defaults = defaults_of(plan_of_page(page_of(web_function, prefill=values)))
+
+    assert set(values) == {"row"}
+    assert all(value is ABSENT
+               for name, value in defaults.items() if name != "row")
+
+
+def test_a_partial_prefill_still_refuses_a_file_it_names(stored_file):
+    stored_file("notes.pdf")
+
+    with pytest.raises(ValueError) as error:
+        resolved(edit_report, {"row": {"document": "notes.pdf"}})
+
+    assert "row: document: not an accepted file type" in str(error.value)
 
 
 def test_unknown_prefill_name_is_a_value_error():
@@ -358,22 +451,40 @@ def test_wrong_extension_is_a_value_error(stored_file):
     assert "document: not an accepted file type" in str(error.value)
 
 
-def test_file_below_min_size_is_a_value_error(stored_file):
+# Until 2.6.0 the core stat'ed the file while building the prefill and refused
+# it here for min_size/max_size. pytypehint 1.0.0 never stats, and a stored
+# reference has no bytes the browser can weigh either, so nothing measures it:
+# what is true now is that the page opens and the bounds travel in the plan for
+# a file the visitor picks locally. Asserting a refusal would be asserting a
+# guarantee no layer of this stack still makes.
+def test_a_stored_file_below_min_size_still_prefills(stored_file, plan_of_page):
     stored_file("small.txt", size=1)
 
-    with pytest.raises(ValueError) as error:
-        resolved(read_bounded, {"document": "small.txt"})
+    values = file_defaults(read_bounded, {"document": "small.txt"},
+                           plan_of_page)
 
-    assert "document: file too small: 1 bytes, minimum 4" in str(error.value)
+    assert values["document"] == "small.txt"
 
 
-def test_file_above_max_size_is_a_value_error(stored_file):
+def test_a_stored_file_above_max_size_still_prefills(stored_file, plan_of_page):
     stored_file("big.txt", size=64)
 
-    with pytest.raises(ValueError) as error:
-        resolved(read_bounded, {"document": "big.txt"})
+    values = file_defaults(read_bounded, {"document": "big.txt"}, plan_of_page)
 
-    assert "document: file too large: 64 bytes, maximum 8" in str(error.value)
+    assert values["document"] == "big.txt"
+
+
+def test_the_prefilled_page_publishes_the_size_bounds_for_the_browser(
+        stored_file, plan_of_page):
+    stored_file("small.txt", size=1)
+    web_function, values = resolved(read_bounded, {"document": "small.txt"})
+
+    plan = plan_of_page(page_of(web_function, prefill=values))
+    options = next(field["node"]["options"] for field in plan["fields"]
+                   if field["name"] == "document")
+
+    assert options["minSize"] == 4
+    assert options["maxSize"] == 8
 
 
 def test_reference_outside_the_storage_is_a_value_error():

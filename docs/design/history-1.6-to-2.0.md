@@ -31,6 +31,14 @@ nesting becomes the norm.
 | empty list / inconsistent schema | `List cannot be empty (use list[...] \| None for optional lists)`; an impossible range was accepted and then failed on every value | an empty list is valid unless `Min` says otherwise; `Int: empty range (10..5)` at compile time |
 | mutable defaults | shared, as in plain Python | fresh on every execution |
 
+The table is written in the names of 2.0, and one of them has moved since:
+`IsPathFile` is called `FileHint` from 2.6.0 on, with no alias behind it. What it
+promises narrowed at the same time — the extension is still read when the
+arguments are built, while `min_size`/`max_size` became the browser's alone, so
+the file-size row above records a capability that arrived in 2.0 and no longer
+has a server-side verdict. Where each half lives today is in
+[files.md](../files.md#what-filehint-checks-and-where).
+
 The 1.6 errors that come out of `analyze_type` are prefixed with the field name:
 `[direccion] Unsupported type: Address. Must be one of: str, time, float, int,
 bool, date`. The two `Params` errors do not: FuncToWeb raises them as
@@ -136,7 +144,7 @@ reference). Hidden fields are applied by FuncToWeb, but only because the layer e
 - `Slider` on `float`: `Float.slider is not supported yet`. On `int` it requires `Min` and `Max`.
 - `Pattern` is restricted to the portable subset: `\d`, `\w`, `\s`, `\b` and the unescaped dot are rejected.
 - Combinations that would need different controls: `Rows`+`Choices`, `Rows`+`IsPassword`, `Slider`+`Placeholder`, `Choices`+`Placeholder`, `Choices`+`Slider`.
-- Forbidden presentation atoms: the text-related ones alongside `IsPathFile` (`Str.pattern with IsPathFile is not supported yet`, and likewise `placeholder`, `rows`, `min`, `max`, `choices`, `is_password`), and `Label`/`Description` on a list item (`field atoms cannot apply to list items`; `Placeholder` does pass).
+- Forbidden presentation atoms: the text-related ones alongside `FileHint` (`Str.pattern with FileHint is not supported yet`, and likewise `placeholder`, `rows`, `min`, `max`, `choices`, `is_password`), and `Label`/`Description` on a list item (`field atoms cannot apply to list items`; `Placeholder` does pass).
 - `Extra` is stored by the core but the layer does not emit it; the `enum` node reserves `labels: null` and shows the raw names.
 - Integers outside JavaScript's safe range (±2⁵³−1) and a dataclass with no fields: `TypeError` when compiling the plan.
 - A recursive dataclass is compiled by the core, but it breaks the plan: `RecursionError: maximum recursion depth exceeded` when building the `WebFunction`.

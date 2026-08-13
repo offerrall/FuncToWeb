@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, Max, Min, OpenForm, run
+from func_to_web import FileHint, Label, Max, Min, OpenForm, run
 
-TextFile = Annotated[str, IsPathFile(extensions=(".txt", ".md"))]
+TextFile = Annotated[str, FileHint(extensions=(".txt", ".md"))]
 
 Keyword = Annotated[str, Min(1), Max(20), Label("Keyword")]
 
@@ -24,10 +24,13 @@ def choose_document(
     """Upload a document once and land on the analysis form with it in place.
 
     The returned document travels as a prefill value, and a prefilled file is
-    treated as an existing file rather than as a new choice: it is certified
-    against the storage and the field before the page is served, the widget
-    shows it as the current file, and submitting sends its reference without
-    uploading a single byte again.
+    treated as an existing file rather than as a new choice: before the page
+    is served the path has to belong to the storage directory and to carry an
+    extension the field accepts, and what the plan publishes is the reference,
+    never the path. Nothing opens it — a prefilled file is neither read nor
+    weighed, because only the file picked in the browser has bytes to
+    measure. The widget shows it as the current file, and submitting sends
+    its reference without uploading a single byte again.
     """
     return {"document": document}
 

@@ -48,7 +48,7 @@ Which two directories were in force is not left to be guessed: `run()`
 announces them, with the version, on the line before the server starts.
 
 ```text
-FuncToWeb 2.5.0
+FuncToWeb 2.6.0
 UPLOADS DIR: /srv/functoweb/uploads
 RETURNS DIR: /tmp/FuncToWeb/returns
 ```

@@ -7,7 +7,13 @@ import pytest
 from pytypehint import Signature
 
 from shared import TxtFile, carries
-from func_to_web import Download, OpenForm, ReturnContractError, WebFunction
+from func_to_web import (
+    Download,
+    OpenForm,
+    ReturnContractError,
+    SchemaValueError,
+    WebFunction,
+)
 from func_to_web.models.function import RESERVED_SLUGS, SLUG_PATTERN
 
 
@@ -534,7 +540,7 @@ def test_a_file_default_outside_the_storage_does_not_compile(sized_file):
     def read(document: TxtFile = planted) -> str:
         return document
 
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(SchemaValueError) as error:
         WebFunction(read)
 
     assert str(error.value) == (

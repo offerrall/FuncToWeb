@@ -1,5 +1,95 @@
 # Changelog
 
+## [2.6.0] - 2026-08-13
+
+FuncToWeb moves onto `pytypehintweb 1.1.0`, and with it onto `pytypehint 1.0.0`.
+The annotation that marks a file parameter is now `FileHint`, and the division of
+labour around files is redrawn: the core stopped touching the filesystem, so
+everything that was a promise about the *real* file on disk — that it exists,
+that it is a file and not a directory, that its bytes fall between `min_size` and
+`max_size` — is now stated only where it is actually enforced. For FuncToWeb that
+is its own storage layer, which already did that work; nothing about uploads,
+references or the pending/promoted lifecycle is weaker than it was in 2.5.0.
+
+### Changed
+- **Breaking:** `IsPathFile` is replaced by `FileHint`, re-exported from
+  `func_to_web` with the same three fields (`extensions`, `min_size`,
+  `max_size`). This is a clean cut: there is no alias, no deprecation warning and
+  no support for `pytypehint 0.x`. Rename the import and the call —
+  `Annotated[str, IsPathFile(extensions=(".png",))]` becomes
+  `Annotated[str, FileHint(extensions=(".png",))]` — and nothing else changes.
+- **Breaking (behaviour):** `Signature.build()` no longer checks that a file
+  value exists, that it is a file, or how large it is. In 2.5.0 an invocation
+  carrying a path to a missing, oversized or undersized file was refused by the
+  layer below; in 2.6.0 the core only checks the **extension** of the value it is
+  given, and builds the arguments.
+- **Breaking (behaviour):** `FileHint.min_size` / `FileHint.max_size` no longer
+  have a server-side second check during invocation. The browser applies them to
+  a file it has just picked, because there it holds the bytes and knows
+  `file.size`; a stored reference carries no bytes, the browser cannot weigh it
+  and the core no longer stats it. Do not expect a `422` from `/invoke` for byte
+  bounds on a reference. An application that needs an authoritative guarantee
+  about stored content owns that policy itself — FuncToWeb does not invent one
+  silently, and `max_upload_bytes` remains the endpoint policy it always was.
+- A file default written by the author as a server path is still refused unless
+  it belongs to the storage directory, and is still published as a reference and
+  never as a path. What changed is only what backs it: in 2.5.0 the core also
+  refused a default that did not exist, so a stale default failed at build time.
+  In 2.6.0 that default becomes a reference, and the resolver refuses it at
+  invocation instead, when it fails to resolve.
+
+### Fixed
+- `OpenForm` now forwards a union-valued prefill in the same transport a browser
+  submit sends, so an opening whose target has a parameter of two or more union
+  branches works. It answered `400` before, in every version that had the
+  feature: the opening published the plan's own way of writing a default —
+  `{"branch": …, "value": …}`, which names the control the page opens on — and
+  the destination reads a prefill as a submit, where a branch is named by the
+  value itself or not at all. Depending on the union the answer was
+  `expected int | str, got dict` or `ambiguous value: wrap it as $type`. The
+  conversion is the plan's own answer rather than a rule restated in FuncToWeb:
+  each branch already carries the mode `pytypehintweb` chose for it, and the
+  three modes emit what `form.js` emits — bare for `plain`,
+  `{"$type": …, "$value": …}` for `wrapped`, `{"$type": …, …fields}` for
+  `inline`. `X | None` was never affected and is unchanged: one real branch
+  compiles no choice at all, so the two spellings already agreed.
+
+### Unchanged, and now the only thing that says so
+- Reference syntax, separators, `..`, control characters, reserved names and
+  markers, and length limits stay in `segment_of()` / `stored_of()`.
+- Confinement to the uploads directory, in both directions: `stored_of()`
+  requires the resolved parent to be the storage root, and `reference_of()`
+  refuses a path whose round trip through storage does not land back on itself,
+  which is what keeps a symbolic link from escaping.
+- **Existence.** `stored_file()` promotes a pending upload or raises
+  `FileNotFoundError`, so a reference that does not resolve never reaches the
+  function. `/invoke` answers `422`; `/invoke-stream` answers `200` and carries
+  the same error in its `result` event, as it does for every rejection once the
+  stream is open. Either way the call is not made, and that refusal is a
+  FuncToWeb storage rule — after 2.6.0, the only one on this path.
+- `max_upload_bytes` is authoritative and unchanged: it may reject early on
+  `Content-Length`, but it never trusts it alone — the bytes are counted as they
+  arrive, the transfer is cut the moment the limit is passed, the partial file is
+  deleted and the answer is `413`.
+- The pending/promoted lifecycle, the sweeper, expiry and the reuse of a promoted
+  reference without a second upload.
+- `OpenForm` still hands a file on to the next function as a reference, hidden
+  and not re-uploaded; the local path never travels.
+
+### Dependencies
+- `pytypehintweb==0.0.5` → `pytypehintweb==1.1.0`, which brings `pytypehint
+  1.0.0` transitively. FuncToWeb still declares no direct dependency on
+  `pytypehint`: it arrives through `pytypehintweb`, as it has since 2.3.0.
+- 1.1.0 delegates the portable decoding to the core inside its own `decode()`:
+  it calls `schema.decode()` and then walks the decoded tree applying the
+  `file_resolver` to each file node. The simplification happens in
+  `pytypehintweb`; FuncToWeb implements none of it and its call sites are
+  unchanged.
+- The mypy exception `untyped_calls_exclude = ["pytypehintweb"]` is removed:
+  1.1.0 annotates `decode()`, so the package passes strict again with no
+  exemption.
+- `starlette==0.49.3` and `uvicorn==0.38.0` are unchanged.
+
 ## [2.5.0] - 2026-08-08
 
 FuncToWeb now depends directly on Starlette instead of FastAPI. `app_of()`

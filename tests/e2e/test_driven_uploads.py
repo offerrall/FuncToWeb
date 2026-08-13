@@ -5,11 +5,11 @@ from typing import Annotated
 import pytest
 
 import func_to_web.web.upload as upload_module
-from func_to_web import IsPathFile
+from func_to_web import FileHint
 
 pytestmark = [pytest.mark.browser, pytest.mark.slow]
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 
 MODAL = ".ftw-upload"
 

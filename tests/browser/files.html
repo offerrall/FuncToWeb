@@ -45,6 +45,16 @@ function message(root, name) {
     return fieldOf(root, name).querySelector(".pth-file-message");
 }
 
+function accepted(form, host, name, shownAs) {
+    check(`${name} is not marked as an error`,
+          fieldNamed(form, name).widget.hasError() === false);
+    check(`${name} is ready`,
+          fieldNamed(form, name).widget.isReady() === true);
+    check("no message is shown", message(host, name).hidden === true);
+    equal("the chosen name is shown back", names(host), [shownAs]);
+    equal("the file is queued for upload", form.uploads().length, 1);
+}
+
 function refused(form, host, name, expected) {
     const shown = message(host, name);
 
@@ -122,6 +132,27 @@ await run({
         pick(fileInputOf(host, "document"),
              [sizedFile(window, "huge.txt", 400)]);
 
+        refused(form, host, "document", "File is too large");
+    },
+
+    // The bounds are inclusive, and this is the only place left that can say
+    // so: nothing on the server weighs a file, so a file sitting exactly on
+    // min_size or max_size is accepted or refused here or nowhere.
+    async size_boundary() {
+        const { form, host } = await compiledForm("take_bounded/");
+
+        const input = fileInputOf(host, "document");
+
+        pick(input, [sizedFile(window, "exact-min.txt", 50)]);
+        accepted(form, host, "document", "exact-min.txt");
+
+        pick(input, [sizedFile(window, "exact-max.txt", 120)]);
+        accepted(form, host, "document", "exact-max.txt");
+
+        pick(input, [sizedFile(window, "under.txt", 49)]);
+        refused(form, host, "document", "File is too small");
+
+        pick(input, [sizedFile(window, "over.txt", 121)]);
         refused(form, host, "document", "File is too large");
     },
 

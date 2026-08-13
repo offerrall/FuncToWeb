@@ -8,7 +8,7 @@ contract lives; this page only lists them.
 | Limit | Where |
 | --- | --- |
 | Two atoms that would need two different controls do not build together: `Rows`+`Choices`, `Rows`+`IsPassword`, `Slider`+`Placeholder`, `Choices`+`Placeholder` and `Choices`+`Slider` | [types.md](types.md), [design/history-1.6-to-2.0.md](design/history-1.6-to-2.0.md#confirmed-limits-of-the-adapter) |
-| The text presentation atoms do not combine with `IsPathFile` (`Str.pattern with IsPathFile is not supported yet`, and the same for `placeholder`, `rows`, `min`, `max`, `choices` and `is_password`), and `Label`/`Description` cannot apply to a list item (`field atoms cannot apply to list items`; `Placeholder` does) | [types.md](types.md), [design/history-1.6-to-2.0.md](design/history-1.6-to-2.0.md#confirmed-limits-of-the-adapter) |
+| The text presentation atoms do not combine with `FileHint` (`Str.pattern with FileHint is not supported yet`, and the same for `placeholder`, `rows`, `min`, `max`, `choices` and `is_password`), and `Label`/`Description` cannot apply to a list item (`field atoms cannot apply to list items`; `Placeholder` does) | [types.md](types.md), [design/history-1.6-to-2.0.md](design/history-1.6-to-2.0.md#confirmed-limits-of-the-adapter) |
 | An `int` outside JavaScript's safe range (±2⁵³−1), and a dataclass with no fields, are a `TypeError` when the plan is compiled | [types.md](types.md), [design/history-1.6-to-2.0.md](design/history-1.6-to-2.0.md#confirmed-limits-of-the-adapter) |
 | A recursive dataclass compiles in the core but breaks the plan: `RecursionError` when the `WebFunction` is built | [types.md](types.md), [design/history-1.6-to-2.0.md](design/history-1.6-to-2.0.md#confirmed-limits-of-the-adapter) |
 
@@ -38,7 +38,8 @@ contract lives; this page only lists them.
 | Limit | Where |
 | --- | --- |
 | `max_upload_bytes` is a global per-file ceiling for the whole space, applied by the upload endpoint and never by the constraint declared on a parameter | [files.md](files.md) |
-| `IsPathFile(min_size=…, max_size=…)` is caught by the server, and warned about early by the browser only for a file that has just been chosen, so a file that changes size on disk between the page being rendered and the function being called slips through | [files.md](files.md) |
+| `FileHint(min_size=…, max_size=…)` is applied by the browser to the file the user picks, and by nothing on the server: a reference sent by a script, one restored with `setValue()`, or a file whose bytes change after it was uploaded is never weighed, and no `422` mentions those bounds. `max_upload_bytes` is the only byte ceiling a client cannot skip | [files.md](files.md#what-filehint-checks-and-where), [security.md](security.md) |
+| A file default written in the signature is checked for its extension and for belonging to the storage directory, but not for existing: one naming a missing file compiles, and the failure arrives as `File not found` on the first execution | [files.md](files.md#declaring-a-file-default) |
 | There is no limit on how many files a request accepts | [files.md](files.md) |
 | There is no deduplication by content, no hash and no invalidation: reuse depends on keeping the reference | [files.md](files.md) |
 | An upload that no execution or prefill ever uses is eligible for the sweep after `pending_ttl`, one hour by default; `pending_ttl=None` keeps everything | [files.md](files.md) |

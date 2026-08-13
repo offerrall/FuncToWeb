@@ -4,12 +4,13 @@ from typing import Annotated
 
 import pytest
 
-from func_to_web import IsPathFile
+from func_to_web import FileHint
 
 CASES = [
     "valid",
     "min_size",
     "max_size",
+    "size_boundary",
     "extension",
     "multiple",
     "nested",
@@ -23,9 +24,9 @@ CASES = [
 STORED = "stored.txt"
 STORED_CONTENT = b"stored bytes"
 
-TxtFile = Annotated[str, IsPathFile(extensions=(".txt",))]
+TxtFile = Annotated[str, FileHint(extensions=(".txt",))]
 BoundedFile = Annotated[
-    str, IsPathFile(extensions=(".txt",), min_size=50, max_size=120)
+    str, FileHint(extensions=(".txt",), min_size=50, max_size=120)
 ]
 
 

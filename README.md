@@ -1,4 +1,4 @@
-# FuncToWeb 2.5.0
+# FuncToWeb 2.6.0
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -299,11 +299,11 @@ from typing import Annotated
 
 from PIL import Image
 
-from func_to_web import Download, IsPathFile, OpenForm, run
+from func_to_web import Download, FileHint, OpenForm, run
 
 ImagePath = Annotated[
     str,
-    IsPathFile(extensions=(".png", ".jpg", ".jpeg")),
+    FileHint(extensions=(".png", ".jpg", ".jpeg")),
 ]
 
 
@@ -354,9 +354,9 @@ itself, and that name has to exist when `choose_image` is defined.
 ```python
 from typing import Annotated
 
-from func_to_web import IsPathFile, Label, Min, run
+from func_to_web import FileHint, Label, Min, run
 
-AnyFile = Annotated[str, IsPathFile()]
+AnyFile = Annotated[str, FileHint()]
 
 Dropped = Annotated[list[AnyFile], Min(1), Label("Files to send")]
 
@@ -476,16 +476,16 @@ mini-app with the dict swapped for a store.
 
 Those three libraries are the whole stack: nested forms, recursive validation,
 streaming, the file lifecycle and the published contract are all inside these
-lines (v2.5.0, `.py`/`.js`/`.css` under `src/`).
+lines (v2.6.0, `.py`/`.js`/`.css` under `src/`).
 
 ```text
-pytypehint       1,987 lines    types, validation, defaults
-pytypehintweb    9,581 lines    plan, widgets, transport (includes the JS/CSS)
-FuncToWeb        5,070 lines    routes, execution, storage, /doc
-total           ~16,000 lines
+pytypehint       2,740 lines    types, validation, defaults
+pytypehintweb    9,468 lines    plan, widgets, transport (includes the JS/CSS)
+FuncToWeb        5,071 lines    routes, execution, storage, /doc
+total           ~17,300 lines
 ```
 
-Each layer can be read on its own: pytypehint is about 2,000 lines of pure
+Each layer can be read on its own: pytypehint is under 3,000 lines of pure
 stdlib and takes an afternoon, and no layer needs the others to be understood.
 The whole set also fits inside the context window of a general-purpose AI: you
 can hand over an entire library, or the three of them, and ask it to review,
@@ -521,7 +521,7 @@ practice.
 
 ## Status
 
-2.5.0 is a stable release: the public API is the one described in
+2.6.0 is a stable release: the public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 
