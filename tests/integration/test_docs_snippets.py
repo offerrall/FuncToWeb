@@ -49,10 +49,10 @@ DOCUMENTED_PAGES = (
 )
 
 DELIBERATE_FRAGMENTS = {
-    ("README.md", 231),
-    ("docs/prefill.md", 263),
-    ("docs/router.md", 7),
-    ("docs/run.md", 7),
+    ("README.md", "due_date: date | None = None"),
+    ("docs/prefill.md", "page_of("),
+    ("docs/router.md", "app_of("),
+    ("docs/run.md", "run("),
 }
 
 FENCE = re.compile(r"^```(\S*)\s*$")
@@ -77,8 +77,8 @@ class Block:
         return self.path.relative_to(ROOT).as_posix()
 
     @property
-    def location(self):
-        return (self.relative, self.line)
+    def fragment_key(self):
+        return (self.relative, self.code.splitlines()[0].strip())
 
     @property
     def label(self):
@@ -205,10 +205,10 @@ def lower_layer_imports(code):
 ALL_PYTHON_BLOCKS = python_blocks()
 
 FRAGMENT_BLOCKS = [block for block in ALL_PYTHON_BLOCKS
-                   if block.location in DELIBERATE_FRAGMENTS]
+                   if block.fragment_key in DELIBERATE_FRAGMENTS]
 
 COMPLETE_BLOCKS = [block for block in ALL_PYTHON_BLOCKS
-                   if block.location not in DELIBERATE_FRAGMENTS]
+                   if block.fragment_key not in DELIBERATE_FRAGMENTS]
 
 IMPORTING_BLOCKS = [block for block in COMPLETE_BLOCKS
                     if "func_to_web" in block.code]
@@ -404,7 +404,7 @@ def test_the_fragment_list_names_exactly_the_blocks_that_do_not_parse():
         try:
             ast.parse(block.code)
         except SyntaxError:
-            broken.add(block.location)
+            broken.add(block.fragment_key)
 
     assert broken == DELIBERATE_FRAGMENTS
 
