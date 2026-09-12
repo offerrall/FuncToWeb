@@ -35,7 +35,6 @@ SCANNED_FILES = ("README.md", "CHANGELOG.md", "pyproject.toml")
 HISTORICAL = (
     "CHANGELOG.md",
     "docs/design/history-1.6-to-2.0.md",
-    "docs/migration-1.6-to-2.0.md",
 )
 
 # (label, pattern, allowed paths)

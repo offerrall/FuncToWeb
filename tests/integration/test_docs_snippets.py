@@ -50,7 +50,7 @@ DOCUMENTED_PAGES = (
 
 DELIBERATE_FRAGMENTS = {
     ("README.md", 231),
-    ("docs/prefill.md", 247),
+    ("docs/prefill.md", 263),
     ("docs/router.md", 7),
     ("docs/run.md", 7),
 }

@@ -23,6 +23,7 @@ const ASCII_FOLDINGS = {
 
 const MODAL_STYLE = `
 .ftw-frame {
+    display: block;
     width: 100%;
     height: 100%;
     border: 0;
@@ -44,6 +45,7 @@ const MODAL_STYLE = `
     display: block;
     width: min(var(--ftw-modal-width, 760px), 100%);
     height: min(var(--ftw-modal-height, 90vh), 100%);
+    max-height: var(--ftw-content-height, none);
     overflow: hidden;
     border-radius: 12px;
     background: transparent;
@@ -375,7 +377,8 @@ export function formUrl(spaceUrl, output) {
 
 export function pageUrl(
     url,
-    { prefill = null, hidden = null, autorun = false } = {},
+    { prefill = null, hidden = null, autorun = false,
+        hideTitle = false, hideDescription = false } = {},
 ) {
     const page = `${trimmed(url)}/`;
     const query = new URLSearchParams();
@@ -383,6 +386,8 @@ export function pageUrl(
     if (prefill !== null) query.set("prefill", JSON.stringify(prefill));
     if (hidden !== null) query.set("hidden", JSON.stringify(hidden));
     if (autorun) query.set("autorun", "1");
+    if (hideTitle) query.set("hide_title", "1");
+    if (hideDescription) query.set("hide_description", "1");
 
     const search = query.toString();
 
@@ -429,6 +434,26 @@ export function embed(target, url, options = {}) {
 
     parent.append(frame);
 
+    if (options.autoHeight !== false) {
+        const channel = listen(frame, {
+            onResize: (height) => { frame.style.height = `${height}px`; },
+        });
+
+        // embed() returns the native iframe. Removing it must also release
+        // its window listener, without requiring a separate disposal API.
+        if (typeof globalThis.MutationObserver === "function") {
+            let connected = frame.isConnected;
+            const observer = new MutationObserver(() => {
+                if (frame.isConnected) connected = true;
+                else if (connected) {
+                    channel.stop();
+                    observer.disconnect();
+                }
+            });
+            observer.observe(globalThis.document, { childList: true, subtree: true });
+        }
+    }
+
     return frame;
 }
 
@@ -445,6 +470,7 @@ function announced(data) {
 export function listen(iframe, handlers = {}) {
     const {
         onReady = null, onResult = null, onError = null, onNavigate = null,
+        onResize = null,
     } = handlers;
 
     const cache = { ready: false, results: null, error: null };
@@ -475,6 +501,9 @@ export function listen(iframe, handlers = {}) {
             if (onError !== null) onError(message.message);
         } else if (message.kind === "navigate") {
             if (onNavigate !== null) onNavigate(message.href);
+        } else if (message.kind === "resize") {
+            if (!Number.isSafeInteger(message.height) || message.height <= 0) return;
+            if (onResize !== null) onResize(message.height);
         }
     }
 
@@ -507,6 +536,7 @@ export function openModal(url, options = {}) {
     const {
         onClose = null, closeOnResult = false, onResult = null, onError = null,
         width = null, height = null,
+        autoHeight = true,
         ...rest
     } = options;
     const document = globalThis.document;
@@ -537,7 +567,8 @@ export function openModal(url, options = {}) {
     panel.append(button);
     overlay.append(panel);
 
-    const frame = embed(panel, url, rest);
+    // The modal owns sizing and listener lifetime; its iframe fills the panel.
+    const frame = embed(panel, url, { ...rest, autoHeight: false });
 
     let open = true;
     let settle = null;
@@ -547,6 +578,9 @@ export function openModal(url, options = {}) {
     });
 
     const channel = listen(frame, {
+        onResize(size) {
+            if (autoHeight) panel.style.setProperty("--ftw-content-height", `${size}px`);
+        },
         onResult(outputs) {
             if (onResult !== null) onResult(outputs);
             if (closeOnResult) close();

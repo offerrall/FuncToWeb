@@ -1,4 +1,4 @@
-import { emit } from "./emit.js";
+import { emit, observeHeight } from "./emit.js";
 import { compileForm } from "./form.js";
 import {
     renderDownload, renderError, renderForm, renderImage, renderRunning,
@@ -255,5 +255,6 @@ submit.addEventListener("click", async () => {
 });
 
 emit("ready");
+observeHeight();
 
 if (autorun && form.isReady()) submit.click();

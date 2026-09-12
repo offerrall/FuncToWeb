@@ -133,7 +133,7 @@ the same URL with the `prefill` query parameter, `hidden` decides which fields
 are not shown, and `autorun` asks the page to submit itself once it is ready.
 See [prefill.md](prefill.md).
 
-That URL with its three parameters, and the iframe around it, are what every
+That URL with its opening options, and the iframe around it, are what every
 host would otherwise write by hand:
 
 ```javascript
@@ -148,7 +148,16 @@ const modal = openModal("/tools/divide", {
 
 // A modal opened for its answer: no form to fill, so no button to press
 openModal("/tools/monthly_report", {autorun: true});
+
+// The host already shows the function's heading and description
+openModal("/tools/add", {hideTitle: true, hideDescription: true});
 ```
+
+`hideTitle` and `hideDescription` independently hide the visible function title
+and description. They work with `pageUrl()`, `embed()` and `openModal()` and
+travel as `hide_title=1` and `hide_description=1`. Both default to `false`.
+When neither heading nor description is visible, the header occupies no space.
+The iframe's accessible `title` option is independent of these flags.
 
 `autorun` is for the modal you open to *see* something —a report, a chart, a
 generated file, a link— rather than to fill anything in. `call()` would skip
@@ -171,10 +180,20 @@ inside the iframe.
 
 ### The size of a modal
 
-A modal is **760px wide and nine tenths of the window tall** by default,
-because the thing inside it is a form and a form that does not fit is a form
-with a scrollbar over it. Height is the axis that matters —a form grows
-downwards— so it is the one that follows the screen instead of a fixed number.
+A modal is **760px wide and fits its content up to nine tenths of the window
+height** by default. Short forms use less space; adding list items, displaying
+validation errors or rendering results can grow it, and removing content can
+shrink it again. Beyond the height limit, the iframe scrolls internally.
+
+`embed()` also adjusts its iframe to the content height, without a modal's
+viewport limit. Both use `autoHeight: true` by default, with no application
+configuration. Turn it off for an opening whose height the host already manages:
+
+```javascript
+openModal("/tools/create_user", {autoHeight: false, height: 600});
+const frame = embed("#panel", "/tools/create_user", {autoHeight: false});
+frame.style.height = "400px";
+```
 
 Two ways to change it, and they are the same way twice:
 
@@ -190,7 +209,8 @@ openModal("/tools/create_user", {height: "100%", width: 1100});
 ```
 
 The option sets those variables on that one panel; the CSS sets them for every
-modal. Both take any CSS length —`px`, `%`, `vh`, `rem`, a `calc()`— and the
+modal. With automatic sizing, `height` is a ceiling; with `autoHeight: false`,
+it is the requested height. Both take any CSS length —`px`, `%`, `vh`, `rem`, a `calc()`— and the
 option also takes a plain number, read as pixels. Anything else raises
 `FuncToWebError: the height must be a number of pixels or a CSS length`.
 
@@ -198,7 +218,7 @@ Whatever is asked for, the panel is capped at the window:
 
 ```text
 width:  min(--ftw-modal-width,  100%)
-height: min(--ftw-modal-height, 100%)
+height: min(content height, --ftw-modal-height, 100%)
 ```
 
 So no setting can push a corner of the modal off screen, and `100%` is the
@@ -206,10 +226,12 @@ ceiling rather than an overflow. That ceiling is the window **minus the 48px
 the overlay keeps** around the panel, which is what makes it read as a modal
 and not as a page.
 
-A form taller than that scrolls inside the iframe, and no height setting
-changes it: the iframe does not grow to fit its content, since the page does
-not report a height. What the default guarantees is the other half of the
-problem — that nothing above the form is wasted.
+The page reports its natural body height through `ResizeObserver`, including
+padding. This lets it shrink as well as grow, and works across origins through
+the existing message channel. Until a height arrives, or for an older page that
+does not report one, the modal uses its configured height. Removing an embedded
+iframe releases its automatic sizing listener; closing a modal releases its
+channel as before.
 
 The theme is decided by the space, not by the host application
 ([router.md](router.md#theme)): a host application cannot impose its theme on
@@ -274,6 +296,7 @@ const channel = listen(frame, {
     onResult: (outputs) => refresh(),
     onError: (message) => show(message),
     onNavigate: (href) => track(href),
+    onResize: (height) => console.log("Content height in pixels:", height),
 });
 
 channel.cache;   // {ready, results, error}, the last of each
@@ -287,13 +310,14 @@ this: `closed` reports that cache when the overlay goes away.
 ### The protocol
 
 The page posts one message per event to `window.parent`, and nothing at all
-when it is not embedded. Four kinds, each with the payload it needs:
+when it is not embedded. Five kinds, each with the payload it needs:
 
 ```text
 ready                        the page is up and the form is mounted
 result    {outputs}          a run finished; the outputs it just drew
 error     {message}          a run failed; the error of the envelope
 navigate  {href}             an OpenForm result is about to move the iframe
+resize    {height}           content height changed, in positive integer CSS pixels
 ```
 
 Every message also carries `v`, the protocol version, and `slug`, the function
@@ -307,7 +331,7 @@ it comes from:
 `v` is how this can grow without breaking a host: a receiver ignores, in
 silence, anything whose `v` it does not know, anything with no `kind`, and any
 `kind` it has not heard of. `listen()` does that for you, so a host written
-today keeps working against a page that learns a fifth kind tomorrow.
+today keeps working against a page that learns another kind tomorrow.
 
 Two boundaries are deliberate. `error` is a *run* that failed —the `error` of
 the envelope, a `422` or a `500` ([http.md](http.md#the-status-code))— and never
@@ -324,8 +348,7 @@ The message is posted with a `targetOrigin` of `"*"`, because the page does not
 know who embedded it: whoever can embed a page can read what runs inside it. See
 [security.md](security.md#the-result-travels-to-whoever-embeds-the-page).
 
-Still missing, and not part of this: adjusting the iframe's height to its
-content, and any host-to-page direction. Initial values still travel as
+There is no host-to-page command channel. Initial values still travel as
 `prefill` in the URL ([prefill.md](prefill.md)), not as a message.
 
 Why the autoclose is off, why `error` skips validation and why `result` reuses

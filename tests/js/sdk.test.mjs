@@ -441,6 +441,28 @@ test("pageUrl builds the page of a function", () => {
     assert.equal(pageUrl(FUNCTION), "/tools/add/");
 });
 
+test("page visibility travels through URLs, embeds and modals", () => {
+    installDocument();
+    const panel = makeElement("div");
+    const options = { hideTitle: true, hideDescription: true, prefill: { a: 9 } };
+    const modal = openModal(FUNCTION, options);
+    const frame = embed(panel, FUNCTION, options);
+
+    for (const href of [pageUrl(FUNCTION, options), frame.src, modal.iframe.src]) {
+        const query = new URL(href, "http://host").searchParams;
+        assert.equal(query.get("hide_title"), "1");
+        assert.equal(query.get("hide_description"), "1");
+        assert.equal(query.get("prefill"), '{"a":9}');
+    }
+    modal.close();
+    assert.equal(pageUrl(FUNCTION, { hideTitle: false, hideDescription: false }),
+        "/tools/add/");
+    assert.equal(pageUrl(FUNCTION, { hideTitle: true }),
+        "/tools/add/?hide_title=1");
+    assert.equal(pageUrl(FUNCTION, { hideDescription: true }),
+        "/tools/add/?hide_description=1");
+});
+
 
 test("pageUrl carries prefill and hidden as json", () => {
     const url = new URL(pageUrl(FUNCTION, { prefill: { a: 9 }, hidden: ["a"] }),
@@ -547,6 +569,57 @@ test("embed puts the page of a function inside the element", () => {
     assert.equal(frame.parent, panel);
     assert.equal(frame.className, "ftw-frame");
     assert.match(frame.src, /^\/tools\/add\/\?prefill=/);
+});
+
+test("embed applies valid heights from its own frame and can shrink", () => {
+    const document = installDocument();
+    const frame = embed(document.body, FUNCTION);
+    frame.contentWindow = {};
+    const bus = messaging();
+    bus.send(frame.contentWindow, { v: 1, kind: "resize", height: 850 });
+    assert.equal(frame.style.height, "850px");
+    for (const height of [0, -5, "100", NaN, Infinity, 2.5]) {
+        bus.send(frame.contentWindow, { v: 1, kind: "resize", height });
+    }
+    bus.send({}, { v: 1, kind: "resize", height: 100 });
+    assert.equal(frame.style.height, "850px");
+    bus.send(frame.contentWindow, { v: 1, kind: "resize", height: 200 });
+    assert.equal(frame.style.height, "200px");
+});
+
+test("a modal applies content height to its panel and releases the listener", () => {
+    installDocument();
+    const modal = openModal(FUNCTION);
+    modal.iframe.contentWindow = {};
+    messaging().send(modal.iframe.contentWindow, { v: 1, kind: "resize", height: 250 });
+    assert.equal(modal.element.children[0].style.getPropertyValue("--ftw-content-height"), "250px");
+    modal.close();
+    assert.equal(messaging().count(), 0);
+});
+
+test("removing an embed releases its resize listener", () => {
+    const document = installDocument();
+    let changed;
+    let disconnected = false;
+    const original = globalThis.MutationObserver;
+    globalThis.MutationObserver = class {
+        constructor(callback) { changed = callback; }
+        observe() {}
+        disconnect() { disconnected = true; }
+    };
+    try {
+        const frame = embed(document.body, FUNCTION);
+        frame.isConnected = true;
+        changed();
+        assert.equal(messaging().count(), 1);
+        frame.isConnected = false;
+        changed();
+        assert.equal(messaging().count(), 0);
+        assert.equal(disconnected, true);
+    } finally {
+        if (original === undefined) delete globalThis.MutationObserver;
+        else globalThis.MutationObserver = original;
+    }
 });
 
 

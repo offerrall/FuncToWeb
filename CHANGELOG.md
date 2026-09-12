@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.1] - 2026-09-13
+
+FuncToWeb 2.6.1 is stable, used daily and actively maintained.
+
+### Added
+- Automatic content height for `embed()` and `openModal()`, including growth
+  and shrinkage after form edits and results. Modal height remains bounded by
+  the configured height and viewport. `autoHeight: false` keeps fixed sizing.
+- Per-opening `hide_title` and `hide_description` options for function pages,
+  available through the URL and `page_of()`. The SDK exposes them as `hideTitle`
+  and `hideDescription` in `pageUrl()`, `embed()` and `openModal()`. Hiding both
+  removes the visible header and its spacing.
+
+### Fixed
+- An overlong file reference in `prefill` now returns `400` when the filesystem
+  rejects its name during the existence check, instead of an internal `500`.
+  Existing stored names remain readable beyond the upload reference limit.
+
 ## [2.6.0] - 2026-08-13
 
 FuncToWeb moves onto `pytypehintweb 1.1.0`, and with it onto `pytypehint 1.0.0`.
@@ -370,15 +388,13 @@ one exception, which is the slug.
 - **The default slug is `fn.__name__` as it is** — `create_task` is served at
   `/create_task/`. The derivation lowercased the name and collapsed every `_`
   into a `-`, while the published contract
-  ([`docs/migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md#startup-mounting-and-the-function-space),
-  [`docs/design/history-1.6-to-2.0.md`](docs/design/history-1.6-to-2.0.md#defaults-that-changed-on-purpose))
+  ([`docs/design/history-1.6-to-2.0.md`](docs/design/history-1.6-to-2.0.md#defaults-that-changed-on-purpose))
   stated the opposite: code and contract had diverged, and it is resolved in
   favour of the contract, because a rule that transforms nothing is the one a
   reader can predict. A hyphenated URL is still available where it is wanted:
   `WebFunction(edit_product, slug="edit-product")`. The **displayed** name is
   untouched — the `<title>`, the `<h1>` and the `run()` index still prettify
-  `create_task` into `Create task`. The two pages that stated the rule needed no
-  correction to it: the code moved to meet them, and the contract won.
+  `create_task` into `Create task`. The code moved to meet the documented rule.
 - **A slug accepts letters, digits and underscores** — the old validation took
   lowercase letters, digits and single hyphens only, and would have refused
   almost every name the rule above derives. It now takes any letter, digit or
@@ -419,8 +435,8 @@ one exception, which is the slug.
   detail, with its own table of examples; it now describes the rule as it is,
   says that hyphens remain available through `slug=`, and states that slugs are
   case-sensitive because URLs are.
-- **URLs in the pages and examples** — `http.md`, `prefill.md`, `outputs.md` and
-  `migration-1.6-to-2.0.md` showed the hyphenated form of a function whose name
+- **URLs in the pages and examples** — `http.md`, `prefill.md` and `outputs.md`
+  showed the hyphenated form of a function whose name
   carries `_`, as did `examples/fastapi/iframe_host.py` and
   `examples/themes/router_theme.py`.
 - **`README.md`** — a new *Change once, propagate everywhere* section walking
@@ -457,10 +473,6 @@ rewritten — `pytypeinput` and `pytypeinputweb` give way to
 [`pytypehint`](https://github.com/offerrall/pytypehint) and `pytypehintweb` —
 and **pydantic goes with them: it is no longer involved at all**. The minimum
 Python version rises from 3.10 to 3.11.
-
-**A full read of [`docs/migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md)
-is recommended before upgrading.** It covers every case below with the exact
-error each one produces, and ends with the ordered update steps.
 
 **From this version on, expect far fewer changes.** The redesign is done: the
 API surface, the transport and the storage contract are what they are meant to
@@ -592,8 +604,7 @@ rewriting it again.
   options has to be redesigned by hand with fixed ones.
 - **The file aliases** (`ImageFile`, `TextFile`, `AudioFile`, `DataFile`,
   `VideoFile`, `DocumentFile`, `File`) — a file field is a `str` annotated with
-  `IsPathFile(extensions=…)`; the migration guide lists the exact extensions
-  each alias carried.
+  `IsPathFile(extensions=…)`.
 - **`OptionalEnabled` and `OptionalDisabled`** — replaced by
   `Annotated[X | None, OptionalToggle(True | False)]`.
 - **`FileResponse`** — superseded by `Download` in the return annotation.
@@ -615,9 +626,6 @@ rewriting it again.
   [`http`](docs/http.md), [`sdk`](docs/sdk.md)), plus
   [`limitations`](docs/limitations.md) and [`security`](docs/security.md)
   stating what the library does not do.
-- **A complete migration guide** —
-  [`migration-1.6-to-2.0.md`](docs/migration-1.6-to-2.0.md), with equivalence
-  tables per area, the confirmed pitfalls and the ordered update steps.
 - **The examples collection was rebuilt** — 80 runnable programs across 11
   folders, each file teaching a single capability and running as it is.
 

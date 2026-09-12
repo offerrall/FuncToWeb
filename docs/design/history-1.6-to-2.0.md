@@ -1,10 +1,6 @@
 # What changed underneath, from 1.6 to 2.0
 
-Why 2.0 breaks what it breaks. The migration itself — the equivalence tables and
-the update steps — is in
-[migration-1.6-to-2.0.md](../migration-1.6-to-2.0.md).
-
-Almost everything the migration lists has the same root cause: the two layers
+The changes in 2.0 have the same root cause: the two layers
 FuncToWeb rests on were rewritten, and that widened what you can write in a
 signature.
 

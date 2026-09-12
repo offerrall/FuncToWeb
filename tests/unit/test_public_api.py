@@ -214,7 +214,7 @@ def test_all_is_exactly_the_own_names_plus_the_documented_reexports():
 
 
 def test_version_is_the_published_two_six_zero():
-    assert func_to_web.__version__ == "2.6.0"
+    assert func_to_web.__version__ == "2.6.1"
 
 
 @pytest.mark.parametrize("name", RETIRED_NAMES)

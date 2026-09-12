@@ -100,6 +100,10 @@ def _routes(
         prefill = request.query_params.get("prefill")
         hidden = request.query_params.get("hidden")
         autorun = boolean_query(request.query_params.get("autorun"), "autorun")
+        hide_title = boolean_query(request.query_params.get("hide_title"),
+                                   "hide_title")
+        hide_description = boolean_query(
+            request.query_params.get("hide_description"), "hide_description")
         names = ([] if hidden is None
                  else hidden_names(json_query(hidden, "hidden")))
         raw: Any = {} if prefill is None else json_query(prefill, "prefill")
@@ -107,7 +111,8 @@ def _routes(
         if prefill is not None and type(raw) is not dict:
             raise HTTPException(400, "prefill must be a JSON object")
 
-        if not raw and not names and not autorun:
+        if (not raw and not names and not autorun
+                and not hide_title and not hide_description):
             return HTMLResponse(base)
 
         try:
@@ -115,7 +120,8 @@ def _routes(
                                     file_resolver=stored_file)
                       if raw else None)
             rendered = page_of(web_function, prefill=values, hidden=names,
-                               autorun=autorun, theme=theme)
+                               autorun=autorun, hide_title=hide_title,
+                               hide_description=hide_description, theme=theme)
             return HTMLResponse(rendered)
         except (TypeError, ValueError, FileNotFoundError) as error:
             raise HTTPException(

@@ -1,3 +1,4 @@
+import errno
 import os
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
@@ -79,7 +80,16 @@ def stored_file(reference: str) -> str:
         ) from error
 
     for remaining in reversed(range(PUBLISH_ATTEMPTS)):
-        if target.is_file():
+        try:
+            exists = target.is_file()
+        except OSError as error:
+            # resolve() may accept a name that stat() cannot address. Refuse
+            # that input without masking unrelated storage failures.
+            if error.errno != errno.ENAMETOOLONG:
+                raise
+            raise ValueError("file reference is too long") from error
+
+        if exists:
             return str(target)
 
         source = _pending_source(target.name)

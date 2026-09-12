@@ -1,4 +1,5 @@
 import asyncio
+import errno
 import sys
 import threading
 from pathlib import Path
@@ -12,6 +13,24 @@ from func_to_web.web.print_capture import PrintCapture, install
 from func_to_web.web.references import segment_of, stored_of
 from func_to_web.web.returned_files import stored_return
 from func_to_web.web.router import DefensivePaths, static_asset
+from func_to_web.web.upload import stored_file
+
+
+@pytest.mark.parametrize("code", [errno.ENAMETOOLONG, errno.EACCES, errno.EIO])
+def test_file_lookup_only_translates_an_overlong_name(monkeypatch, code):
+    error = OSError(code, "storage lookup failed")
+
+    def fail_stat(path):
+        raise error
+
+    monkeypatch.setattr(Path, "is_file", fail_stat)
+    if code == errno.ENAMETOOLONG:
+        with pytest.raises(ValueError, match="file reference is too long"):
+            stored_file("report.txt")
+    else:
+        with pytest.raises(OSError) as caught:
+            stored_file("report.txt")
+        assert caught.value is error
 
 
 def add(a: int = 1) -> str:

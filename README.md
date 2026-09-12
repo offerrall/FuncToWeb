@@ -1,4 +1,4 @@
-# FuncToWeb 2.6.0
+# FuncToWeb 2.6.1
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -521,12 +521,11 @@ practice.
 
 ## Status
 
-2.6.0 is a stable release: the public API is the one described in
+**FuncToWeb 2.6.1 is stable, used daily and actively maintained.**
+
+The public API is the one described in
 [`docs/`](docs/index.md), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
-
-If you are coming from 1.6, the migration guide is in
-[migration-1.6-to-2.0.md](docs/migration-1.6-to-2.0.md).
 
 ## License
 

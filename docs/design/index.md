@@ -19,7 +19,7 @@ library.
   its own. → [static-assets.md](../static-assets.md)
 * [history-1.6-to-2.0.md](history-1.6-to-2.0.md) — why 2.0 breaks what it
   breaks: the two layers underneath were rewritten, and what that widened, lost
-  and left as a limit. → [migration-1.6-to-2.0.md](../migration-1.6-to-2.0.md)
+  and left as a limit. → [architecture.md](../architecture.md)
 * [outputs.md](outputs.md) — why table rows are read with `itertuples()`, why a
   matplotlib figure is closed, and why a union cannot mix a download with an
   ordinary branch. → [outputs.md](../outputs.md)

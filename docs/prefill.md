@@ -4,13 +4,15 @@ A prefill is a set of **temporary initial values for one specific opening**: it
 does not change the function, its schema, its plan or its base page.
 
 It has two entry points: `page_of()` from Python and the `prefill` query
-parameter of `GET /{slug}/`; the second builds on the first. Two more travel
-alongside it, and all three describe **one opening**, never the function.
+parameter of `GET /{slug}/`; the second builds on the first. The options beside
+it also describe **one opening**, never the function.
 
 ```text
 prefill  → proposes initial values
 hidden   → decides which parameters are not shown
 autorun  → asks the page to submit itself once it is ready
+hide_title → hides the visible function title
+hide_description → hides the visible function description
 ```
 
 They are independent: `hidden` does not need `prefill` and vice versa. A
@@ -21,7 +23,7 @@ uses this channel.
 ## HTTP API
 
 ```text
-GET /{slug}/?prefill=<JSON object>&hidden=<JSON list of names>&autorun=1
+GET /{slug}/?prefill=<JSON object>&hidden=<JSON list of names>&autorun=1&hide_title=1&hide_description=1
 ```
 
 The root JSON of the prefill must be an object. Its keys are parameter
@@ -73,11 +75,10 @@ SchemaValueError: age: default: too large: 999, maximum 120
 `WebFunction.schema`, `WebFunction.plan` and `WebFunction.html` are compiled
 once when the `WebFunction` is created and never change.
 
-Without prefill or hidden, that base HTML is returned directly. With either of
-them, and only for that opening, a temporary `Signature` is created, the
-values are applied as temporary defaults, `plan_of()` validates them and
-generates a plan for that opening alone, and that plan is rendered. Nothing is
-stored anywhere: two openings with different prefills share no state.
+With the default opening options, the base HTML is returned directly. A prefill
+creates a temporary `Signature` with temporary defaults, and `plan_of()` validates
+them. The other opening options control rendering without changing the signature.
+Nothing is stored anywhere: two openings with different options share no state.
 
 ## Partial prefill
 
@@ -195,8 +196,8 @@ does not impose. The full list is in [limitations.md](limitations.md).
 ## Running the opening on its own
 
 `autorun` asks the page to press its own submit button as soon as it is
-mounted. It is the third parameter of an opening and behaves like the other
-two: it belongs to that opening, it changes nothing about the function, and it
+mounted. Like the other opening options,
+it belongs to that opening, it changes nothing about the function, and it
 travels either from Python or in the query.
 
 ```text
@@ -241,6 +242,21 @@ Two things it is not:
   decided by where the space is mounted and who reaches it →
   [security.md](security.md).
 
+## Hiding the page heading
+
+`hide_title` and `hide_description` independently omit the visible function
+title and description. Both default to false. If neither remains visible, the
+whole header is omitted, including its spacing. The document title, metadata,
+form plan and parameter labels and descriptions keep their original values.
+
+```text
+GET /monthly_report/?hide_title=1&hide_description=1&autorun=1
+```
+
+Both flags accept the same HTTP booleans as `autorun`: `1`, `true`, `on`, `yes`
+and `0`, `false`, `off`, `no`, case-insensitively. Other values return `422`.
+The SDK spells them `hideTitle` and `hideDescription`.
+
 ## Python API: `page_of()`
 
 ```python
@@ -250,6 +266,8 @@ page_of(
     prefill: Mapping[str, Any] | None = None,
     hidden: Iterable[str] | None = None,
     autorun: bool = False,
+    hide_title: bool = False,
+    hide_description: bool = False,
     theme: Theme = "system",
 ) -> str
 ```
@@ -279,7 +297,9 @@ any flow that generates the page on its own.
   [Running the opening on its own](#running-the-opening-on-its-own).
 * `theme` is the one from [`app_of()`](router.md#theme), with the same three
   values.
-* With no prefill, no hidden, no autorun and `theme="system"` it returns
+* `hide_title` and `hide_description` hide the visible heading and summary;
+  each must be a `bool`, otherwise `TypeError` is raised.
+* With no prefill, no hidden, all boolean options false and `theme="system"` it returns
   `WebFunction.html` unchanged.
 
 The HTML expects the space assets at `../static/...`, so it needs an application

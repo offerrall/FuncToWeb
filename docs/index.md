@@ -48,8 +48,6 @@ Technical reference for the project. For an overview, see the
 
 * [Architecture](architecture.md) — the layers and what each one solves.
 * [Limitations](limitations.md) — the known limits, in a single list.
-* [Migrating from 1.6 to 2.0](migration-1.6-to-2.0.md) — what changes, a table
-  of equivalences by area, and the upgrade steps.
 
 ## Design notes
 

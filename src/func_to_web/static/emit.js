@@ -33,3 +33,28 @@ export function emit(kind, payload = {}) {
 
     parent.postMessage({ v: VERSION, kind, slug: slug(), ...payload }, "*");
 }
+
+
+export function observeHeight() {
+    if (host() === null || typeof globalThis.ResizeObserver !== "function") return;
+
+    const body = globalThis.document.body;
+    let previous = 0;
+    let scheduled = null;
+
+    function measure() {
+        scheduled = null;
+        // The body's natural border box includes padding and can shrink.
+        // documentElement.scrollHeight would retain the iframe's old height.
+        const height = Math.ceil(body.getBoundingClientRect().height);
+        if (height > 0 && height !== previous) {
+            previous = height;
+            emit("resize", { height });
+        }
+    }
+
+    const observer = new ResizeObserver(() => {
+        if (scheduled === null) scheduled = requestAnimationFrame(measure);
+    });
+    observer.observe(body, { box: "border-box" });
+}

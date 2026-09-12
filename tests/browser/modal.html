@@ -35,6 +35,10 @@ async function opened(slug, options = {}) {
     });
 
     const inner = modal.iframe.contentDocument;
+    if (options.autoHeight !== false) {
+        await waitFor("the content height to arrive", () =>
+            panel.style.getPropertyValue("--ftw-content-height") !== "");
+    }
 
     return {
         modal,
@@ -58,9 +62,13 @@ await run({
         const window = globalThis.innerHeight;
         const share = page.box.height / window;
 
-        check("the panel takes about nine tenths of the window",
-              share > 0.88 && share <= 0.9,
+        check("the panel takes no more than nine tenths of the window",
+              share > 0 && share <= 0.9,
               `${page.box.height}px of ${window}px`);
+        const content = Math.ceil(page.modal.iframe.contentDocument.body
+            .getBoundingClientRect().height);
+        equal("the panel fits the content up to its ceiling",
+              Math.round(page.box.height), Math.round(Math.min(content, window * 0.9)));
         check("and never more than the window itself",
               page.box.height <= window, `${page.box.height}px`);
 
@@ -81,22 +89,31 @@ await run({
 
         const page = await opened("divide/");
 
-        check("and the modal is well past the 760px this used to be fixed at",
-              page.box.height > 760, `${Math.round(page.box.height)}px`);
+        check("a small form gets a small modal",
+              page.box.height < 760, `${Math.round(page.box.height)}px`);
     },
 
     async limit() {
-        // What the tenth of the window costs, in the case where it costs
-        // anything: a form that the screen could hold whole, but the modal
-        // margin cannot. It is the price of a modal looking like a modal, and
-        // it is one line of CSS away for a host that would rather not pay it.
+        // Content can grow after mount. Both the default and an explicit
+        // full-height opening must retain their viewport ceilings.
         const page = await opened("many/");
         const window = globalThis.innerHeight;
+        const whole = await opened("many/", { height: "100%" });
+
+        for (const target of [page, whole]) {
+            const doc = target.modal.iframe.contentDocument;
+            const content = doc.createElement("div");
+            content.style.height = `${window * 2}px`;
+            doc.body.append(content);
+            await waitFor("the taller content to be reported", () =>
+                parseFloat(target.panel.style.getPropertyValue("--ftw-content-height"))
+                    > window * 2);
+            target.needs = doc.documentElement.scrollHeight;
+            target.got = target.modal.iframe.getBoundingClientRect().height;
+        }
 
         check("a form this tall does not fit in nine tenths of the window",
               !fits(page), `needs ${page.needs}px, has ${Math.round(page.got)}px`);
-
-        const whole = await opened("many/", { height: "100%" });
 
         check("and asking for the whole window does not save it either",
               !fits(whole),
@@ -140,7 +157,7 @@ await run({
     },
 
     async sheet() {
-        const first = await opened("divide/", { height: 300 });
+        const first = await opened("divide/", { height: 300, autoHeight: false });
         const second = await opened("many/");
 
         equal("a modal given a size keeps it", Math.round(first.box.height),

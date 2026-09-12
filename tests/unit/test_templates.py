@@ -21,7 +21,7 @@ OPTIONAL_END_TAGS = frozenset({"html", "head", "body", "p", "li", "option"})
 
 PLACEHOLDERS = (
     "PLAN_JSON", "HIDDEN_JSON", "__TITLE__", "__THEME__", "__META__",
-    "__DESCRIPTION__",
+    "__HEADER__",
 )
 
 SCRIPT_TAG = re.compile(r"<script\b")

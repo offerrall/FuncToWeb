@@ -45,8 +45,13 @@ def page_from_plan(
     description: str = "",
     hidden: Iterable[str] = (),
     autorun: bool = False,
+    hide_title: bool = False,
+    hide_description: bool = False,
     theme: Theme = "system",
 ) -> str:
+    heading = "" if hide_title else f"    <h1>{escape(_titled(name))}</h1>\n"
+    summary = (f"    <p>{escape(description)}</p>\n"
+               if description and not hide_description else "")
     values = {
         "PLAN_JSON": _embedded(
             labelled_plan(plan, name=name, description=description)
@@ -59,8 +64,8 @@ def page_from_plan(
             f'<meta name="description" content="{escape(description, quote=True)}">'
             if description else ""
         ),
-        "__DESCRIPTION__": (f"<p>{escape(description)}</p>"
-                            if description else ""),
+        "__HEADER__": (f"<header>\n{heading}{summary}</header>"
+                       if heading or summary else ""),
     }
 
     def render(match: re.Match[str]) -> str:
@@ -72,7 +77,7 @@ def page_from_plan(
         return f"{indent}{values[key]}\n" if values[key] else ""
 
     return re.sub(
-        r"([ \t]*)(__(?:META|DESCRIPTION)__)\n"
+        r"([ \t]*)(__(?:META|HEADER)__)\n"
         r"|PLAN_JSON|HIDDEN_JSON|AUTORUN_JSON|__TITLE__|__THEME__",
         render,
         PAGE_TEMPLATE,

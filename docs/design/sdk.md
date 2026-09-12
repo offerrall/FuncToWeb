@@ -2,7 +2,7 @@
 
 Why `closeOnResult` defaults to off, why `error` is not about validation, and
 why the payload of `result` is the envelope of `/invoke` again. The contract —
-the four kinds, their payloads, the rule about `v` — is in
+the event kinds, their payloads, the rule about `v` — is in
 [sdk.md](../sdk.md#the-protocol).
 
 ## `closeOnResult` is off by default
