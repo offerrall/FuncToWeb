@@ -378,7 +378,7 @@ export function formUrl(spaceUrl, output) {
 export function pageUrl(
     url,
     { prefill = null, hidden = null, autorun = false,
-        hideTitle = false, hideDescription = false } = {},
+        hideTitle = false, hideDescription = false, hideSubmit = false } = {},
 ) {
     const page = `${trimmed(url)}/`;
     const query = new URLSearchParams();
@@ -388,6 +388,7 @@ export function pageUrl(
     if (autorun) query.set("autorun", "1");
     if (hideTitle) query.set("hide_title", "1");
     if (hideDescription) query.set("hide_description", "1");
+    if (hideSubmit) query.set("hide_submit", "1");
 
     const search = query.toString();
 

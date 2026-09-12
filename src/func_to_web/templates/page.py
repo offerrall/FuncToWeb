@@ -47,6 +47,7 @@ def page_from_plan(
     autorun: bool = False,
     hide_title: bool = False,
     hide_description: bool = False,
+    hide_submit: bool = False,
     theme: Theme = "system",
 ) -> str:
     heading = "" if hide_title else f"    <h1>{escape(_titled(name))}</h1>\n"
@@ -57,6 +58,7 @@ def page_from_plan(
             labelled_plan(plan, name=name, description=description)
         ),
         "HIDDEN_JSON": _embedded(sorted(hidden)),
+        "__SUBMIT_HIDDEN__": " hidden" if hide_submit else "",
         "AUTORUN_JSON": _embedded(bool(autorun)),
         "__THEME__": theme_attribute(checked_theme(theme)),
         "__TITLE__": escape(_titled(name)),
@@ -78,7 +80,7 @@ def page_from_plan(
 
     return re.sub(
         r"([ \t]*)(__(?:META|HEADER)__)\n"
-        r"|PLAN_JSON|HIDDEN_JSON|AUTORUN_JSON|__TITLE__|__THEME__",
+        r"|PLAN_JSON|HIDDEN_JSON|AUTORUN_JSON|__TITLE__|__THEME__|__SUBMIT_HIDDEN__",
         render,
         PAGE_TEMPLATE,
     )

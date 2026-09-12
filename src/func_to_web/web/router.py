@@ -104,6 +104,8 @@ def _routes(
                                    "hide_title")
         hide_description = boolean_query(
             request.query_params.get("hide_description"), "hide_description")
+        hide_submit = boolean_query(request.query_params.get("hide_submit"),
+                                    "hide_submit")
         names = ([] if hidden is None
                  else hidden_names(json_query(hidden, "hidden")))
         raw: Any = {} if prefill is None else json_query(prefill, "prefill")
@@ -112,7 +114,7 @@ def _routes(
             raise HTTPException(400, "prefill must be a JSON object")
 
         if (not raw and not names and not autorun
-                and not hide_title and not hide_description):
+                and not hide_title and not hide_description and not hide_submit):
             return HTMLResponse(base)
 
         try:
@@ -121,7 +123,8 @@ def _routes(
                       if raw else None)
             rendered = page_of(web_function, prefill=values, hidden=names,
                                autorun=autorun, hide_title=hide_title,
-                               hide_description=hide_description, theme=theme)
+                               hide_description=hide_description,
+                               hide_submit=hide_submit, theme=theme)
             return HTMLResponse(rendered)
         except (TypeError, ValueError, FileNotFoundError) as error:
             raise HTTPException(

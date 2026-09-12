@@ -188,6 +188,7 @@ def page_of(
     autorun: bool = False,
     hide_title: bool = False,
     hide_description: bool = False,
+    hide_submit: bool = False,
     theme: Theme = "system",
 ) -> str:
     """Render the complete HTML of one opening of a WebFunction.
@@ -195,7 +196,8 @@ def page_of(
     prefill proposes initial values as real Python objects, hidden names the
     parameters that opening does not show, and autorun asks the page to
     submit itself as soon as it is ready. hide_title and hide_description
-    omit the visible heading and summary. These options never change the
+    omit the visible heading and summary; hide_submit hides the Submit button
+    without enabling autorun. These options never change the
     WebFunction. Raises TypeError for an invalid argument type and ValueError
     for an unknown prefill field.
     """
@@ -209,7 +211,8 @@ def page_of(
         raise TypeError("autorun must be bool")
 
     for name, value in (("hide_title", hide_title),
-                        ("hide_description", hide_description)):
+                        ("hide_description", hide_description),
+                        ("hide_submit", hide_submit)):
         if type(value) is not bool:
             raise TypeError(f"{name} must be bool")
 
@@ -219,7 +222,7 @@ def page_of(
         raise TypeError("hidden must contain only str")
 
     if (not prefill and not names and not autorun
-            and not hide_title and not hide_description
+            and not hide_title and not hide_description and not hide_submit
             and checked_theme(theme) == "system"):
         return web_function.html
 
@@ -236,5 +239,6 @@ def page_of(
         autorun=autorun,
         hide_title=hide_title,
         hide_description=hide_description,
+        hide_submit=hide_submit,
         theme=theme,
     )

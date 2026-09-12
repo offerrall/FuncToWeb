@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.6.2] - 2026-09-13
+
+### Added
+
+- Per-opening `hide_submit` for Python `page_of()` and HTTP function pages,
+  exposed as `hideSubmit` in SDK `pageUrl()`, `embed()` and `openModal()`.
+  Hides the Submit button without reserving space or enabling autorun.
+  The default remains false. Combine with `autorun` for result-only previews;
+  existing validation, uploads and result rendering remain in use.
+
 ## [2.6.1] - 2026-09-13
 
 FuncToWeb 2.6.1 is stable, used daily and actively maintained.

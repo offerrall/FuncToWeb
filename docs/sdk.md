@@ -147,7 +147,7 @@ const modal = openModal("/tools/divide", {
 });
 
 // A modal opened for its answer: no form to fill, so no button to press
-openModal("/tools/monthly_report", {autorun: true});
+openModal("/tools/monthly_report", {autorun: true, hideSubmit: true});
 
 // The host already shows the function's heading and description
 openModal("/tools/add", {hideTitle: true, hideDescription: true});
@@ -158,6 +158,14 @@ and description. They work with `pageUrl()`, `embed()` and `openModal()` and
 travel as `hide_title=1` and `hide_description=1`. Both default to `false`.
 When neither heading nor description is visible, the header occupies no space.
 The iframe's accessible `title` option is independent of these flags.
+
+`hideSubmit: true` hides the Submit button completely, including its space.
+It works with `pageUrl()`, `embed()` and `openModal()` and travels as
+`hide_submit=1`. It defaults to `false` and does not enable `autorun`.
+Combine both options for a result-only preview with all required values
+already supplied. Validation, uploads, errors and results behave as usual.
+If required values are missing, autorun does not run; keep Submit visible
+when the user needs to complete or retry a form.
 
 `autorun` is for the modal you open to *see* something —a report, a chart, a
 generated file, a link— rather than to fill anything in. `call()` would skip

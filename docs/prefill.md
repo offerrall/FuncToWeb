@@ -13,6 +13,7 @@ hidden   → decides which parameters are not shown
 autorun  → asks the page to submit itself once it is ready
 hide_title → hides the visible function title
 hide_description → hides the visible function description
+hide_submit      → hides the Submit button without enabling autorun
 ```
 
 They are independent: `hidden` does not need `prefill` and vice versa. A
@@ -257,6 +258,21 @@ Both flags accept the same HTTP booleans as `autorun`: `1`, `true`, `on`, `yes`
 and `0`, `false`, `off`, `no`, case-insensitively. Other values return `422`.
 The SDK spells them `hideTitle` and `hideDescription`.
 
+## Hiding Submit
+
+`hide_submit` hides the Submit button without leaving space. It defaults to
+false and accepts the same HTTP booleans as `autorun`; invalid values return
+`422`. In Python it must be a bool. The SDK calls it `hideSubmit`.
+
+```text
+GET /monthly_report/?autorun=1&hide_title=1&hide_description=1&hide_submit=1
+```
+
+This option does not enable autorun or bypass validation. Use it with
+`autorun` when all required values are supplied and the page is opened to
+show a result. Keep the button visible for forms users must complete or retry.
+It affects only this opening, leaving the WebFunction unchanged.
+
 ## Python API: `page_of()`
 
 ```python
@@ -268,6 +284,7 @@ page_of(
     autorun: bool = False,
     hide_title: bool = False,
     hide_description: bool = False,
+    hide_submit: bool = False,
     theme: Theme = "system",
 ) -> str
 ```
