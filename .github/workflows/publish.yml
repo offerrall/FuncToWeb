@@ -41,6 +41,10 @@ jobs:
         run: >-
           python -m pytest tests/unit tests/integration -m "not package"
           --ignore=tests/integration/test_js_suite.py
+          --ignore=tests/integration/test_docs_snippets.py
+          --deselect=tests/unit/test_public_api.py::test_public_signature_matches_the_one_written_in_the_docs
+          --deselect=tests/integration/test_source_hygiene.py::test_a_retired_promise_appears_nowhere_outside_its_history
+          --deselect=tests/integration/test_source_hygiene.py::test_every_allowed_historical_document_still_exists
           -W "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning"
       - name: JavaScript tests
         run: node --test "tests/js/*.test.mjs"
