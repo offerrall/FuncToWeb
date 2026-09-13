@@ -75,6 +75,9 @@ OpenForm(edit_product, hidden=("product_id",))
 OpenForm(edit)
 ```
 
+`hidden` accepts root names and nested paths such as `"config.token"` or
+`"items.*.token"`; see [prefill.md](prefill.md#nested-fields).
+
 `hidden` is a tuple of `str` with the usual semantics: it hides the field on the
 target form, without fixing or protecting it. A list, a bare string, or an
 element that is not a `str` raises a `TypeError` when the metadata is built.

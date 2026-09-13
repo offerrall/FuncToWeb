@@ -8,19 +8,18 @@ import { runUploads } from "./upload.js";
 
 const plan = JSON.parse(
     document.getElementById("functoweb-plan").textContent);
-const form = compileForm(plan);
+const hidden = JSON.parse(
+    document.getElementById("functoweb-hidden").textContent);
+const form = compileForm(plan, { hidden });
 
 const labels = new Map(plan.fields.map((field) => [field.name, field.label]));
-
-const hidden = new Set(JSON.parse(
-    document.getElementById("functoweb-hidden").textContent));
 
 const autorun = JSON.parse(
     document.getElementById("functoweb-autorun").textContent);
 
 const fields = document.getElementById("fields");
 for (const field of form.fields) {
-    if (!hidden.has(field.name)) fields.append(field.widget.el);
+    fields.append(field.widget.el);
 }
 
 const result = document.getElementById("result");

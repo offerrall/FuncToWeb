@@ -53,7 +53,7 @@ def test_the_target_page_arrives_prefilled(open_page):
 
     page.click("#submit")
     page.wait_for_url("**/edit_product/**")
-    page.wait_for_selector("#fields .pth-field")
+    page.wait_for_selector("#fields .pth-field:visible")
 
     assert field_input(page, "name").input_value() == "chosen"
 
@@ -63,9 +63,9 @@ def test_the_hidden_field_is_not_shown_but_still_travels(open_page):
 
     page.click("#submit")
     page.wait_for_url("**/edit_product/**")
-    page.wait_for_selector("#fields .pth-field")
+    page.wait_for_selector("#fields .pth-field:visible")
 
-    assert page.locator(".pth-field:has(label:text-is('product_id'))").count() == 0
+    assert page.locator(".pth-field:has(label:text-is('product_id'))").is_hidden()
 
     page.click("#submit")
 
@@ -103,7 +103,7 @@ def test_the_prefilled_page_can_be_run_and_changed(open_page):
 
     page.click("#submit")
     page.wait_for_url("**/edit_product/**")
-    page.wait_for_selector("#fields .pth-field")
+    page.wait_for_selector("#fields .pth-field:visible")
 
     field_input(page, "name").fill("edited")
     page.click("#submit")

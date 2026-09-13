@@ -72,7 +72,7 @@ EXPECTED_CLASSIFIERS = (
 # pytypehint is not listed on purpose: pytypehintweb requires it, so it
 # arrives with it and pinning it twice is one more place to keep in step.
 EXPECTED_RUNTIME_REQUIREMENTS = (
-    "pytypehintweb==1.1.0",
+    "pytypehintweb==1.2.0",
     "starlette==0.49.3",
     "uvicorn==0.38.0",
 )

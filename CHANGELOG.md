@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.0] - 2026-09-13
+
+- `hidden` supports nested object paths (`config.token`) and list wildcards
+  (`items.*.token`) through pytypehintweb 1.2.0. `OpenForm` validates paths
+  against the target plan. The page delegates visibility to the widget compiler,
+  sharing its traversal with prefill. Hidden fields now remain in the DOM with
+  the native `hidden` attribute and keep their values and validation.
+
 ## [2.6.2] - 2026-09-13
 
 ### Added

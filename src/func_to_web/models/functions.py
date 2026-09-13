@@ -148,14 +148,39 @@ def _target_of(
 
 
 def _check_hidden(mark: OpenForm, target: WebFunction) -> None:
-    names = {param.name for param in target.schema.params}
-
     for name in mark.hidden:
-        if name not in names:
+        if not _has_hidden_path(target.plan, name):
             raise ReturnContractError(
                 f"unknown hidden field {name!r} for OpenForm target "
                 f"{target.slug!r}"
             )
+
+
+def _has_hidden_path(node: dict[str, Any], path: str) -> bool:
+    """Resolve visibility against the same plan the browser compiles.
+
+    Optional and choice wrappers do not add path components. A list consumes
+    '*', so its rule also applies to items created later in the browser.
+    """
+    kind = node["kind"]
+    if kind in ("form", "object"):
+        return any(
+            path == field["name"] or (
+                path.startswith(field["name"] + ".")
+                and _has_hidden_path(field["node"], path[len(field["name"]) + 1:])
+            )
+            for field in node["fields"]
+        )
+    if kind == "list":
+        return path == "*" or (
+            path.startswith("*.") and _has_hidden_path(node["item"], path[2:])
+        )
+    if kind == "optional":
+        return _has_hidden_path(node["node"], path)
+    if kind == "choice":
+        return any(_has_hidden_path(branch["node"], path)
+                   for branch in node["branches"])
+    return False
 
 
 FunctionEntry: TypeAlias = Callable[..., Any] | WebFunction

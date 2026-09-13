@@ -7,7 +7,7 @@ from shared import warm_uvicorn
 
 warm_uvicorn()
 
-READY = "#fields .pth-field"
+READY = "#fields .pth-field:visible"
 
 TIMEOUT = 15000
 

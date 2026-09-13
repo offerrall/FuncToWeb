@@ -1,5 +1,6 @@
 export const form = {
     plans: [],
+    options: [],
     fields: [],
     ready: true,
     uploads: [],
@@ -10,6 +11,7 @@ export const form = {
 
 export function reset() {
     form.plans = [];
+    form.options = [];
     form.fields = [];
     form.ready = true;
     form.uploads = [];
@@ -18,8 +20,9 @@ export function reset() {
 }
 
 
-export function compileForm(plan) {
+export function compileForm(plan, options) {
     form.plans.push(plan);
+    form.options.push(options);
 
     return {
         get fields() {

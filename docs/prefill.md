@@ -139,7 +139,7 @@ like any other value and the resolver recognizes it. See [files.md](files.md).
 
 ## Hidden parameters
 
-`hidden` takes the widget out of the page. What happens to the parameter is
+`hidden` hides the widget and its label using the native `hidden` attribute. What happens to the parameter is
 exactly this:
 
 * it stays compiled into the form, with its value (the prefill's, or its own
@@ -154,6 +154,29 @@ The channel only checks the shape: valid JSON, a list at the root, and every
 element exactly a `str`. Duplicates, ordering and unknown names are not its
 business, because hiding is a visual matter and a misspelled name does not
 break any contract.
+
+### Nested fields
+
+Use dotted paths for object fields and `*` for every item of a list:
+
+```javascript
+{
+  prefill: {config: {token: "abc", name: "Demo"}},
+  hidden: ["config.token"]
+}
+```
+
+`hidden: ["items.*.token"]` hides `token` in all items, including newly added
+ones. Nested lists use another `*`: `"items.*.*.token"`. Hiding `"config"`
+still hides the entire parameter. Optional and union wrappers add no segment;
+a path applies to every union branch containing the field. Numeric indices
+and branch-specific selectors are not supported.
+
+Preloaded values and visibility descend through the same widget compiler.
+Hidden children retain their values, validation and uploads. They stay in the
+DOM with `hidden`, so select visible fields explicitly when inspecting a page.
+URL/SDK paths that resolve to no field have no effect. `OpenForm` checks paths
+against the target plan and rejects unresolved paths during registration.
 
 ### It hides, it does not lock
 

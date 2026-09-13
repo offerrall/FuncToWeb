@@ -630,7 +630,7 @@ test("rejects an envelope that is not an object", async () => {
     assert.equal(page.message(), INVALID);
 });
 
-test("shows only the fields that the page does not hide", async () => {
+test("passes visibility to the compiler and mounts its fields", async () => {
     const widgets = {
         a: makeElement("div", { id: "wa" }),
         b: makeElement("div", { id: "wb" }),
@@ -638,7 +638,7 @@ test("shows only the fields that the page does not hide", async () => {
 
     const page = await load({
         plan: { fields: [{ name: "a", label: "A" }, { name: "b", label: "B" }] },
-        hidden: ["b"],
+        hidden: ["b", "config.token"],
         form: {
             fields: [
                 { name: "a", widget: { el: widgets.a } },
@@ -647,7 +647,8 @@ test("shows only the fields that the page does not hide", async () => {
         },
     });
 
-    assert.deepEqual(page.fields.children.map((child) => child.id), ["wa"]);
+    assert.deepEqual(form.options, [{ hidden: ["b", "config.token"] }]);
+    assert.deepEqual(page.fields.children.map((child) => child.id), ["wa", "wb"]);
 });
 
 test("does not invoke the server when the form is not ready", async () => {
