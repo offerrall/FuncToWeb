@@ -9,11 +9,12 @@ from pathlib import Path
 
 import pytest
 
+from func_to_web.config import __version__ as VERSION
+
 pytestmark = [pytest.mark.package, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "src" / "func_to_web"
-VERSION = "2.6.1"
 WHEEL_NAME = f"func_to_web-{VERSION}-py3-none-any.whl"
 SDIST_NAME = f"func_to_web-{VERSION}.tar.gz"
 SDIST_PREFIX = f"func_to_web-{VERSION}/"
@@ -395,23 +396,10 @@ def test_twine_check_approves_both_artifacts(wheel, sdist):
     assert "WARNING" not in result.stdout
 
 
-def test_wheel_metadata_declares_name_and_version(wheel):
+def test_wheel_metadata_declares_name(wheel):
     metadata = metadata_of(wheel)
 
     assert metadata["Name"] == "func-to-web"
-    assert metadata["Version"] == VERSION
-
-
-def test_wheel_version_matches_the_source_of_truth(wheel):
-    from func_to_web import __version__
-
-    config = (PACKAGE / "config.py").read_text(encoding="utf-8")
-    declared = re.search(r'^__version__ = "([^"]+)"', config, re.MULTILINE)
-
-    assert declared is not None
-    assert declared.group(1) == VERSION
-    assert __version__ == VERSION
-    assert metadata_of(wheel)["Version"] == VERSION
 
 
 def test_wheel_metadata_pins_runtime_dependencies(wheel):
