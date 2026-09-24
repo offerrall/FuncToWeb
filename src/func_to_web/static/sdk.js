@@ -51,6 +51,15 @@ const MODAL_STYLE = `
     background: transparent;
 }
 
+.ftw-modal-panel[data-ftw-sizing] {
+    visibility: hidden;
+    animation: ftw-reveal 0s 1.5s forwards;
+}
+
+@keyframes ftw-reveal {
+    to { visibility: visible; }
+}
+
 .ftw-modal-close {
     position: absolute;
     top: 10px;
@@ -568,6 +577,11 @@ export function openModal(url, options = {}) {
     panel.append(button);
     overlay.append(panel);
 
+    // Until the page reports its height the panel would open at its maximum
+    // and then shrink. It stays invisible meanwhile; the overlay still shows
+    // at once, and the stylesheet reveals the panel if no height ever comes.
+    if (autoHeight) panel.setAttribute("data-ftw-sizing", "");
+
     // The modal owns sizing and listener lifetime; its iframe fills the panel.
     const frame = embed(panel, url, { ...rest, autoHeight: false });
 
@@ -580,7 +594,9 @@ export function openModal(url, options = {}) {
 
     const channel = listen(frame, {
         onResize(size) {
-            if (autoHeight) panel.style.setProperty("--ftw-content-height", `${size}px`);
+            if (!autoHeight) return;
+            panel.style.setProperty("--ftw-content-height", `${size}px`);
+            panel.removeAttribute("data-ftw-sizing");
         },
         onResult(outputs) {
             if (onResult !== null) onResult(outputs);

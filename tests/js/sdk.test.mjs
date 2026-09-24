@@ -597,6 +597,32 @@ test("a modal applies content height to its panel and releases the listener", ()
     assert.equal(messaging().count(), 0);
 });
 
+test("a modal stays hidden until its page reports a height", () => {
+    installDocument();
+    const modal = openModal(FUNCTION);
+    const panel = modal.element.children[0];
+    assert.equal(panel.hasAttribute("data-ftw-sizing"), true);
+    modal.iframe.contentWindow = {};
+    messaging().send(modal.iframe.contentWindow, { v: 1, kind: "resize", height: 250 });
+    assert.equal(panel.hasAttribute("data-ftw-sizing"), false);
+    modal.close();
+});
+
+test("a modal of fixed height shows at once", () => {
+    installDocument();
+    const modal = openModal(FUNCTION, { autoHeight: false });
+    assert.equal(modal.element.children[0].hasAttribute("data-ftw-sizing"), false);
+    modal.close();
+});
+
+test("the modal stylesheet reveals a panel whose height never arrives", () => {
+    const document = installDocument();
+    openModal(FUNCTION);
+    const sheet = document.getElementById("functoweb-modal-style").textContent;
+    assert.match(sheet, /\[data-ftw-sizing\][^}]*visibility:\s*hidden/);
+    assert.match(sheet, /animation:\s*ftw-reveal/);
+});
+
 test("removing an embed releases its resize listener", () => {
     const document = installDocument();
     let changed;

@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.7.1] - 2026-09-24
+
+### Fixed
+
+- `openModal()` no longer opens at full height and then shrinks. With
+  `autoHeight` the panel stays invisible until the page reports its height;
+  the overlay appears at once. If no height arrives within 1.5 s the panel is
+  shown anyway. `autoHeight: false` is unchanged.
+
 ## [2.7.0] - 2026-09-13
 
 - `hidden` supports nested object paths (`config.token`) and list wildcards

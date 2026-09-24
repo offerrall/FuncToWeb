@@ -192,6 +192,9 @@ A modal is **760px wide and fits its content up to nine tenths of the window
 height** by default. Short forms use less space; adding list items, displaying
 validation errors or rendering results can grow it, and removing content can
 shrink it again. Beyond the height limit, the iframe scrolls internally.
+A modal's panel stays invisible until the page reports its first height, so it
+opens at its size instead of shrinking into it; the overlay appears at once and
+the panel is revealed after 1.5 s if no height arrives.
 
 `embed()` also adjusts its iframe to the content height, without a modal's
 viewport limit. Both use `autoHeight: true` by default, with no application
