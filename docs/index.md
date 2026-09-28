@@ -1,4 +1,4 @@
-# FuncToWeb 2.0 documentation
+# FuncToWeb documentation
 
 Technical reference for the project. For an overview, see the
 [README](../README.md); for hands-on use, see
