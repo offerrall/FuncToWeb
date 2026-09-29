@@ -1,8 +1,8 @@
 # Types and validation
 
 The catalog of types and constraints is defined by
-[`pytypehint`](https://github.com/offerrall/pytypehint); FuncToWeb does not
-extend or reinterpret it, and that project's repository is the complete
+[pytypehint](https://offerrall.github.io/pytypehint/); FuncToWeb does not
+extend or reinterpret it, and that project's documentation is the complete
 reference. This document describes what that contract guarantees and how it
 reaches the web.
 
@@ -142,12 +142,12 @@ that is a `422` with the message from the core; in a prefill, a `400`. See
 
 ## Seeing every control
 
-The widgets are `pytypehintweb`'s, and that project ships a demo with the
-complete catalog: every control, grouped by type, with the cases each one
-covers.
+The widgets are [pytypehintweb](https://offerrall.github.io/pytypehintweb/)'s,
+and that project ships a demo with the complete catalog: every control, grouped
+by type, with the cases each one covers. It needs pytypehintweb's `demo` extra,
+and runs with:
 
 ```bash
-pip install "pytypehintweb[demo]"
 pytypehintweb-demo
 ```
 
@@ -159,5 +159,5 @@ that validate the same thing. `Choices` on a `str` against a `Pattern`,
 `Slider` against a plain `int`, `Rows` against a single-line field: the
 difference is visual, and it is easier to see it than to read it.
 
-Related: <https://github.com/offerrall/pytypehint>, [files.md](files.md),
-[architecture.md](architecture.md).
+Related: [pytypehint](https://offerrall.github.io/pytypehint/),
+[Files](files.md), [Architecture](architecture.md).

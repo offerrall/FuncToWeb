@@ -45,10 +45,10 @@ run(functions, uploads_dir="/srv/functoweb/uploads")
 ```
 
 Which two directories were in force is not left to be guessed: `run()`
-announces them, with the version, on the line before the server starts.
+announces them, with the installed version, on the line before the server starts.
 
 ```text
-FuncToWeb 2.7.1
+FuncToWeb X.Y.Z
 UPLOADS DIR: /srv/functoweb/uploads
 RETURNS DIR: /tmp/FuncToWeb/returns
 ```

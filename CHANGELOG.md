@@ -1,15 +1,40 @@
 # Changelog
 
-## [2.7.3] - 2026-09-29
+## 2.7.4 - 2026-09-29
 
+### Changed
+
+- Documentation only: the README becomes a short entrance to the documentation
+  site at https://offerrall.github.io/func-to-web/, and `docs/overview.md` holds
+  the introduction and its fuller examples (the API, `/doc`, FastAPI, `sdk.js`,
+  how it works, the CRUD, `OpenForm`, files, streaming, capabilities and the
+  comparison). The design notes are listed as maintainer pages.
+- The layers and `pytypehintstore` are described once, in
+  `docs/architecture.md`, and the widget demo once, in `docs/types.md`; the
+  hand-kept line and example counts, the dependency tree, the badges, the
+  install commands and the Status and License sections are gone, since the
+  site derives them.
+- `docs/examples.md` lists the `users.py`, `bookings.py` and `gallery.py`
+  mini-apps, and states once which examples need an extra library.
+- The design notes state the theme and the stream polling as facts rather than
+  plans, the `run()` banner sample no longer carries a stale version, and links
+  to pytypehint, pytypehintweb and pytypehintstore point to their documentation
+  sites.
+- The changelog headings use one format, and seven dates are corrected to the
+  PyPI upload dates (0.1.0, 0.4.4, 0.5.0, 0.9.8, 1.0.1, 2.5.0 and 2.6.1).
+- `pyproject.toml` gains the Documentation URL, and Source is renamed
+  Repository.
+
+The code is the same as 2.7.3.
+
+## 2.7.3 - 2026-09-29
 ### Changed
 
 - Documentation only: the design notes are listed one by one in the README's
   Documentation section, and `docs/design/index.md`, which only listed them, is
   removed. The code is the same as 2.7.2.
 
-## [2.7.2] - 2026-09-29
-
+## 2.7.2 - 2026-09-29
 ### Changed
 
 - Documentation only: the documentation index moves from `docs/index.md` into
@@ -24,8 +49,7 @@
   `anyio.abc.BlockingPortal` is raised inside Starlette's `TestClient`; that one
   warning is ignored, every other warning is still an error.
 
-## [2.7.1] - 2026-09-24
-
+## 2.7.1 - 2026-09-24
 ### Fixed
 
 - `openModal()` no longer opens at full height and then shrinks. With
@@ -33,16 +57,14 @@
   the overlay appears at once. If no height arrives within 1.5 s the panel is
   shown anyway. `autoHeight: false` is unchanged.
 
-## [2.7.0] - 2026-09-13
-
+## 2.7.0 - 2026-09-13
 - `hidden` supports nested object paths (`config.token`) and list wildcards
   (`items.*.token`) through pytypehintweb 1.2.0. `OpenForm` validates paths
   against the target plan. The page delegates visibility to the widget compiler,
   sharing its traversal with prefill. Hidden fields now remain in the DOM with
   the native `hidden` attribute and keep their values and validation.
 
-## [2.6.2] - 2026-09-13
-
+## 2.6.2 - 2026-09-13
 ### Added
 
 - Per-opening `hide_submit` for Python `page_of()` and HTTP function pages,
@@ -51,8 +73,7 @@
   The default remains false. Combine with `autorun` for result-only previews;
   existing validation, uploads and result rendering remain in use.
 
-## [2.6.1] - 2026-09-13
-
+## 2.6.1 - 2026-09-12
 FuncToWeb 2.6.1 is stable, used daily and actively maintained.
 
 ### Added
@@ -69,8 +90,7 @@ FuncToWeb 2.6.1 is stable, used daily and actively maintained.
   rejects its name during the existence check, instead of an internal `500`.
   Existing stored names remain readable beyond the upload reference limit.
 
-## [2.6.0] - 2026-08-13
-
+## 2.6.0 - 2026-08-13
 FuncToWeb moves onto `pytypehintweb 1.1.0`, and with it onto `pytypehint 1.0.0`.
 The annotation that marks a file parameter is now `FileHint`, and the division of
 labour around files is redrawn: the core stopped touching the filesystem, so
@@ -159,8 +179,7 @@ references or the pending/promoted lifecycle is weaker than it was in 2.5.0.
   exemption.
 - `starlette==0.49.3` and `uvicorn==0.38.0` are unchanged.
 
-## [2.5.0] - 2026-08-08
-
+## 2.5.0 - 2026-08-09
 FuncToWeb now depends directly on Starlette instead of FastAPI. `app_of()`
 returns a mountable Starlette/ASGI application, and `run()` serves that same
 application with Uvicorn. FastAPI remains a naturally compatible host through
@@ -194,8 +213,7 @@ numbering goes from 2.3.0 straight to 2.5.0.
 - Replaced `fastapi==0.121.1` with `starlette==0.49.3` at runtime.
 - FastAPI is retained only in the test extra to verify host compatibility.
 
-## [2.3.0] - 2026-08-08
-
+## 2.3.0 - 2026-08-08
 Three things about the page a host opens. A function that prints in a loop no
 longer pushes the rest of the page down for as long as it runs; a modal is as
 tall as the window allows instead of a fixed 760px; and an opening can be told
@@ -295,8 +313,7 @@ a form. The install also loses a name: `pytypehint` arrives with
   prefilled and hidden by the host, and one with a required field nobody
   filled, which is the case where autorun does nothing and waits.
 
-## [2.2.0] - 2026-08-08
-
+## 2.2.0 - 2026-08-08
 One dependency less. `platformdirs` was in the install for a single call in
 `config.py` —where the default uploads directory lives— and that call asked for
 nothing the library is interesting for: no version, no roaming, no author, no
@@ -365,8 +382,7 @@ is now four packages, all of which this project either writes or serves on.
   hermetic on Windows too. Where the defaults *point* is what the new file
   above tests.
 
-## [2.1.1] - 2026-08-03
-
+## 2.1.1 - 2026-08-03
 Copying a result works on a page that is not served from `localhost`. Both copy
 buttons went straight to `navigator.clipboard`, which exists only in a secure
 context, and a panel read over plain http from a LAN address is not one. There
@@ -389,8 +405,7 @@ The check is `isSecureContext` and the presence of the API, not the protocol:
 `localhost` is granted a secure context over plain http, and reading the scheme
 would have sent it down the fallback path for no reason.
 
-## [2.1.0] - 2026-07-30
-
+## 2.1.0 - 2026-07-30
 The feature of this release is the channel back from an embedded page. Until now
 a host application could open a function in a modal and learn nothing from it:
 the result was drawn inside the iframe and stayed there, so a page could not
@@ -514,14 +529,13 @@ one exception, which is the slug.
   (`examples/http/upload_client.py`, noted in `examples/http/README.md`). No
   example changes what it teaches.
 
-## [2.0.0] - 2026-07-29
-
+## 2.0.0 - 2026-07-29
 2.0 is not one more release: it is a different library built on the same idea.
 Your function, its type hints, its dataclasses and its docstring still work.
 What changes is how constraints are declared, how files travel, how results are
 returned and which URLs the server serves. The two layers underneath were
 rewritten — `pytypeinput` and `pytypeinputweb` give way to
-[`pytypehint`](https://github.com/offerrall/pytypehint) and `pytypehintweb` —
+[`pytypehint`](https://offerrall.github.io/pytypehint/) and `pytypehintweb` —
 and **pydantic goes with them: it is no longer involved at all**. The minimum
 Python version rises from 3.10 to 3.11.
 
@@ -680,8 +694,7 @@ rewriting it again.
 - **The examples collection was rebuilt** — 80 runnable programs across 11
   folders, each file teaching a single capability and running as it is.
 
-## [1.6.0] - 2026-06-06
-
+## 1.6.0 - 2026-06-06
 ### Security 
 
 (by https://github.com/Dr1985)
@@ -783,8 +796,7 @@ rewriting it again.
   typing) and a `Limitations` section spelling out the nested / optional /
   duplicate-name cases that are rejected at startup.
 
-## [1.5.0] - 2026-06-04
-
+## 1.5.0 - 2026-06-04
 This release is a big simplification pass. The goal: remove features that can be done more elegantly other ways, and make FuncToWeb composable.
 
 1.5.0 takes FuncToWeb from "tool for spinning up mini programs" to "a library you can use both ways": `run()` serves your functions standalone, exactly as it always has, and the new `create_app()` returns a plain FastAPI app you can mount inside your own. Nothing from the original mode is lost — the auto-generated form UI, single/multi function apps, and everything you already use keep working exactly as before.
@@ -874,8 +886,7 @@ No observable behaviour change; dead-code and vestigial cleanup.
 - **`FunctionMetadata` is now the single source of truth for multi-function apps** — the parallel `navigation_data` list of `{name, slug, description, url}` dicts (built by `build_navigation_structure()` and stored on `NormalizedInput`) duplicated the `FunctionMetadata` objects already in `items`, since every URL is just `/<slug>`. It's gone: templates, the index redirect and route registration read `items` directly, slug-uniqueness is validated in `normalize_items()`, and the now-trivial helpers `build_navigation_structure()`, `register_navigation_routes()` and `detect_input_type()` were removed (the last two inlined). No behaviour change.
 - **Removed a dead destructure binding in `zz-form.js`** — `getOrCreateContainer` was pulled out of `window.functoweb.result` but never used (only `clearContainer` and `renderResult` are); it stays exported by `result-renderer.js`, which uses it internally.
 
-## [1.0.2] - 2026-05-02
-
+## 1.0.2 - 2026-05-02
 ### Fixed
 - **`ActionTable` cell serialization for list / tuple / dict values** — non-scalar cells were being rendered with Python's `str()`, producing invalid output like `['34', 'aaa']` (single quotes, not parseable as JSON)
   - Now serialized with `json.dumps`, producing standard `["34","aaa"]`
@@ -890,8 +901,7 @@ No observable behaviour change; dead-code and vestigial cleanup.
 - **Fixed pytypeinput and pytypeinputweb version numbers in dependencies** — updated to the latest versions (1.0.2 and 1.0.3 respectively) to ensure compatibility with the new features and fixes in those libraries
 - **Uploads and returned-files directories are now created lazily** — `uploads/` and `returned_files/` are no longer created at server startup; each directory is created on demand the first time a file is actually uploaded or returned, so apps with no file I/O never create them
 
-## [1.0.1] - 2026-04-28
-
+## 1.0.1 - 2026-05-01
 ### Added
 - **Custom frontend hosting via `front_dir` and `assets_dir`** — `run()` now accepts two new parameters to serve a custom frontend from the same process
   - `front_dir`: directory mounted at `/front` with `html=True` for SPA-style routing — drop a static site, landing page, or built React/Vue/Svelte bundle next to your Python functions
@@ -921,15 +931,14 @@ No observable behaviour change; dead-code and vestigial cleanup.
     no visual seams — combine with URL prefill (`?param=value`) for a fully
     pre-configured embedded form
 
-## [1.0.0] - 2026-04-15
-
+## 1.0.0 - 2026-04-15
 Biggest release so far. The library has been rewritten from the ground up — most existing code works without changes or with very minor ones.
 
 The biggest structural change is that FuncToWeb is now split into three independent libraries:
 
 - **[pytypeinput](https://github.com/offerrall/pytypeinput)** — Analyzes Python type hints and extracts UI metadata. No web dependency.
 - **[pytypeinputweb](https://github.com/offerrall/pytypeinputweb)** — Renders HTML forms from `pytypeinput` metadata. Use it in your own server.
-- **[func-to-web](https://github.com/offerrall/functoweb)** — The full stack.
+- **[func-to-web](https://offerrall.github.io/func-to-web/)** — The full stack.
 
 This opens up a lot of new possibilities — for example, using FuncToWeb as a support layer inside an existing web app, exposing individual utility functions without building a full tool. There are other interesting approaches worth exploring that the docs cover.
 
@@ -937,13 +946,13 @@ This opens up a lot of new possibilities — for example, using FuncToWeb as a s
 
 This is a **stable beta**. I'll be actively fixing issues and improving things over the coming days.
 
-## [0.9.14] - 2026-04-01
+## 0.9.14 - 2026-04-01
 ### Fixed
 - Starlette compatibility issue
   - Added explicit starlette<1.0.0
 
 
-## [0.9.13] - 2026-01-13
+## 0.9.13 - 2026-01-13
 ### Added
 - **Multiple file upload improvements for `list[FileType]`**
   - New "+" button next to file input allows adding files from different folders
@@ -957,7 +966,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
 - Improved UX for file uploads with real-time feedback and preview
 - Only frontend changes, fully backwards compatible with existing backend logic
 
-## [0.9.12] - 2026-01-11
+## 0.9.12 - 2026-01-11
 ### Added
 - **New `Dropdown()` type for dynamic dropdowns** - cleaner, type-safe syntax for dropdowns with runtime-generated options
   - Use `Annotated[str, Dropdown(get_options)]` instead of `Literal[get_options]`
@@ -978,7 +987,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
   - Works with `str`, `int`, `float`, and `bool` types
   - Fully backwards compatible - `Literal[func]` syntax still supported
 
-## [0.9.11] - 2026-01-07
+## 0.9.11 - 2026-01-07
 ### Added
 - Grouped functions feature: organize multiple functions into collapsible accordion groups
   - Pass a dictionary to `run()` with group names as keys and function lists as values
@@ -987,7 +996,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
   - Only one group can be open at a time for clean navigation
   - Fully backwards compatible with existing single function and list modes
 
-## [0.9.10] - 2026-01-01
+## 0.9.10 - 2026-01-01
 ### Added
 - VideoFile and AudioFile types for file uploads
   - `VideoFile`: Accepts common video formats (mp4, mov, avi, mkv, wmv, flv, webm, mpeg, mpg)
@@ -1002,8 +1011,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
 ### Changed
 - Changed default title of index page from "Function Tools" to "Menu"
 
-## [0.9.9] - 2025-12-23
-
+## 0.9.9 - 2025-12-23
 ### Performance
 - **Non-blocking Execution**: Standard Python functions (`def`) are now automatically executed in a thread pool. This prevents CPU-heavy tasks from blocking the main event loop.
 - **Async Disk I/O**: Offloaded `FileResponse` processing and disk writing to background threads.
@@ -1011,8 +1019,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
   - The UI remains responsive for other users while files are being written to disk.
 - **Improved Concurrency**: The server can now handle multiple simultaneous heavy requests (calculations or downloads) without queue blocking.
 
-## [0.9.8] - 2025-12-21
-
+## 0.9.8 - 2025-12-20
 ### Changed
 - **FileResponse Filename Limit**: 150-character maximum (Pydantic validated)
 
@@ -1028,8 +1035,7 @@ This is a **stable beta**. I'll be actively fixing issues and improving things o
   - `validate_list_param()` accepts pre-processed lists in addition to JSON strings
 
 
-## [0.9.7] - 2025-12-10
-
+## 0.9.7 - 2025-12-10
 ### Philosophy Change
 
 Version 0.9.6 introduced SQLite for file tracking, blocked multiple workers, and added complex configuration. This was overengineered. func-to-web should be simple, fast, and reliable.
@@ -1120,8 +1126,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 
 0.9.6 was overengineered. 0.9.7 is simple again: no database, automatic cleanup, multiple workers supported. Filesystem operations are fast, atomic, and sufficient.
 
-## [0.9.6] - 2025-12-10
-
+## 0.9.6 - 2025-12-10
 ### Added
 - **Automatic Periodic Cleanup**: Files are now automatically cleaned up every hour while the server runs.
   - No need to restart the server for cleanup to occur
@@ -1212,15 +1217,13 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Reduced coupling: Clear interfaces between components
   - Future-proof: Easy to extend without touching unrelated code
 
-## [0.9.5] - 2025-12-09
-
+## 0.9.5 - 2025-12-09
 ### Added
 - **New Generic `File` Type**: Added support for a generic `File` type hint.
   - Use `from func_to_web.types import File` to accept uploaded files of **any** extension.
 - **Expanded File Extensions**: Significantly broadened the list of supported formats for specific file types.
 
-## [0.9.4] - 2025-12-08
-
+## 0.9.4 - 2025-12-08
 ### Added
 - **Python Enum Support**: Full support for Python `Enum` types as dropdown menus.
   - Use standard Python enums as type hints: `def func(theme: Theme)`
@@ -1238,15 +1241,13 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **Rich Semantics**: Access both enum name and value, add custom methods
 - **Clean Code**: No repetition of `Literal['option1', 'option2']` in every function signature
 
-## [0.9.3] - 2025-11-30
-
+## 0.9.3 - 2025-11-30
 ### Fixed
 - **Async Function Support**: Fixed an issue where passing an `async def` function displayed a `<coroutine object>` instead of the result.
   - The library now automatically detects `async` functions and `awaits` them properly.
   - Enables seamless integration with async libraries (e.g., `httpx`, `tortoise-orm`, `motor`).
 
-## [0.9.2] - 2025-11-25
-
+## 0.9.2 - 2025-11-25
 ### Added
 - **Built-in Authentication**: Robust, stateless authentication system.
   - Enable simply by passing a dictionary `auth={"username": "password"}` to the `run()` function.
@@ -1262,8 +1263,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **Dependencies**: Added `itsdangerous` to required packages (essential for session signing).
 - **Templates**: Updated `base` templates to handle conditional rendering based on authentication state (`has_auth` flag).
 
-## [0.9.1] - 2025-11-24
-
+## 0.9.1 - 2025-11-24
 ### Added
 - **Reverse Proxy Support**: New `root_path` argument in `run()` to properly handle deployments behind Nginx, Traefik, or Docker containers with path prefixes.
 - **Advanced Server Configuration**: Any extra keyword arguments passed to `run()` (`**kwargs`) are now forwarded directly to **Uvicorn**.
@@ -1271,8 +1271,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Allows performance tuning (`workers`, `limit_max_requests`, `timeout_keep_alive`).
 - **Custom API Metadata**: New `fastapi_config` dictionary argument to customize the underlying FastAPI application (e.g., changing the API title, version, or disabling swagger docs).
 
-## [0.9.0] - 2025-11-24
-
+## 0.9.0 - 2025-11-24
 ### Added
 - **Table Rendering**: Automatic HTML table generation from multiple data formats
   - `list[dict]` - Headers extracted from dictionary keys
@@ -1296,8 +1295,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Removed enclosing quotes from string results (both in display and clipboard)
   - Improved button state logic to handle rapid clicks and timeouts robustly
 
-## [0.8.1] - 2025-11-24
-
+## 0.8.1 - 2025-11-24
 ### Added
 - **Multiple Outputs**: Functions can now return tuples or lists to display multiple outputs simultaneously
   - Combine text, images, plots, and file downloads in a single response
@@ -1310,8 +1308,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **Response Format**: Backend now supports `result_type: 'multiple'` with nested outputs array
 - **Frontend Rendering**: New `createMultipleOutputs()` function in builders.js for recursive rendering
 
-## [0.8.0] - 2025-11-23
-
+## 0.8.0 - 2025-11-23
 ### Added
 - **Back Button Navigation**: Added back button on form pages to return to tools index
 
@@ -1346,22 +1343,19 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **Example Code**: Better examples in /examples folder with improved comments
 - **Update examples images**: Regenerated example images
 
-## [0.7.6] - 2025-11-14
-
+## 0.7.6 - 2025-11-14
 ### Fixed
 - **PyPI README**: Fixed missing README.md display on PyPI package page
   - Added `long_description` and `long_description_content_type` to package metadata
 
-## [0.7.5] - 2025-11-14
-
+## 0.7.5 - 2025-11-14
 ### Fixed
 - **Long text output handling**: Fixed layout overflow when functions return long strings (e.g., 100+ character passwords)
   - Added word-wrapping and proper text overflow handling in result containers
   - Applied `word-break: break-all` and `overflow-wrap: break-word` to prevent layout breaking
   - Improved responsive behavior for long outputs on mobile devices
 
-## [0.7.4] - 2025-10-26
-
+## 0.7.4 - 2025-10-26
 ### Added
 - **Function Descriptions**: Functions with docstrings now display their description below the title in the web UI
   - Extracted using `inspect.getdoc()` for clean formatting
@@ -1375,8 +1369,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Eliminated duplicate code between single and multiple function modes
   - Improved maintainability and consistency across endpoints
 
-## [0.7.3] - 2025-10-25
-
+## 0.7.3 - 2025-10-25
 ### Changed
 - **Complete Documentation Rewrite**: Restructured entire documentation using MkDocs Material for better navigation and user experience
   - Organized into clear categories: Input Types, Types Constraints, Output Types, and Other Features
@@ -1385,8 +1378,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Enhanced README with direct links to all major documentation sections
   - Better mobile responsiveness and dark mode support
 
-## [0.7.2] - 2025-10-18
-
+## 0.7.2 - 2025-10-18
 ### Added
 - **Auto-focus First Field**: Cursor automatically focuses on the first input field when the page loads, improving keyboard navigation
 - **Keyboard Shortcuts**: 
@@ -1407,16 +1399,14 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Reduced cognitive load with single-responsibility functions
   - Improved code reusability and testability
 
-## [0.7.1] - 2025-10-17
-
+## 0.7.1 - 2025-10-17
 ### Fixed
 - **Optional List Fields**: Hide add (+) and remove (-) buttons when optional list fields are disabled
 - **Error Messages on Disabled Fields**: Clear error messages when fields are disabled
 - **Initial State Consistency**: Fixed inconsistent behavior between page load and toggle interactions
 - **Minimum List Items**: Lists with minimum item requirements now auto-create all required items
 
-## [0.7.0] - 2025-10-13
-
+## 0.7.0 - 2025-10-13
 ### Added
 - **Dark Mode**: Toggle between light and dark themes with persistent preference
   - Floating theme toggle button (🌙/☀️) in top-right corner
@@ -1427,8 +1417,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Animated toggle button with hover effects
   - Mobile-responsive button sizing
 
-## [0.6.0] - 2025-10-13
-
+## 0.6.0 - 2025-10-13
 ### Added
 - **File Download Support**: Return files from functions with automatic download buttons
   - Return single file: `FileResponse(data=bytes, filename="file.txt")`
@@ -1445,8 +1434,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
         return FileResponse(data=pdf_bytes, filename="report.pdf")
 ```
 
-## [0.5.0] - 2025-10-12
-
+## 0.5.0 - 2025-10-13
 ### Added
 - **List Support**: Full support for list parameters with dynamic add/remove items
   - Syntax: `list[int]`, `list[str]`, `list[float]`, `list[Color]`, `list[ImageFile]`, etc.
@@ -1467,8 +1455,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Visual feedback: Individual error messages per list item
   - Empty/whitespace values automatically filtered out
 
-## [0.4.5] - 2025-10-12
-
+## 0.4.5 - 2025-10-12
 ### Fixed
 - **Color Picker UI Bug**: Fixed color picker not opening when clicking on color preview box
   - Removed CSS properties that prevented programmatic clicks (`pointer-events: none`, extreme positioning)
@@ -1476,8 +1463,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Maintained visual appearance while ensuring browser can open native color picker
   - Color picker now properly opens on preview click for both regular and optional fields
 
-## [0.4.4] - 2025-10-11
-
+## 0.4.4 - 2025-10-10
 ### Added
 - **Explicit Optional Control**: New `OptionalEnabled` and `OptionalDisabled` markers for precise control over optional field initial state
   - `Type | OptionalEnabled`: Field always starts enabled, regardless of default value
@@ -1499,8 +1485,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **analyze()**: Enhanced Union type detection to identify OptionalEnabled/OptionalDisabled markers
 - **types.py**: Added marker classes and type aliases for explicit optional control
 
-## [0.4.3] - 2025-10-10
-
+## 0.4.3 - 2025-10-10
 ### Added
 - **Test Suite for build_form_fields()**: 88 tests covering HTML field generation, constraint extraction, and edge cases
   - All field types: text, number, checkbox, select, date, time, color, email, file
@@ -1519,8 +1504,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - Three core modules: `analyze_function.py`, `validate_params.py`, `build_form_fields.py`
   - **272 total tests** across all modules (96 + 88 + 88)
 
-## [0.4.2] - 2025-10-10
-
+## 0.4.2 - 2025-10-10
 ### Added
 - **Test Suite for validate_params()**: 88 tests covering type conversion, validation, and edge cases
   - Type conversions: strings → int/float/bool/date/time
@@ -1534,8 +1518,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - New module: `validate_params.py`
   - **184 total tests** (96 + 88)
 
-## [0.4.1] - 2025-10-10
-
+## 0.4.1 - 2025-10-10
 ### Added
 - **Test Suite for analyze()**: 96 tests covering function signature analysis
   - All types, constraints, special types (Color, Email, Files), Literals, optionals
@@ -1547,8 +1530,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 ### Changed
 - **Code Refactoring**: Extracted `analyze()` and `ParamInfo` to `analyze_function.py`
 
-## [0.4.0] - 2025-10-09
-
+## 0.4.0 - 2025-10-09
 ### Added
 - **Optional Parameters**: Full `Type | None` support with visual toggle switches
   - Fields with defaults start enabled, without defaults start disabled
@@ -1564,8 +1546,7 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
   - `form.js` → all JavaScript logic
   - `styles.css` → all styling
 
-## [0.3.0] - 2025-10-08
-
+## 0.3.0 - 2025-10-08
 ### Added
 - **Upload Progress**: Real-time progress bar, file size display, status messages
 
@@ -1576,12 +1557,10 @@ run(my_function, uploads_dir="/data/uploads", returns_dir="/data/returns")
 - **Upload Performance**: 8MB chunk streaming, ~237 MB/s on localhost
   - Replaced `fetch()` with `XMLHttpRequest` for progress tracking
 
-## [0.2.0] - 2025-10-07
-
+## 0.2.0 - 2025-10-07
 ### Added
 - **Dynamic Dropdowns**: Functions in `Literal` generate options at runtime
 
-## [0.1.0] - 2025-10-05
-
+## 0.1.0 - 2025-10-06
 ### Added
 - Initial release with basic types, files, validation, images/plots, multi-function support

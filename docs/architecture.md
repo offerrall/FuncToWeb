@@ -10,10 +10,10 @@ pytypehintweb   web plan, browser widgets and transport
 FuncToWeb       routes, execution, integration and documentation
 ```
 
-* [`pytypehint`](https://github.com/offerrall/pytypehint) compiles a signature
+* [pytypehint](https://offerrall.github.io/pytypehint/) compiles a signature
   into a `Signature`: which types each parameter accepts, which constraints and
   defaults apply, and how the real arguments are built from validated values.
-* [`pytypehintweb`](https://github.com/offerrall/pytypehintweb) turns that
+* [pytypehintweb](https://offerrall.github.io/pytypehintweb/) turns that
   contract into a **plan**: the description of the form that the browser
   consumes, with its JSON transport, plus the widgets that render it.
 * FuncToWeb adds what is still missing in order to publish it: the HTTP routes,
@@ -23,6 +23,14 @@ FuncToWeb does not validate on its own, and it does not reinterpret the type
 catalog. What it does is re-export that catalog (the constraint and annotation
 atoms, `Color`, `Email` and the errors), so whoever writes a function never
 needs to import from the lower layers.
+
+Beside the stack, not under it: FuncToWeb stores nothing — a function runs and
+returns. When a small app needs its rows to outlive the process,
+[pytypehintstore](https://offerrall.github.io/pytypehintstore/) persists the
+same dataclasses this stack validates, in memory and shadowed by a JSON file you
+can open and edit. It is optional and not a dependency:
+[`examples/project/todo_stored.py`](../examples/project/todo_stored.py) is the
+todo mini-app with the dict swapped for a store.
 
 ## From the function to the response
 

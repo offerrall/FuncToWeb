@@ -1,17 +1,17 @@
 # Examples
 
-The [documentation](../README.md#documentation) is the technical reference;
-[`examples/`](../examples/) is the hands-on part, and it holds two kinds of file.
+The other pages are the technical reference; [`examples/`](../examples/) is
+the hands-on part, and it holds two kinds of file.
 
-**Examples** teach **a single capability** and nothing else: 81 of them, in the
-11 folders of the table below. **Mini-apps** live in [`project/`](../examples/project/) and
-do the opposite — each one combines several capabilities into a small complete
-application, to show how the pieces sit together once there is more than one.
+**Examples** teach **a single capability** and nothing else, grouped in the
+folders of the table below. **Mini-apps** live in
+[`project/`](../examples/project/) and do the opposite — each one combines
+several capabilities into a small complete application, to show how the pieces
+sit together once there is more than one.
 
-Both kinds are runnable programs: a file with an `if __name__ == "__main__":`
-guard, which is what the count in the main README means. That is every `.py`
-file here, nothing in the collection is a module that only exists to be
-imported.
+Both kinds are runnable programs: every `.py` file has an
+`if __name__ == "__main__":` guard, and nothing in the collection is a module
+that only exists to be imported.
 
 ## Running
 
@@ -45,6 +45,9 @@ Examples and mini-apps alike serve at <http://127.0.0.1:8000> and block until
 | --- | --- | --- |
 | [`project/todo.py`](../examples/project/todo.py) | one dataclass model reused by three functions, `app_of()` under a prefix, a hand-written route of your own | [types](types.md), [application](router.md) |
 | [`project/todo_stored.py`](../examples/project/todo_stored.py) | the same mini-app whose tasks survive the restart: the dict becomes a store and the model that draws the forms is what the JSON file holds | [types](types.md), [application](router.md) |
+| [`project/users.py`](../examples/project/users.py) | a dataclass with a photo field walking the whole file cycle: upload once, edit with the photo already in place and no byte uploaded again, and a host endpoint serving the stored file | [files](files.md), [prefill](prefill.md), [sdk](sdk.md) |
+| [`project/bookings.py`](../examples/project/bookings.py) | one dataclass that is the whole form and rulebook: a date, two times, an enum, a slider, a toggled note, and a cross-field rule in `__post_init__` that surfaces as a `422` in the form and the API alike | [types](types.md), [prefill](prefill.md) |
+| [`project/gallery.py`](../examples/project/gallery.py) | outputs a CRUD never reaches, drawn inside the modal: an image with its download, a table and streamed lines, with modals that close on their result and modals that do not | [outputs](outputs.md), [streaming](streaming.md), [sdk](sdk.md) |
 
 A mini-app is still short enough to read in one sitting, and it is still an
 ordinary FastAPI application: the library contributes an application, never the
@@ -52,12 +55,13 @@ host.
 
 ## Dependencies
 
-Everything works with `pip install func-to-web`, except
+Everything runs with the library alone, except
 [`outputs_optional/`](#outputs-with-optional-dependencies), where each subfolder
-declares its own (`pillow`, `matplotlib`, `pandas`, `polars`, `numpy`), and
-[`project/todo_stored.py`](../examples/project/todo_stored.py), which needs
-[`pytypehintstore`](https://github.com/offerrall/pytypehintstore). None of them
-is required by the library.
+declares its own (`pillow`, `matplotlib`, `pandas`, `polars`, `numpy`);
+[`project/gallery.py`](../examples/project/gallery.py), which needs `pillow` and
+`pandas`; and [`project/todo_stored.py`](../examples/project/todo_stored.py),
+which needs [pytypehintstore](https://offerrall.github.io/pytypehintstore/). None
+of them is required by the library.
 
 The examples use fictional data, never access the Internet and write only to
 the system temporary directories, with two deliberate exceptions:
@@ -135,19 +139,12 @@ dependency is imported only inside its own example.
 | `polars/` | polars | `pip install polars` | `table` |
 | `numpy/` | numpy | `pip install numpy` | `table` |
 
-Each one is described below. None of these
-libraries is a dependency of FuncToWeb, and none of them appears in
-`pyproject.toml`: install only the one for the example you want to run.
+Each one is described below. None of these libraries is a dependency of
+FuncToWeb: install only the one for the example you want to run.
 
 The reference for the outputs contract is in [Outputs](outputs.md).
 
 ### Image with Pillow
-
-Optional dependency: **Pillow**.
-
-```bash
-pip install pillow
-```
 
 `image.py` draws a square gradient with a frame and a label, and returns
 the `PIL.Image.Image` object unchanged: FuncToWeb recognizes it as an image,
@@ -167,12 +164,6 @@ python examples/outputs_optional/pillow/image.py
 ```
 
 ### Chart with matplotlib
-
-Optional dependency: **matplotlib**.
-
-```bash
-pip install matplotlib
-```
 
 `figure.py` plots a sine wave and returns the `matplotlib.figure.Figure`, which
 FuncToWeb saves as a PNG with `bbox_inches="tight"` and delivers as an `image`
@@ -196,12 +187,6 @@ python examples/outputs_optional/matplotlib/figure.py
 
 ### Table with pandas
 
-Optional dependency: **pandas**.
-
-```bash
-pip install pandas
-```
-
 `dataframe.py` builds a sales report in memory and returns the
 `pandas.DataFrame`, which is converted into a `table` output with the column
 names as headers.
@@ -223,12 +208,6 @@ python examples/outputs_optional/pandas/dataframe.py
 
 ### Table with polars
 
-Optional dependency: **polars**.
-
-```bash
-pip install polars
-```
-
 `dataframe.py` builds an inventory report in memory, adds a computed column,
 and returns the `polars.DataFrame`, which is converted into a `table` output.
 
@@ -247,12 +226,6 @@ python examples/outputs_optional/polars/dataframe.py
 ```
 
 ### Table with numpy
-
-Optional dependency: **numpy**.
-
-```bash
-pip install numpy
-```
 
 `matrix.py` builds an operation table using broadcasting and returns the
 two-dimensional `numpy.ndarray`, which is converted into a `table` output.

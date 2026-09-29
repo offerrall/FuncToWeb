@@ -1,9 +1,5 @@
 # Getting started
 
-```bash
-pip install func-to-web
-```
-
 ## A function and its web page
 
 ```python

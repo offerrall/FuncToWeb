@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 DOCUMENTED_PAGES = (
     "README.md",
+    "docs/overview.md",
     "docs/getting-started.md",
     "docs/run.md",
     "docs/router.md",
@@ -49,7 +50,7 @@ DOCUMENTED_PAGES = (
 )
 
 DELIBERATE_FRAGMENTS = {
-    ("README.md", "due_date: date | None = None"),
+    ("docs/overview.md", "due_date: date | None = None"),
     ("docs/prefill.md", "page_of("),
     ("docs/router.md", "app_of("),
     ("docs/run.md", "run("),

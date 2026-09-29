@@ -22,7 +22,6 @@ A `WebFunction` carries no theme of its own, because it compiles its HTML once,
 without knowing which application it will end up in. That is why the theme belongs
 to the space and two themes need two applications.
 
-> Today the theme is set by whoever mounts the space. Letting the user
-> choose it, and remembering that choice, will come in a future version: that is
-> why there is no visible selector yet, no `localStorage`, no cookies, and no
-> theme-switching JavaScript.
+The theme is set by whoever mounts the space, not by the user: there is no
+visible selector, no `localStorage`, no cookies, and no theme-switching
+JavaScript.

@@ -46,7 +46,3 @@ goes back to sleep. Two things follow from that: an event can take up to one
 poll to go out, including the final `result`, and every open connection costs
 that wake-up for as long as the execution lasts. For what FuncToWeb is, internal
 tools with a few users at a time, neither is noticeable.
-
-> Polling will be replaced by direct notification in a future version, to hold
-> more simultaneous connections. The contract does not change: the same events,
-> the same grouping of printed output and the same final envelope.

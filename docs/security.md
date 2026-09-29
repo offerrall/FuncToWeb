@@ -73,7 +73,7 @@ either. See [prefill.md](prefill.md).
 ## The prefill travels in the URL
 
 It stays in the browser history, in the `Referer` header and in the server
-access log. No channel available today avoids this, so data that must not be
+access log. No prefill channel avoids this, so data that must not be
 logged must not travel as a prefill.
 
 ## The result travels to whoever embeds the page

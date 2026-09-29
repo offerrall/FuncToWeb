@@ -57,7 +57,8 @@ test-browser = [
 
 [project.urls]
 Homepage = "https://github.com/offerrall/FuncToWeb"
-Source = "https://github.com/offerrall/FuncToWeb"
+Documentation = "https://offerrall.github.io/func-to-web/"
+Repository = "https://github.com/offerrall/FuncToWeb"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
