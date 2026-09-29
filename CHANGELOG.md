@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.3] - 2026-09-29
+
+### Changed
+
+- Documentation only: the design notes are listed one by one in the README's
+  Documentation section, and `docs/design/index.md`, which only listed them, is
+  removed. The code is the same as 2.7.2.
+
 ## [2.7.2] - 2026-09-29
 
 ### Changed

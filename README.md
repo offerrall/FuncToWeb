@@ -553,7 +553,19 @@ see [Examples](docs/examples.md), one capability per file.
 
 ### Design notes
 
-The pages above say what each thing is: the signature, the values, the errors and one example. The reasoning behind each of those decisions lives apart, in [`design/`](docs/design/index.md) — for whoever contributes to FuncToWeb, and for the curious. Nothing there is needed in order to use the library.
+The pages above say what each thing is: the signature, the values, the errors and one example. The reasoning behind each of those decisions lives apart, in the design notes below — for whoever contributes to FuncToWeb, and for the curious. Nothing there is needed in order to use the library.
+
+- [The space index](docs/design/run.md): why the page `run()` adds at `/` navigates with `location.replace()` and carries no form logic of its own.
+- [The application](docs/design/router.md): why both storage TTLs default to one hour, and why the theme is resolved in pure CSS.
+- [Prefill: from the query parameter to the plan](docs/design/prefill.md): what happens between the `prefill` query parameter and the HTML that is served.
+- [Files: the upload endpoint, the reference and custody](docs/design/files.md): why `/upload` does not apply `FileHint.max_size`, why a second upload of the same reference is a `409`, and where custody of a promoted file ends up.
+- [`WebFunction` metadata](docs/design/web-function.md): why the description is passed through `cleandoc()`, and why only the first letter of a displayed name is uppercased.
+- [Streaming and print capture](docs/design/streaming.md): how `print()` capture works, why it is experimental, and why the transport polls.
+- [Outputs](docs/design/outputs.md): why table rows are read with `itertuples()`, why a matplotlib figure is closed, and why a union cannot mix a download with an ordinary branch.
+- [The iframe channel](docs/design/sdk.md): why the modal does not close itself by default, why `error` is not about validation, and why the payload of `result` is the envelope of `/invoke` again.
+- [Frontend: assets, icons and color](docs/design/frontend.md): why the content type is decided rather than guessed, why every icon is a file, and why the page adds almost no color of its own.
+- [Architecture: what counts as public contract](docs/design/architecture.md): why the line between the public API and the merely visible internals falls where it does.
+- [From 1.6 to 2.0](docs/design/history-1.6-to-2.0.md): why 2.0 breaks what it breaks: the two layers underneath were rewritten, and what that widened, lost and left as a limit.
 
 ## Status
 
