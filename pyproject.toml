@@ -62,7 +62,11 @@ Source = "https://github.com/offerrall/FuncToWeb"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # Raised inside Starlette's TestClient by anyio 4.15, not by FuncToWeb.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]
 markers = [
     "browser: needs a real headless browser",
     "package: builds or installs the distribution",

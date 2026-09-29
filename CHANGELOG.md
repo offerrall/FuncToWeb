@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.7.2] - 2026-09-29
+
+### Changed
+
+- Documentation only: the documentation index moves from `docs/index.md` into
+  the README's Documentation section, and the README no longer repeats the
+  version in its title and status line. The code is the same as 2.7.1.
+- The READMEs inside `examples/` become one page, `docs/examples.md`, listed
+  with the rest of the documentation.
+
+### Fixed
+
+- The test suite runs again with anyio 4.15, whose deprecation of
+  `anyio.abc.BlockingPortal` is raised inside Starlette's `TestClient`; that one
+  warning is ignored, every other warning is still an error.
+
 ## [2.7.1] - 2026-09-24
 
 ### Fixed

@@ -1,4 +1,4 @@
-# FuncToWeb 2.7.1
+# FuncToWeb
 
 [![PyPI version](https://img.shields.io/pypi/v/func-to-web.svg)](https://pypi.org/project/func-to-web/)
 [![Python](https://img.shields.io/pypi/pyversions/func-to-web.svg)](https://pypi.org/project/func-to-web/)
@@ -384,7 +384,7 @@ upload no execution ever uses expires; what your code received stays.
 ## Examples
 
 The examples are probably the best way to learn the library.
-[`examples/`](examples/README.md) contains 81 runnable programs in 11 folders.
+[`examples/`](docs/examples.md) contains 81 runnable programs in 11 folders.
 Each file teaches **a single capability**: you can read it in one sitting and
 run it as it is. Alongside them, [`examples/project/`](examples/project/) holds
 mini-apps, where several capabilities are combined into one small application.
@@ -515,16 +515,52 @@ func-to-web && pip freeze` in an empty virtualenv prints exactly this.
 
 ## Documentation
 
-[docs/index.md](docs/index.md) is the complete index, organized by what you
-want to do, and the technical reference for everything the examples show in
-practice.
+The technical reference, organized by what you want to do. For hands-on use,
+see [Examples](docs/examples.md), one capability per file.
+
+### Start here
+
+- [Getting started](docs/getting-started.md): install, write your first function and run it.
+- [Examples](docs/examples.md): the runnable examples and mini-apps, how to run them, and what each folder teaches.
+- [`run()`](docs/run.md): the standalone application and the space index.
+- [`app_of()`](docs/router.md): mounting the application in an existing FastAPI host application.
+
+### Inputs and forms
+
+- [Types and validation](docs/types.md): constraints, dataclasses, lists, unions, optionals and defaults.
+- [Prefill and hidden parameters](docs/prefill.md): open a form with initial values, from Python or from the URL.
+- [Files](docs/files.md): uploads, reusable file references, and which layer applies each limit.
+- [`WebFunction`](docs/web-function.md): the name, description and slug of a function; prepared spaces.
+
+### Execution and results
+
+- [Execution over HTTP](docs/http.md): `/invoke`, the request body, the envelope and the status codes.
+- [Streaming](docs/streaming.md): `/invoke-stream`, SSE events and `print()` capture.
+- [Outputs](docs/outputs.md): text, images, tables and downloads with `Download`.
+- [`OpenForm`](docs/open-form.md): open another function's form with the return value as prefill.
+
+### Integration
+
+- [`/doc`](docs/api-docs.md): the published contract that a client or an agent consumes.
+- [`sdk.js`](docs/sdk.md): the helpers that call a space from your own frontend, and how to embed a function's page in another site.
+- [Static assets](docs/static-assets.md): `/static`, the icons, the theme and how they are cached.
+- [Security](docs/security.md): what FuncToWeb covers and what belongs to the host application.
+
+### Internals
+
+- [Architecture](docs/architecture.md): the layers and what each one solves.
+- [Limitations](docs/limitations.md): the known limits, in a single list.
+
+### Design notes
+
+The pages above say what each thing is: the signature, the values, the errors and one example. The reasoning behind each of those decisions lives apart, in [`design/`](docs/design/index.md) — for whoever contributes to FuncToWeb, and for the curious. Nothing there is needed in order to use the library.
 
 ## Status
 
-**FuncToWeb 2.7.1 is stable, used daily and actively maintained.**
+**FuncToWeb is stable, used daily and actively maintained.**
 
 The public API is the one described in
-[`docs/`](docs/index.md), and the known limitations are listed in
+[documentation](#documentation), and the known limitations are listed in
 [limitations.md](docs/limitations.md).
 
 ## License
