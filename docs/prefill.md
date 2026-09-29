@@ -1,302 +1,90 @@
-# Prefill and hidden parameters
+# Prefill and OpenForm
 
-A prefill is a set of **temporary initial values for one specific opening**: it
-does not change the function, its schema, its plan or its base page.
-
-It has two entry points: `page_of()` from Python and the `prefill` query
-parameter of `GET /{slug}/`; the second builds on the first. The options beside
-it also describe **one opening**, never the function.
+A form can open with values already filled in, some fields hidden, or running
+by itself. These options belong to one opening of the page; the function does
+not change.
 
 ```text
-prefill  → proposes initial values
-hidden   → decides which parameters are not shown
-autorun  → asks the page to submit itself once it is ready
-hide_title → hides the visible function title
-hide_description → hides the visible function description
-hide_submit      → hides the Submit button without enabling autorun
+GET /edit_user/?prefill={"name": "Ana", "age": 32}&hidden=["age"]
 ```
 
-They are independent: `hidden` does not need `prefill` and vice versa. A
-function can also open another function in the space with its own return value
-as the prefill, without building the URL by hand: [`OpenForm`](open-form.md)
-uses this channel.
-
-## HTTP API
-
-```text
-GET /{slug}/?prefill=<JSON object>&hidden=<JSON list of names>&autorun=1&hide_title=1&hide_description=1
-```
-
-The root JSON of the prefill must be an object. Its keys are parameter
-names and its values travel in the browser transport format
-[http.md](http.md#the-input) describes, the same one `/invoke` uses.
-
-```javascript
-const url = new URL("/tools/edit_user/", location.origin);
-
-url.searchParams.set("prefill", JSON.stringify({name: "Ana", age: 32}));
-
-iframe.src = url;
-```
-
-The two entry points end at the same place, `page_of()`, and the walk from the
-query parameter down to it is one path written twice →
-[design/prefill.md](design/prefill.md).
-
-Any error gets a `400` **before** the page is served, never a half-filled
-form:
-
-| Query | Response |
+| Option | What it does |
 | --- | --- |
-| `prefill={not json` | `400 prefill must be valid JSON` |
-| `prefill=[1, 2]` | `400 prefill must be a JSON object` |
-| `prefill={"nope": 1}` | `400 unknown prefill field: 'nope'` |
-| `prefill={"task_id": "two"}` | `400 task_id: expected int, got str` |
-| `prefill={"title": "ab"}` | `400 title: too short: 2 chars, minimum 3` |
-| `prefill={"priority": "URGENT"}` | `400 priority: expected Priority, got str` |
-| `prefill={"due": "30/07/2026"}` | `400 due: expected date, got str` |
-| `hidden=[not json` | `400 hidden must be valid JSON` |
-| `hidden={"a":1}` | `400 hidden must be a JSON array` |
-| `hidden=["a",1]` | `400 hidden must contain only strings` |
-| `hidden=["nope"]` | 200: an unknown name hides nothing |
-| `hidden=["a","a"]` | 200: it is hidden once |
-| `hidden=[]` | 200: the same as not sending it |
+| `prefill` | a JSON object with initial values, by parameter name |
+| `hidden` | a JSON list of fields not to show; `"config.token"` and `"items.*.token"` reach nested fields |
+| `autorun` | submits the form once it is ready, if nothing is missing |
+| `hide_title`, `hide_description` | hide the function's heading and description |
+| `hide_submit` | hides the Submit button |
 
-From Python the same failures arrive as exceptions, with the `default:` prefix
-that reveals how the prefill is applied:
+The flags take `1`, `true`, `on` or `yes` (and `0`, `false`, `off`, `no`);
+anything else is a `422`.
+
+The prefill uses the same JSON as `/invoke` (dates as ISO text, an enum by its
+name, a file by its reference) and it can leave out parameters, which keep
+their defaults. It is validated against the signature before the page is
+served, so a wrong value is a `400`, never a half-filled form:
 
 ```text
-ValueError: unknown prefill field: 'nope'
-SchemaTypeError:  age: default: expected int, got str
-SchemaValueError: age: default: too large: 999, maximum 120
+prefill={"age": "two"}   → 400 age: expected int, got str
+prefill={"nope": 1}      → 400 unknown prefill field: 'nope'
 ```
 
-## What is base and what is temporary
+`autorun` is for a page opened to see a result, such as a report: the page
+presses its own button once. With `hide_submit` too, it shows only the result.
 
-`WebFunction.schema`, `WebFunction.plan` and `WebFunction.html` are compiled
-once when the `WebFunction` is created and never change.
+**`hidden` hides, it does not lock.** A hidden field still travels in the
+request, and anyone can call `/invoke` with another value. The prefill travels
+in the URL, so it ends up in the browser history and the server logs: it is not
+a place for secrets.
 
-With the default opening options, the base HTML is returned directly. A prefill
-creates a temporary `Signature` with temporary defaults, and `plan_of()` validates
-them. The other opening options control rendering without changing the signature.
-Nothing is stored anywhere: two openings with different options share no state.
+## OpenForm
 
-## Partial prefill
-
-A prefill does not have to cover every parameter. Parameters that do not appear
-keep their original state: a required parameter stays required, a declared
-default stays in place, and label, description and constraints do not change. A
-required parameter included in the prefill gets a temporary default for that
-opening.
-
-## File prefill
-
-A file field can be prefilled too, and it follows the same path as any other
-value, with one extra step at each end: the reference is resolved against the
-storage before the core reads it, and it is the reference again —never the
-resolved path— that is written into the plan.
-
-```text
-reference → file_resolver → real path → the core reads its extension
-                                      → the reference is the temporary default
-                                      → the widget shows it as the current
-                                         file, with no pending upload
-```
-
-The local path exists only for that step and is dropped there: it never reaches
-the browser, not in the URL, not in the body and not in the message of a
-rejection, which names the file and not where it is kept.
-
-Like the rest of the prefill, it fails **before** the page is served:
-
-| Query | Response |
-| --- | --- |
-| `prefill={"document": "report-<uuid>.pdf"}` | 200, with the file in place |
-| `prefill={"document": "nope.pdf"}` | `400 File not found: nope.pdf` |
-| `prefill={"document": "../evil.pdf"}` | `400 invalid file reference '../evil.pdf': is not a file of the storage directory` |
-| `prefill={"document": "/etc/passwd"}` | `400 invalid file reference '/etc/passwd': is not a file of the storage directory` |
-| `prefill={"document": "notas.txt"}` | `400 document: not an accepted file type: 'notas.txt', expected one of ('.pdf',)` |
-
-Those are the two questions asked: does storage own the file, and does the
-extension match. The `min_size`/`max_size` of a
-[`FileHint`](files.md#what-filehint-checks-and-where) are not among them — they
-are the browser's, applied to a file it is handed, and a prefill hands it a
-reference — so a stored file outside those bounds opens the form with a `200`.
-
-From Python the same rule applies to the value itself, and there the failure is
-an exception, since `page_of()` takes a real path and there is no resolver to
-turn one into a reference:
-
-```text
-SchemaValueError: document: default: file is not in the storage directory: 'x.pdf'
-```
-
-It works at any depth (`list[File]`, dataclasses with a file, lists of
-dataclasses), because `decode()` is what walks the structure.
-
-A prefilled file is not uploaded again: it travels in the body of `/invoke`
-like any other value and the resolver recognizes it. See [files.md](files.md).
-
-## Hidden parameters
-
-`hidden` hides the widget and its label using the native `hidden` attribute. What happens to the parameter is
-exactly this:
-
-* it stays compiled into the form, with its value (the prefill's, or its own
-  default);
-* `form.read()` still includes it, so it **travels in the body** of `/invoke`
-  and `/invoke-stream` like any other parameter;
-* it still takes part in validation: hiding a parameter that has no value
-  available makes the submission fail with the usual message, naming a field
-  that is not visible.
-
-The channel only checks the shape: valid JSON, a list at the root, and every
-element exactly a `str`. Duplicates, ordering and unknown names are not its
-business, because hiding is a visual matter and a misspelled name does not
-break any contract.
-
-### Nested fields
-
-Use dotted paths for object fields and `*` for every item of a list:
-
-```javascript
-{
-  prefill: {config: {token: "abc", name: "Demo"}},
-  hidden: ["config.token"]
-}
-```
-
-`hidden: ["items.*.token"]` hides `token` in all items, including newly added
-ones. Nested lists use another `*`: `"items.*.*.token"`. Hiding `"config"`
-still hides the entire parameter. Optional and union wrappers add no segment;
-a path applies to every union branch containing the field. Numeric indices
-and branch-specific selectors are not supported.
-
-Preloaded values and visibility descend through the same widget compiler.
-Hidden children retain their values, validation and uploads. They stay in the
-DOM with `hidden`, so select visible fields explicitly when inspecting a page.
-URL/SDK paths that resolve to no field have no effect. `OpenForm` checks paths
-against the target plan and rejects unresolved paths during registration.
-
-### It hides, it does not lock
-
-```text
-GET /task/?prefill={"task_id":7}&hidden=["task_id"]
-→ the form does not show task_id
-POST /task/invoke {"task_id": 9, ...}
-→ it runs with 9
-```
-
-`hidden` is not access control: the value travels in the body and a direct
-call can send a different one. Authentication and permissions belong to the
-host application. See [security.md](security.md).
-
-## A CRUD on a single function
-
-The host application builds the links:
+A function can return the values another function opens with. Mark the return
+with `OpenForm` and the target function:
 
 ```python
-def link_of(identifier: int, task: Task) -> str:
-    prefill = {
-        "task_id": identifier,
-        "title": task.title,
-        "due": task.due.isoformat(),
-        "priority": task.priority.name,
-        "done": task.done,
-    }
+from dataclasses import dataclass
+from typing import Annotated
 
-    return "/task/?" + urlencode({"prefill": json.dumps(prefill)})
+from func_to_web import OpenForm, run
+
+
+@dataclass
+class Product:
+    product_id: int
+    name: str
+    stock: int
+
+
+def edit_product(product_id: int, name: str, stock: int) -> str:
+    return "Product updated"
+
+
+def select_product(
+    product_id: int,
+) -> Annotated[Product, OpenForm(edit_product, hidden=("product_id",))]:
+    return Product(product_id, "Tuna", 12)
+
+
+run([select_product, edit_product])
 ```
 
-A link with no query opens the create form; each link with a prefill edits one
-record. An iframe needs no channel of its own: it opens that same URL.
+Running `select_product` takes the browser to `edit_product`, with its fields
+filled in and `product_id` hidden.
 
-## Limits
+- Return a dataclass or a dict; it may cover only some of the parameters.
+- The target must be defined first, and registered in the same space; it is
+  checked when the application is built.
+- `OpenForm` marks the whole return, and does not mix with other outputs.
+- A file the function received can be passed on: the target opens with it
+  already in place, without uploading it again.
 
-The prefill travels in the URL, with everything that implies (history,
-`Referer`, access log), and there is no other channel. A prefill proposes, it
-does not impose. The full list is in [limitations.md](limitations.md).
+![resize_image opened from choose_image, with its size already filled in](images/resizeimage.png)
 
-## Running the opening on its own
+## From Python: `page_of()`
 
-`autorun` asks the page to press its own submit button as soon as it is
-mounted. Like the other opening options,
-it belongs to that opening, it changes nothing about the function, and it
-travels either from Python or in the query.
-
-```text
-GET /{slug}/?autorun=1
-```
-
-```javascript
-openModal(`${SPACE}/monthly_report`, {autorun: true});
-```
-
-It exists for a modal you open to **see the answer**, not to fill in a form: a
-report, a chart, a generated file, a link. Those functions often take no
-parameters, or take them all prefilled by the host, so the form has nothing to
-ask and the button is a step with no decision in it. Calling `/invoke` from
-your own code would skip the button too, but then you get JSON and have to
-draw the table, the image or the download yourself — which is exactly the work
-FuncToWeb has already done.
-
-What it does is *press the button*, and nothing else. The click that follows is
-the ordinary one: the same validation, the same uploads, the same stream, the
-same result card, the same [announcements to the host](sdk.md). Every rule
-about a run is the rule it was already.
-
-```text
-form ready       → it runs, once
-form incomplete  → nothing happens
-```
-
-An incomplete form is left **untouched**: no errors shown, no fields marked,
-nothing in red. Someone who has just opened a modal has not typed anything yet
-and has nothing to fix; the missing field is on screen, and their click is what
-the page was waiting for anyway. From that point on the page is an ordinary
-one, and clicking submit runs it.
-
-Two things it is not:
-
-* **Not a loop.** It presses once, at mount. A result that opens another form
-  with [`OpenForm`](open-form.md) does not carry `autorun` into it unless the
-  href says so.
-* **Not a permission.** Whoever can open the page can already run the function
-  by clicking; this only saves the click. What a page is allowed to run is
-  decided by where the space is mounted and who reaches it →
-  [security.md](security.md).
-
-## Hiding the page heading
-
-`hide_title` and `hide_description` independently omit the visible function
-title and description. Both default to false. If neither remains visible, the
-whole header is omitted, including its spacing. The document title, metadata,
-form plan and parameter labels and descriptions keep their original values.
-
-```text
-GET /monthly_report/?hide_title=1&hide_description=1&autorun=1
-```
-
-Both flags accept the same HTTP booleans as `autorun`: `1`, `true`, `on`, `yes`
-and `0`, `false`, `off`, `no`, case-insensitively. Other values return `422`.
-The SDK spells them `hideTitle` and `hideDescription`.
-
-## Hiding Submit
-
-`hide_submit` hides the Submit button without leaving space. It defaults to
-false and accepts the same HTTP booleans as `autorun`; invalid values return
-`422`. In Python it must be a bool. The SDK calls it `hideSubmit`.
-
-```text
-GET /monthly_report/?autorun=1&hide_title=1&hide_description=1&hide_submit=1
-```
-
-This option does not enable autorun or bypass validation. Use it with
-`autorun` when all required values are supplied and the page is opened to
-show a result. Keep the button visible for forms users must complete or retry.
-It affects only this opening, leaving the WebFunction unchanged.
-
-## Python API: `page_of()`
+`page_of()` builds the HTML of one opening, for a host that serves pages of its
+own:
 
 ```python
 page_of(
@@ -315,36 +103,25 @@ page_of(
 ```python
 from func_to_web import WebFunction, page_of
 
-
-web_function = WebFunction(edit_user)
-
-html = page_of(web_function, prefill={"name": "Ana", "age": 32})
+html = page_of(WebFunction(edit_user), prefill={"name": "Ana", "age": 32})
 ```
 
-Returns the complete HTML of one opening. It is meant for integrations that are
-more hands-on than `app_of()`: your own builders, custom HTML responses or
-any flow that generates the page on its own.
+Here the prefill holds real Python values (`date`, enum members, dataclasses).
+The page loads its assets from `../static/`, so it needs a space mounted beside
+it.
 
-* `web_function` must be a `WebFunction`; a bare function, a `WebFunctions` or
-  `None` all raise `TypeError: web_function must be WebFunction`.
-* `prefill` carries real Python values (`date`, `time`, `Enum` members,
-  dataclasses, lists), not their JSON transport form.
-* `hidden` holds parameter names. A bare `str` is rejected, because it would
-  iterate character by character:
-  `TypeError: hidden must be an iterable of str, not a single str`.
-* `autorun` asks the page to submit itself once mounted; anything other than a
-  `bool` raises `TypeError: autorun must be bool`. See
-  [Running the opening on its own](#running-the-opening-on-its-own).
-* `theme` is the one from [`app_of()`](router.md#theme), with the same three
-  values.
-* `hide_title` and `hide_description` hide the visible heading and summary;
-  each must be a `bool`, otherwise `TypeError` is raised.
-* With no prefill, no hidden, all boolean options false and `theme="system"` it returns
-  `WebFunction.html` unchanged.
+<details>
+<summary>How it works inside</summary>
 
-The HTML expects the space assets at `../static/...`, so it needs an application
-that serves them. `page_of()` creates no routes and no application: that is the
-job of [`app_of()`](router.md) and [`run()`](run.md).
+A URL prefill goes through `json.loads()`, then `decode()` (which also resolves
+file references), then a temporary `Signature` with only the parameters present,
+whose `build()` produces exact Python values. Those go to `page_of()`, which is
+where the Python entry point starts. The prefill becomes temporary defaults, so
+its errors from Python carry the `default:` prefix; the function's own schema,
+plan and HTML are never modified.
 
-Related: [open-form.md](open-form.md), [sdk.md](sdk.md#embedding-a-function-page),
-[web-function.md](web-function.md), [types.md](types.md).
+An `OpenForm` target is resolved by identity, not by slug: a matching slug
+would not prove it is the same function. Its result reaches the browser as a
+relative URL with the usual query string, so nothing is stored on the server.
+
+</details>

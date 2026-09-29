@@ -78,8 +78,8 @@ PYTYPEHINTWEB_NAMES = (
 )
 
 DOCUMENTED_SIGNATURES = (
-    ("run", "run.md"),
-    ("app_of", "router.md"),
+    ("run", "getting-started.md"),
+    ("app_of", "getting-started.md"),
     ("page_of", "prefill.md"),
 )
 

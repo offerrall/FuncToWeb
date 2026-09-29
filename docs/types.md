@@ -1,22 +1,7 @@
 # Types and validation
 
-The catalog of types and constraints is defined by
-[pytypehint](https://offerrall.github.io/pytypehint/); FuncToWeb does not
-extend or reinterpret it, and that project's documentation is the complete
-reference. This document describes what that contract guarantees and how it
-reaches the web.
-
-FuncToWeb re-exports every piece, so you never have to import from the lower
-layers: the constraint atoms (`Min`, `Max`, `Choices`, `MultipleOf`, `Pattern`,
-`FileHint`), the annotation atoms (`Label`, `Description`, `Placeholder`,
-`Step`, `Slider`, `IsPassword`, `Rows`, `Extra`, `OptionalToggle`), the
-convenience types (`Color`, `Email`) and the errors (`SchemaTypeError`,
-`SchemaValueError`).
-
-## The annotation is the contract
-
-Type hints compile to a schema that validates every value **before** the
-function is called.
+The type hints are the contract: every value is validated **before** the
+function runs, and the function receives real Python values.
 
 ```python
 from typing import Annotated
@@ -28,71 +13,78 @@ def percentage(value: Annotated[int, Min(0), Max(100)]) -> int:
     return value
 ```
 
-`value` is exactly an `int` between 0 and 100: the function never runs with
-`-1`, `101`, `1.5`, `"50"` or `True`. FuncToWeb does not validate anything
-itself; it builds the arguments with the schema and lets the core reject
-whatever does not comply.
+`value` is always an `int` from 0 to 100: `-1`, `1.5`, `"50"` or `True` never
+reach the function. Over HTTP a value that breaks the contract is a `422` with
+the reason.
 
-## Validation is recursive
+## What a parameter can be
 
-Recursive validation reaches every element of a structure, not just its outer
-shape. In a list, the outer constraints belong to the list and the inner ones to
-each element, and both apply:
+| Type | In the form |
+| --- | --- |
+| `int`, `float`, `str`, `bool` | a number, a text, a switch |
+| `date`, `time` | a date or time picker |
+| an `Enum` or `Literal[...]` | a dropdown |
+| `list[T]` | a list of fields, with add and remove |
+| a dataclass | its fields, nested; the function gets a real instance |
+| `T \| None` | the field with a toggle that decides whether it is sent |
+| `A \| B` | a choice between the shapes of each branch |
+| `Color`, `Email` | a `str` with a color picker, or checked as an email |
+| a `str` with `FileHint` | a file picker; see [Files](files.md) |
+
+Validation is recursive: it reaches every item of a list and every field of a
+nested dataclass.
 
 ```python
 def average(
-    values: Annotated[
-        list[Annotated[int, Min(0), Max(100)]],
-        Min(1),
-        Max(20),
-    ],
+    values: Annotated[list[Annotated[int, Min(0), Max(100)]], Min(1), Max(20)],
 ) -> float:
     return sum(values) / len(values)
 ```
 
-Between 1 and 20 values, each one between 0 and 100. In the interface, `list[T]`
-is a list of widgets with an **Add** button and a trash icon on each row, and
-the length limits are the ones declared on the list.
+Between 1 and 20 values, each from 0 to 100: the outer `Min`/`Max` count the
+list, the inner ones check each item.
 
-## Dataclasses
+## Constraints and presentation
 
-A dataclass used as a parameter compiles to a nested structure and reaches the
-function as a real instance, already validated. You do not have to inherit from
-a base model or register any types.
+Everything goes inside `Annotated`, and everything is imported from
+`func_to_web`.
+
+These constrain the value:
+
+| Atom | What it checks |
+| --- | --- |
+| `Min(value, exclusive=False)`, `Max(...)` | a number, date or time's bound; a text's or list's length. `exclusive=True` leaves the bound out |
+| `MultipleOf(value)` | an `int` that is a multiple of `value` |
+| `Choices(values=(...))` | one of a fixed set |
+| `Pattern(value, message=None)` | a text matching a regular expression; `message` is the error shown |
+| `FileHint(extensions=(), min_size=None, max_size=None)` | a file; see [Files](files.md) |
+
+These only change how the field looks:
+
+| Atom | What it does |
+| --- | --- |
+| `Label(value)`, `Description(value)`, `Placeholder(value)` | the field's name, its help text, and a hint inside it |
+| `Step(value)` | the step of a number's arrows |
+| `Slider(show_value=True)` | a slider instead of a number box |
+| `Rows(value)` | a multi-line text box of that height |
+| `IsPassword()` | a hidden text |
+| `OptionalToggle(enabled)` | whether an `X \| None` field starts on |
+| `Extra(key, value)` | a namespaced pair stored on the field, for your own code; FuncToWeb ignores it |
+
+`Color` and `Email` are `str` with the patterns `COLOR_PATTERN` and
+`EMAIL_PATTERN`, which you can also use yourself. A signature that cannot be
+compiled raises `SchemaTypeError` (a wrong type) or `SchemaValueError` (a wrong
+value, such as a default outside its bounds) when the application is built.
+
+## Defaults
+
+Defaults are checked when the application starts, and rebuilt for every call,
+so a list or a dataclass used as a default is never shared between two calls:
 
 ```python
 from dataclasses import dataclass
 
 
-@dataclass
-class Limits:
-    minimum: int
-    maximum: int
-
-
-def configure(limits: Limits) -> str:
-    return f"{limits.minimum} - {limits.maximum}"
-```
-
-Nesting is not a special case: a dataclass can contain other dataclasses, lists
-of dataclasses or unions, and recursive validation reaches into all of them.
-
-## Unions and optionals
-
-A union offers several possible shapes for the same parameter, and the transport
-identifies the chosen branch, using `$type` when that is needed to avoid
-guesswork (see [http.md](http.md)).
-
-An `X | None` parameter is optional: the interface represents it with a toggle
-that decides whether the value travels.
-
-## Defaults
-
-Defaults are validated when the schema is compiled and **rematerialized** on
-every execution, so a mutable default (a list, a dataclass) is never shared
-between calls:
-
-```python
 @dataclass
 class Item:
     value: int
@@ -102,62 +94,26 @@ def process(items: list[Item] = [Item(1), Item(2)]) -> int:
     return sum(item.value for item in items)
 ```
 
-Every execution receives a new, validated structure, even when the default
-contains lists or nested dataclasses. A [prefill](prefill.md) is applied as a
-temporary default for that one form opening, which is why its errors arrive with
-the `default:` prefix.
+## Every control, on screen
 
-## Convenience types
-
-These are not new types. `Color` is a `str` with a hexadecimal pattern: Python
-receives a `str`, the core validates the format and the browser shows a color
-picker. Writing the same pattern by hand gives you the same validation and the
-same widget; what changes is the message: `Color` comes with
-`Hex color like #ff5733`, while a hand-written pattern falls back to
-`Invalid format`.
-
-```python
-from func_to_web import Color
-
-
-def set_color(color: Color) -> str:
-    return color
-```
-
-`Email` works the same way with its own pattern, and both are imported from
-`func_to_web` alongside `COLOR_PATTERN` and `EMAIL_PATTERN`.
-
-A `str` annotated with `FileHint(...)` declares a file reference with its
-accepted extensions and, optionally, its size limits. It is the one atom whose
-halves are not all applied by the core: the extension is, on every execution,
-while the size limits are the browser's, applied to the file the user picks and
-to nothing else. The full contract, and which layer holds which piece, is in
-[files.md](files.md#what-filehint-checks-and-where).
-
-## What happens when the contract is broken
-
-A value that breaks the contract fails before it enters the function. Over HTTP
-that is a `422` with the message from the core; in a prefill, a `400`. See
-[http.md](http.md) and [prefill.md](prefill.md).
-
-## Seeing every control
-
-The widgets are [pytypehintweb](https://offerrall.github.io/pytypehintweb/)'s,
-and that project ships a demo with the complete catalog: every control, grouped
-by type, with the cases each one covers. It needs pytypehintweb's `demo` extra,
-and runs with:
+The widgets are pytypehintweb's, and its demo shows every one of them. Install
+the `demo` extra of `pytypehintweb` and run:
 
 ```bash
 pytypehintweb-demo
 ```
 
-![The widget catalog, grouped by type, with the cases of each one](images/pytypehintweb-demo.png)
+![The widget catalog, grouped by type](images/pytypehintweb-demo.png)
 
-It answers the question this page cannot answer in prose —what a given
-annotation actually looks like— so it is the fastest way to choose between two
-that validate the same thing. `Choices` on a `str` against a `Pattern`,
-`Slider` against a plain `int`, `Rows` against a single-line field: the
-difference is visual, and it is easier to see it than to read it.
+The complete catalog of types and atoms is in
+[pytypehint's documentation](https://offerrall.github.io/pytypehint/).
 
-Related: [pytypehint](https://offerrall.github.io/pytypehint/),
-[Files](files.md), [Architecture](architecture.md).
+## Limits
+
+- Two atoms that need different controls cannot be combined: `Rows` with
+  `Choices` or `IsPassword`, and `Slider` or `Choices` with `Placeholder`, or
+  `Choices` with `Slider`.
+- A file field takes no text atoms (`Pattern`, `Placeholder`, `Rows`...).
+- An `int` beyond JavaScript's safe range (±2⁵³−1), a dataclass with no fields
+  and a dataclass that contains itself are rejected when the application is
+  built.

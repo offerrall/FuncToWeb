@@ -34,7 +34,6 @@ SCANNED_FILES = ("README.md", "CHANGELOG.md", "pyproject.toml")
 # than waved through by a directory rule.
 HISTORICAL = (
     "CHANGELOG.md",
-    "docs/design/history-1.6-to-2.0.md",
 )
 
 # (label, pattern, allowed paths)

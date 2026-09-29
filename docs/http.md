@@ -1,123 +1,130 @@
-# Execution over HTTP
+# HTTP API
 
-`POST /{slug}/invoke` runs a function and returns its result or its error. It is
-**the** execution endpoint, and the recommended one for scripts, services,
-applications and agents: one request, one response.
+Every function is an HTTP endpoint. Paths are relative to where the space is
+mounted.
+
+```text
+POST /{slug}/invoke          run it: one request, one response
+POST /{slug}/invoke-stream   the same, streaming what it prints (SSE)
+POST /upload                 upload a file, when some function takes one
+GET  /returns/{reference}    download a returned file
+GET  /doc                    the contract of every function, in plain text
+```
+
+## `/invoke`
+
+The body is a JSON object with one key per parameter:
 
 ```python
 import requests
 
-response = requests.post(
-    "http://127.0.0.1:8000/create_tag/invoke",
-    json={"name": "demo"},
-)
-
+response = requests.post("http://127.0.0.1:8000/divide/invoke",
+                         json={"a": 10, "b": 2})
 payload = response.json()
 
 if "error" in payload:
     raise RuntimeError(payload["error"])
 
-print(payload["result"])
+print(payload["result"])   # {"type": "text", "value": "5.0"}
 ```
 
-The web interface also uses `POST /{slug}/invoke-stream`, which streams what the
-function prints while it runs and ends with this same envelope. A programmatic
-client does not need it; see [streaming.md](streaming.md).
+Values use JSON as the form sends them: a date or a time as ISO text, an enum by
+its member name, a dataclass as an object, a file by its
+[reference](files.md#how-a-file-travels). A missing parameter takes its default.
+When a union's branches cannot be told apart by their shape, the value says
+which one it is with `$type`: `{"$type": "list[str]", "$value": ["a"]}`, or a
+`"$type"` key inside the object of a dataclass. Each function's plan in `/doc`
+shows the exact shape.
 
-## The input
+The response has exactly one key, `result` or `error`. `result` is one
+[output](outputs.md), or a list of them. The status code says whose problem it
+was:
 
 ```text
-POST /{slug}/invoke
-Content-Type: application/json
+200   it ran, and returned
+422   the input breaks the contract   {"error": "SchemaTypeError: b: expected float, got str"}
+500   the function raised             {"error": "ZeroDivisionError: float division by zero"}
 ```
 
-The body is always a **JSON object** with one key per parameter, in the
-browser's transport format:
+A function can be a plain `def` or an `async def`. A plain one runs in a thread,
+so a slow function does not block the server.
 
-* dates and times, as ISO text;
-* an enum, the name of its member;
-* a dataclass, a nested object;
-* a union branch, discriminated with `$type` when the transport needs it and
-  cannot guess;
-* a file, the reference that names it (see [files.md](files.md)).
+## Streaming
 
-This is the same format that the function's plan describes and that URL
-[prefill](prefill.md) uses.
-
-That object goes through two stages before it reaches the function: `decode()`
-interprets the transport, and `schema.build()` validates and builds the
-arguments. Inside `decode()`, every file reference is replaced by the local path
-of the stored file.
-
-The function receives real Python values, not the JSON or an approximation of
-it. Parameters that are absent take their default; a parameter that is missing
-and has no default, or one that does not belong to the signature, is a contract
-error.
-
-## The response
-
-```json
-{"result": {"type": "text", "value": "Hola"}}
-```
-
-```json
-{"error": "<ExceptionType>: <message>"}
-```
-
-Exactly one of the two keys, never both. A client reads `result` by the presence
-of the key, not by its value. The function finishing does not guarantee
-`result`: if its return value breaks what it declares, or cannot be converted
-into outputs, the response carries `error` even though the function raised
-nothing.
-
-`result` carries one output, or a list of outputs in the order the function
-returned them. The types, and the value each one produces, are described in
-[outputs.md](outputs.md). Since every output is converted to text before it is
-sent, serialization does not depend on the type the function returns, and the
-bytes of a download never travel in the JSON: they are served separately,
-through their reference.
-
-The envelope is identical for both endpoints: what `/invoke` returns as its body
-is exactly what `/invoke-stream` sends in its `result` event.
-
-## The status code
-
-The envelope says **what** happened; the status code says **whose** problem it
-is.
+`/invoke-stream` takes the same body and sends
+[server-sent events](https://developer.mozilla.org/docs/Web/API/Server-sent_events):
 
 ```text
-200   the function finished and its return became outputs
-422   the body does not meet the input contract
-500   the function raised an exception, or its return breaks what it declares
+event: start
+data: {}
+
+event: print
+data: {"text": "[ 40%] file 2 of 5\n"}
+
+event: result
+data: {"result": {"type": "text", "value": "5 file(s) converted"}}
 ```
+
+`print` comes zero or more times, with what the function printed since the last
+one; `result` comes once, with the same envelope `/invoke` returns. The status
+is always `200`, since the response has started before the function ends. This
+is how the page shows a function's prints while it runs:
+
+![The convert form showing the printed lines while it runs](images/printsse.png)
+
+Capture is on by default. Turn it off for a whole space with
+`capture_prints=False`, or for one function with
+`WebFunction(fn, capture_prints=False)`. It is **experimental**: it replaces
+`sys.stdout` for the rest of the process, which can conflict with a test
+harness or a library that also replaces it.
+
+If the client disconnects, the function still runs to the end.
+
+## Files from a script
+
+Upload the bytes first, under a reference you choose, then call the function
+with that reference:
 
 ```text
-422  {"error": "SchemaTypeError: when: expected date, got str"}
-422  {"error": "SchemaTypeError: missing argument(s): at, contact"}
-422  {"error": "SchemaTypeError: unexpected argument(s): zzz"}
-422  {"error": "FileNotFoundError: File not found: nope.pdf"}
-500  {"error": "ZeroDivisionError: float division by zero"}
-500  {"error": "ReturnContractError: expected bytes for Download, got Path"}
+POST /upload
+Content-Type: application/octet-stream
+X-File-Reference: report-2026.pdf
+
+<the bytes>
 ```
 
-The `422` covers everything that fails **before** entering the function: the
-transport, the decoding, the construction of the arguments and the resolution of
-a file reference. The `500` covers everything that fails inside it or after it.
+It answers `413` past `max_upload_bytes`, `409` if the reference already exists,
+and `400` if it is not a valid file name. A returned file is downloaded at
+`GET /returns/{reference}`, where the reference is the `value` of its
+`download` output.
 
-A client that reads only the body is unaffected; the status code is there so
-that a proxy, a log or a dashboard can tell a malformed request apart from a
-server failure.
+## `/doc`
 
-On `/invoke-stream` the status code is always `200`: the response has already
-started by the time the function fails.
+A plain-text document with everything a client needs: the functions, how to call
+them, the outputs, and each function's full contract (types, defaults,
+constraints). It is written once when the application is built, names only the
+routes that exist, and writes `<base_url>` for the prefix, so an agent reads it
+and knows how to call the space.
 
-## The edge outside the envelope
+<details>
+<summary>How it works inside</summary>
 
-A body that is not a JSON object (a list, a number, text or nothing at all)
-gets `422 {"detail": "body must be valid JSON"}` or
-`422 {"detail": "body must be a JSON object"}`. This happens before the
-request reaches the function. A client that reads `result`/`error` has to
-account for it.
+**Print capture.** The first function with capture that runs replaces
+`sys.stdout` with a dispatcher, and it stays for the life of the process. Every
+write goes to the original `stdout` and also to the execution that made it,
+found by its thread or its async context, so two calls never mix their output.
+Something that replaces `sys.stdout` afterwards leaves capture without effect;
+something that wraps it too ends up nested with it.
 
-Related: [outputs.md](outputs.md), [streaming.md](streaming.md),
-[files.md](files.md), [api-docs.md](api-docs.md), [types.md](types.md).
+**Polling.** While the function runs, the stream wakes every 50 ms to send what
+is pending, so an event can be up to 50 ms late and each open stream costs that
+wake-up. For internal tools with a few users, neither is noticeable.
+
+**Static assets.** `/static/{path}` serves `page.js`, `page.css`, `sdk.js` and
+the widgets of pytypehintweb, with an `ETag` and one hour of cache, so every
+function of a space shares them. Every URL a page requests is relative, which is
+why a space works under any prefix. The content type is fixed by extension
+(`.js`, `.css`, `.svg`), because `mimetypes` reads the Windows registry, where
+`.js` is often `text/plain`.
+
+</details>

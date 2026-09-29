@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.7.6 - 2026-09-29
+
+### Changed
+
+- Documentation only: the docs are rewritten as nine short pages (Overview,
+  Getting started, Types and validation, Files, Outputs, Prefill and OpenForm,
+  HTTP API, `sdk.js`, Security and limits), about a fifth of their former
+  length, still covering every public name, parameter and route. The notes for
+  maintainers close the page they explain, folded, instead of living in
+  `docs/design/`. Links in older changelog entries point to the pages as they
+  were at v2.7.5. The code is the same as 2.7.5.
+
 ## 2.7.5 - 2026-09-29
 
 ### Changed
@@ -426,11 +438,11 @@ one exception, which is the slug.
   asset, `emit.js`, posts one message to `window.parent` per event: `ready` when
   the form is mounted, `result` with the outputs a run just drew, `error` with
   the `error` of the envelope, and `navigate` with the `href` an
-  [`OpenForm`](docs/open-form.md) is about to move the iframe to. Every message
+  [`OpenForm`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/open-form.md) is about to move the iframe to. Every message
   carries `v` —the protocol version, `1`— and the `slug` it comes from. A page
   nobody embeds (`window.parent === window`) posts nothing at all and does not
   fail. `targetOrigin` is `"*"`, because the page does not know who embedded it:
-  [`security.md`](docs/security.md#the-result-travels-to-whoever-embeds-the-page)
+  [`security.md`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/security.md#the-result-travels-to-whoever-embeds-the-page)
   states the assumption.
 - **`openModal()` returns a `closed` promise** — it resolves **once**, when the
   modal closes by any route (the close button, a click outside, `Escape`,
@@ -461,7 +473,7 @@ one exception, which is the slug.
 - **The default slug is `fn.__name__` as it is** — `create_task` is served at
   `/create_task/`. The derivation lowercased the name and collapsed every `_`
   into a `-`, while the published contract
-  ([`docs/design/history-1.6-to-2.0.md`](docs/design/history-1.6-to-2.0.md#defaults-that-changed-on-purpose))
+  ([`docs/design/history-1.6-to-2.0.md`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/design/history-1.6-to-2.0.md#defaults-that-changed-on-purpose))
   stated the opposite: code and contract had diverged, and it is resolved in
   favour of the contract, because a rule that transforms nothing is the one a
   reader can predict. A hyphenated URL is still available where it is wanted:
@@ -691,12 +703,12 @@ rewriting it again.
 
 ### Documentation
 - **The documentation was rewritten around the new library** — one page per
-  area ([`run`](docs/run.md), [`router`](docs/router.md),
-  [`types`](docs/types.md), [`files`](docs/files.md),
-  [`outputs`](docs/outputs.md), [`prefill`](docs/prefill.md),
-  [`open-form`](docs/open-form.md), [`streaming`](docs/streaming.md),
-  [`http`](docs/http.md), [`sdk`](docs/sdk.md)), plus
-  [`limitations`](docs/limitations.md) and [`security`](docs/security.md)
+  area ([`run`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/run.md), [`router`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/router.md),
+  [`types`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/types.md), [`files`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/files.md),
+  [`outputs`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/outputs.md), [`prefill`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/prefill.md),
+  [`open-form`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/open-form.md), [`streaming`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/streaming.md),
+  [`http`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/http.md), [`sdk`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/sdk.md)), plus
+  [`limitations`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/limitations.md) and [`security`](https://github.com/offerrall/FuncToWeb/blob/v2.7.5/docs/security.md)
   stating what the library does not do.
 - **The examples collection was rebuilt** — 80 runnable programs across 11
   folders, each file teaching a single capability and running as it is.

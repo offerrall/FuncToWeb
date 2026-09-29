@@ -2,7 +2,7 @@ import ast
 import inspect
 import json
 import re
-from dataclasses import MISSING, dataclass, fields
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import parse_qs, urlparse
@@ -36,24 +36,17 @@ DOCUMENTED_PAGES = (
     "README.md",
     "docs/overview.md",
     "docs/getting-started.md",
-    "docs/run.md",
-    "docs/router.md",
-    "docs/web-function.md",
-    "docs/open-form.md",
-    "docs/outputs.md",
+    "docs/types.md",
     "docs/files.md",
+    "docs/outputs.md",
     "docs/prefill.md",
     "docs/http.md",
-    "docs/streaming.md",
-    "docs/types.md",
-    "docs/sdk.md",
 )
 
 DELIBERATE_FRAGMENTS = {
-    ("docs/overview.md", "due_date: date | None = None"),
     ("docs/prefill.md", "page_of("),
-    ("docs/router.md", "app_of("),
-    ("docs/run.md", "run("),
+    ("docs/getting-started.md", "app_of("),
+    ("docs/getting-started.md", "run("),
 }
 
 FENCE = re.compile(r"^```(\S*)\s*$")
@@ -383,7 +376,7 @@ def test_the_documentation_pages_the_snippets_come_from_exist(repo_root):
 def test_the_documentation_really_carries_python_snippets():
     covered = {block.relative for block in ALL_PYTHON_BLOCKS}
 
-    assert len(ALL_PYTHON_BLOCKS) > 30
+    assert len(ALL_PYTHON_BLOCKS) > 15
     assert set(DOCUMENTED_PAGES) <= covered
 
 
@@ -437,10 +430,10 @@ def test_the_documentation_imports_cover_a_real_part_of_the_public_api():
 @pytest.mark.parametrize(
     ("page", "name", "target"),
     [
-        ("docs/run.md", "run", run),
-        ("docs/router.md", "app_of", app_of),
+        ("docs/getting-started.md", "run", run),
+        ("docs/getting-started.md", "app_of", app_of),
         ("docs/prefill.md", "page_of", page_of),
-        ("docs/web-function.md", "WebFunction", WebFunction),
+        ("docs/getting-started.md", "WebFunction", WebFunction),
     ],
 )
 def test_the_documented_signature_matches_the_real_one(page, name, target):
@@ -448,24 +441,6 @@ def test_the_documented_signature_matches_the_real_one(page, name, target):
 
     assert documented_parameters(block.code) == real_parameters(target)
     assert documented_defaults(block.code) == real_defaults(target)
-
-
-def test_the_documented_open_form_dataclass_matches_the_real_one():
-    block = next(item for item in fenced_blocks(ROOT / "docs/open-form.md")
-                 if item.language == "python"
-                 and item.code.startswith("@dataclass(frozen=True)"))
-    declared = ast.parse(block.code).body[0]
-    written = [(node.target.id,
-                None if node.value is None else ast.unparse(node.value))
-               for node in declared.body]
-    real = [(item.name,
-             None if item.default is MISSING else repr(item.default))
-            for item in fields(OpenForm)]
-
-    assert declared.name == "OpenForm"
-    assert [name for name, _ in written] == [name for name, _ in real]
-    assert written == [("target", None), ("hidden", "()")]
-    assert real == [("target", None), ("hidden", "()")]
 
 
 def test_the_readme_first_example_runs(client_factory):
