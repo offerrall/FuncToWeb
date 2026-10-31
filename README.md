@@ -11,6 +11,7 @@ people and agents, an application you mount inside FastAPI, and a page your own
 frontend opens in a modal.
 
 ```python
+# pip install func-to-web
 from func_to_web import run
 
 def divide(a: float, b: float) -> float:
