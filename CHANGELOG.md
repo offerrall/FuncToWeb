@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.8.0 - 2026-10-31
+
+### Added
+
+- An embedded page announces `busy`: `true` when Submit starts a run, uploads
+  included, and `false` when it ends, whatever the outcome. A failed upload or
+  a broken response announce no `error`, but they still close the bracket; a
+  form the browser rejects never opens one. `listen()` and `openModal()` take
+  `onBusy(busy)`, so a host can tuck a slow modal away and keep working.
+  Hosts that do not know the kind ignore it, as the protocol already said.
+
+### Changed
+
+- The README shows the `divide` form again under its example, by its address on
+  the documentation site so it also renders on PyPI. `docs/overview.md` drops
+  its copy, since the site's Overview page starts with the README.
+
+### Fixed
+
+- A Pillow image in mode `I` (32-bit integers) is returned again with Pillow
+  13, which no longer saves that mode as PNG: it is sent as 16-bit grayscale
+  (`I;16`), values above 65535 clipped. `I;16` images are now sent as they
+  are instead of being converted to RGB.
+- The test suite runs again with pytest-asyncio 1.4, which warns while
+  `asyncio_default_fixture_loop_scope` is unset; it is set to `"function"`.
+
 ## 2.7.6 - 2026-09-29
 
 ### Changed

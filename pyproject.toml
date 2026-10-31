@@ -63,6 +63,8 @@ Repository = "https://github.com/offerrall/FuncToWeb"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
+# pytest-asyncio 1.4 warns while it is unset, and every warning is an error.
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "error",
     # Raised inside Starlette's TestClient by anyio 4.15, not by FuncToWeb.

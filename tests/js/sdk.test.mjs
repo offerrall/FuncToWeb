@@ -937,6 +937,7 @@ test("listen ignores everything foreign to the protocol", () => {
         onResult: (outputs) => seen.push(outputs),
         onError: (text) => seen.push(text),
         onNavigate: (href) => seen.push(href),
+        onBusy: (busy) => seen.push(busy),
     });
 
     const foreign = [
@@ -951,6 +952,8 @@ test("listen ignores everything foreign to the protocol", () => {
         { v: 1, kind: "whatever" },
         { v: 1, kind: "result" },
         { v: 1, kind: "result", outputs: "not an array" },
+        { v: 1, kind: "busy" },
+        { v: 1, kind: "busy", busy: "yes" },
     ];
 
     for (const data of foreign) bus.send(frame.contentWindow, data);
@@ -995,17 +998,22 @@ test("listen reports every kind to its handler", () => {
         onResult: (outputs) => seen.push(["result", outputs]),
         onError: (text) => seen.push(["error", text]),
         onNavigate: (href) => seen.push(["navigate", href]),
+        onBusy: (busy) => seen.push(["busy", busy]),
     });
 
     bus.send(frame.contentWindow, message("ready"));
+    bus.send(frame.contentWindow, message("busy", { busy: true }));
     bus.send(frame.contentWindow, message("result", { outputs: OUTPUTS }));
     bus.send(frame.contentWindow, message("error", { message: "boom" }));
+    bus.send(frame.contentWindow, message("busy", { busy: false }));
     bus.send(frame.contentWindow, message("navigate", { href: "../edit_task/" }));
 
     assert.deepEqual(seen, [
         ["ready"],
+        ["busy", true],
         ["result", OUTPUTS],
         ["error", "boom"],
+        ["busy", false],
         ["navigate", "../edit_task/"],
     ]);
 });
@@ -1125,6 +1133,21 @@ test("the modal reports the result and the error to its own handlers", () => {
     announce(bus, modal, message("error", { message: "boom" }));
 
     assert.deepEqual(seen, [["result", OUTPUTS], ["error", "boom"]]);
+});
+
+
+test("the modal reports busy to its own handler and stays open", async () => {
+    const seen = [];
+    const { document, bus, modal } = opened({
+        onBusy: (busy) => seen.push(busy),
+    });
+
+    announce(bus, modal, message("busy", { busy: true }));
+    announce(bus, modal, message("busy", { busy: false }));
+
+    assert.deepEqual(seen, [true, false]);
+    assert.deepEqual(document.body.children, [modal.element]);
+    assert.equal(await state(modal.closed), PENDING);
 });
 
 

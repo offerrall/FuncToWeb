@@ -10,9 +10,6 @@ from func_to_web.outputs.image import is_figure, is_image
 PREFIX = "data:image/png;base64,"
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
-PILLOW_I_MODE = "ignore:Saving I mode images as PNG:DeprecationWarning"
-
-
 class FakeImage:
     mode = "RGB"
 
@@ -41,8 +38,7 @@ def decoded(output):
     return b64decode(output["value"][len(PREFIX):], validate=True)
 
 
-@pytest.mark.filterwarnings(PILLOW_I_MODE)
-@pytest.mark.parametrize("mode", ["1", "L", "LA", "I", "P", "RGB", "RGBA"])
+@pytest.mark.parametrize("mode", ["1", "L", "LA", "I", "I;16", "P", "RGB", "RGBA"])
 def test_supported_modes_produce_a_valid_png(mode):
     pil = pil_module()
     output = image_output(pil.new(mode, (3, 2)))
@@ -52,8 +48,7 @@ def test_supported_modes_produce_a_valid_png(mode):
     assert decoded(output).startswith(SIGNATURE)
 
 
-@pytest.mark.filterwarnings(PILLOW_I_MODE)
-@pytest.mark.parametrize("mode", ["1", "L", "LA", "I", "P", "RGB", "RGBA"])
+@pytest.mark.parametrize("mode", ["1", "L", "LA", "I;16", "P", "RGB", "RGBA"])
 def test_supported_modes_are_not_converted(mode):
     pil = pil_module()
     image = pil.new(mode, (3, 2))
@@ -61,6 +56,15 @@ def test_supported_modes_are_not_converted(mode):
     image_output(image)
 
     assert image.mode == mode
+
+
+def test_a_32_bit_image_is_encoded_as_16_bit_grayscale():
+    pil = pil_module()
+    output = image_output(pil.new("I", (3, 2), 70000))
+
+    with pil.open(BytesIO(decoded(output))) as reopened:
+        assert reopened.mode == "I;16"
+        assert reopened.getpixel((0, 0)) == 65535
 
 
 def test_unsupported_mode_is_encoded_as_rgb():

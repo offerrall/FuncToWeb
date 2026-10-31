@@ -77,14 +77,24 @@ if (completed) await refresh();
 
 `openModal()` returns `{element, iframe, close, closed}`: `close()` closes it
 from your code, and `closed` resolves when it closes by any route. `completed`
-is true if a run finished, and `results` holds the outputs of the last one. `onResult`, `onError` and
-`onClose` are called as it happens. `closeOnResult` is off by default, because
-most results (an image, a table, a download) are meant to be read inside the
-modal.
+is true if a run finished, and `results` holds the outputs of the last one. `onResult`, `onError`,
+`onBusy` and `onClose` are called as it happens. `closeOnResult` is off by
+default, because most results (an image, a table, a download) are meant to be
+read inside the modal.
+
+`onBusy(busy)` is called with `true` when Submit starts a run, uploads
+included, and with `false` when it ends, whatever the outcome, so a host can
+tuck the modal away while it works and bring it back when it is done:
+
+```javascript
+openModal("/tools/create_product", {
+    onBusy: (busy) => badge.hidden = !busy,
+});
+```
 
 For an `embed()` or an iframe of your own, `listen(iframe, handlers)` gives the
-same events: `onReady`, `onResult`, `onError`, `onNavigate` (an `OpenForm` is
-moving the page) and `onResize` (the content's height). It returns `cache`, the
+same events: `onReady`, `onResult`, `onError`, `onBusy`, `onNavigate` (an
+`OpenForm` is moving the page) and `onResize` (the content's height). It returns `cache`, the
 last `{ready, results, error}` received, and `stop()`.
 
 <details>
@@ -98,10 +108,13 @@ is not embedded:
  "outputs": [{"type": "text", "value": "Task 1 created"}]}
 ```
 
-`kind` is `ready`, `result`, `error`, `navigate` or `resize`. A receiver ignores
-a `v` or a `kind` it does not know, so a page can learn new kinds without
-breaking a host. `error` means a run failed (the `error` of the envelope),
-never a field the browser rejected as the user typed. `navigate` replaces
+`kind` is `ready`, `busy`, `result`, `error`, `navigate` or `resize`. A
+receiver ignores a `v` or a `kind` it does not know, so a page can learn new
+kinds without breaking a host. `error` means a run failed (the `error` of the
+envelope), never a field the browser rejected as the user typed. `busy` carries
+`"busy": true` before a run and `false` after it, sent from a `finally`: a
+failed upload or a broken response, which announce no `error`, still end the
+bracket, and a form the browser rejected never opens one. `navigate` replaces
 `result` when an `OpenForm` moves the page, since opening another form is not a
 result. `result` carries the same outputs `call()` returns, so there is one
 shape to learn.

@@ -128,6 +128,10 @@ async function load(options = {}) {
              turn += 1) {
             await Promise.resolve();
         }
+
+        // The result is drawn before the click's finally runs: a few more
+        // turns let the run close, busy false included.
+        for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
     }
 
     return page;
@@ -878,7 +882,8 @@ test("announces one result per run", async () => {
     await page.send([sse("result", { result: { type: "text", value: "3" } })]);
     await page.send([sse("result", { result: { type: "text", value: "7" } })]);
 
-    assert.deepEqual(kinds(page), ["ready", "result", "result"]);
+    assert.deepEqual(kinds(page),
+                     ["ready", "busy", "result", "busy", "busy", "result", "busy"]);
     assert.deepEqual(announced(page, "result").map((data) => data.outputs), [
         [{ type: "text", value: "3" }],
         [{ type: "text", value: "7" }],
@@ -932,7 +937,7 @@ test("announces the navigation of an open form instead of a result", async () =>
     ]);
 
     assert.deepEqual(page.assigned, ["../edit_task/?prefill=1"]);
-    assert.deepEqual(kinds(page), ["ready", "navigate"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "navigate", "busy"]);
     assert.deepEqual(announced(page, "navigate"), [{
         v: 1,
         kind: "navigate",
@@ -942,7 +947,37 @@ test("announces the navigation of an open form instead of a result", async () =>
 });
 
 
-test("announces nothing when the envelope is malformed", async () => {
+test("brackets a run between busy true and busy false", async () => {
+    const page = await load({ embedded: true });
+
+    await page.send([sse("result", { result: { type: "text", value: "3" } })]);
+
+    assert.deepEqual(kinds(page), ["ready", "busy", "result", "busy"]);
+    assert.deepEqual(announced(page, "busy"), [
+        { v: 1, kind: "busy", slug: "add", busy: true },
+        { v: 1, kind: "busy", slug: "add", busy: false },
+    ]);
+});
+
+
+test("closes the busy bracket when an upload fails", async () => {
+    const completed = [];
+    const page = await load({
+        embedded: true,
+        form: { uploads: [upload(completed, "a.txt", 10)] },
+    });
+
+    xhr.scenarios.push({ outcome: "error" });
+
+    await page.submit.click();
+
+    assert.equal(page.calls.length, 0);
+    assert.deepEqual(announced(page, "busy").map((data) => data.busy),
+                     [true, false]);
+});
+
+
+test("announces no result when the envelope is malformed", async () => {
     const page = await load({ embedded: true });
 
     await page.send([sse("result", {})]);
@@ -950,21 +985,21 @@ test("announces nothing when the envelope is malformed", async () => {
         sse("result", { result: { type: "text", value: "x" }, error: "boom" }),
     ]);
 
-    assert.deepEqual(kinds(page), ["ready"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "busy", "busy", "busy"]);
 });
 
 
-test("announces nothing when an output cannot be drawn", async () => {
+test("announces no result when an output cannot be drawn", async () => {
     const page = await load({ embedded: true });
 
     await page.send([sse("result", { result: { type: "unknown", value: "x" } })]);
 
     assert.equal(page.message(), INVALID);
-    assert.deepEqual(kinds(page), ["ready"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
 });
 
 
-test("announces nothing when the request itself fails", async () => {
+test("announces no result when the request itself fails", async () => {
     const page = await load({ embedded: true });
 
     page.response = new Error("offline");
@@ -972,17 +1007,17 @@ test("announces nothing when the request itself fails", async () => {
     await page.submit.click();
 
     assert.equal(page.message(), INVALID);
-    assert.deepEqual(kinds(page), ["ready"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
 });
 
 
-test("announces nothing when the stream carries no answer", async () => {
+test("announces no result when the stream carries no answer", async () => {
     const page = await load({ embedded: true });
 
     await page.send([sse("start", {})]);
 
     assert.equal(page.message(), INVALID);
-    assert.deepEqual(kinds(page), ["ready"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
 });
 
 
@@ -1085,7 +1120,7 @@ test("autorun announces its result to a host like any other run", async () => {
         chunks: [sse("result", { result: { type: "text", value: "done" } })],
     });
 
-    assert.deepEqual(kinds(page), ["ready", "result"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "result", "busy"]);
 });
 
 test("autorun uploads what the form carries before invoking", async () => {

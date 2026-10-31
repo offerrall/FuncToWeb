@@ -4,8 +4,6 @@
 for `a` and `b`, validation of both, and the result or the error on the same
 page.
 
-![The divide form with its result](images/divide.png)
-
 ## One function, four ways to use it
 
 The function you wrote is, at the same time:

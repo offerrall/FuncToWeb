@@ -3,7 +3,7 @@ from base64 import b64encode
 from io import BytesIO
 from typing import Any, TypedDict
 
-PNG_MODES: frozenset[str] = frozenset({"1", "L", "LA", "I", "P", "RGB", "RGBA"})
+PNG_MODES: frozenset[str] = frozenset({"1", "L", "LA", "I;16", "P", "RGB", "RGBA"})
 
 
 class ImageOutput(TypedDict):
@@ -28,7 +28,11 @@ def is_image(value: Any) -> bool:
 
 
 def image_output(image: Any) -> ImageOutput:
-    if image.mode not in PNG_MODES:
+    # Pillow 13 no longer saves 32-bit "I" as PNG; 16-bit grayscale is the
+    # closest it does, with values above 65535 clipped.
+    if image.mode == "I":
+        image = image.convert("I;16")
+    elif image.mode not in PNG_MODES:
         image = image.convert("RGB")
 
     buffer = BytesIO()

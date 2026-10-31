@@ -480,7 +480,7 @@ function announced(data) {
 export function listen(iframe, handlers = {}) {
     const {
         onReady = null, onResult = null, onError = null, onNavigate = null,
-        onResize = null,
+        onResize = null, onBusy = null,
     } = handlers;
 
     const cache = { ready: false, results: null, error: null };
@@ -514,6 +514,9 @@ export function listen(iframe, handlers = {}) {
         } else if (message.kind === "resize") {
             if (!Number.isSafeInteger(message.height) || message.height <= 0) return;
             if (onResize !== null) onResize(message.height);
+        } else if (message.kind === "busy") {
+            if (typeof message.busy !== "boolean") return;
+            if (onBusy !== null) onBusy(message.busy);
         }
     }
 
@@ -545,7 +548,7 @@ function cssLength(value, name) {
 export function openModal(url, options = {}) {
     const {
         onClose = null, closeOnResult = false, onResult = null, onError = null,
-        width = null, height = null,
+        onBusy = null, width = null, height = null,
         autoHeight = true,
         ...rest
     } = options;
@@ -604,6 +607,9 @@ export function openModal(url, options = {}) {
         },
         onError(message) {
             if (onError !== null) onError(message);
+        },
+        onBusy(busy) {
+            if (onBusy !== null) onBusy(busy);
         },
     });
 

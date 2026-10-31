@@ -19,6 +19,8 @@ def divide(a: float, b: float) -> float:
 run(divide)  # http://127.0.0.1:8000
 ```
 
+![The divide form with its result](https://offerrall.github.io/func-to-web/images/divide.png)
+
 The full documentation is at https://offerrall.github.io/func-to-web/.
 
 ## Documentation

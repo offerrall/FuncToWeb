@@ -232,24 +232,32 @@ submit.addEventListener("click", async () => {
         return;
     }
 
-    const uploads = form.uploads();
-
-    if (uploads.length > 0) {
-        submit.disabled = true;
-
-        const uploaded = await runUploads(uploads);
-
-        submit.disabled = false;
-
-        if (!uploaded) return;
-    }
-
-    submit.disabled = true;
+    // busy brackets everything the click starts, uploads included, and its
+    // false goes out whatever the outcome, so a host is never left waiting.
+    emit("busy", { busy: true });
 
     try {
-        await run(form.read());
+        const uploads = form.uploads();
+
+        if (uploads.length > 0) {
+            submit.disabled = true;
+
+            const uploaded = await runUploads(uploads);
+
+            submit.disabled = false;
+
+            if (!uploaded) return;
+        }
+
+        submit.disabled = true;
+
+        try {
+            await run(form.read());
+        } finally {
+            submit.disabled = false;
+        }
     } finally {
-        submit.disabled = false;
+        emit("busy", { busy: false });
     }
 });
 
