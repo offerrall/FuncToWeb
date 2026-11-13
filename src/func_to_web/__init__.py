@@ -16,6 +16,7 @@ from pytypehint import (
     SchemaValueError,
     Slider,
     Step,
+    immutable,
 )
 from pytypehintweb import COLOR_PATTERN, EMAIL_PATTERN, Color, Email
 
@@ -57,6 +58,7 @@ __all__ = [
     "Rows",
     "Extra",
     "OptionalToggle",
+    "immutable",
     "Color",
     "Email",
     "COLOR_PATTERN",

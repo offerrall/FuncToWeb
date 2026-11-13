@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.10.0 - 2026-11-13
+
+### Added
+
+- A parameter may be a tuple. `tuple[T, ...]` is a list in the form, with
+  `Min`/`Max` counting its items, and a fixed tuple whose positions are all the
+  same type, such as `tuple[float, float, float]`, is a list of exactly that
+  size. The function receives a real `tuple`. A tuple whose positions differ
+  is refused when the function is prepared.
+- `immutable` is exported from `func_to_web`: an `@immutable` model is a
+  parameter like any dataclass, validated before the function runs, and holds
+  its collections in tuples.
+
+### Changed
+
+- The form layer is `pytypehintweb == 1.4.0`. Stepping an integer field past
+  JavaScript's safe range is no longer taken, and the browser runtime it serves
+  is about 6,500 bytes smaller.
+
 ## 2.9.0 - 2026-11-13
 
 ### Changed

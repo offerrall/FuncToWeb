@@ -25,7 +25,9 @@ the reason.
 | `date`, `time` | a date or time picker |
 | an `Enum` or `Literal[...]` | a dropdown |
 | `list[T]` | a list of fields, with add and remove |
-| a dataclass | its fields, nested; the function gets a real instance |
+| `tuple[T, ...]` | the same list; the function gets a real `tuple` |
+| `tuple[T, T, T]` | a list of exactly that many fields, all of one type |
+| a dataclass or an `@immutable` model | its fields, nested; the function gets a real instance |
 | `T \| None` | the field with a toggle that decides whether it is sent |
 | `A \| B` | a choice between the shapes of each branch |
 | `Color`, `Email` | a `str` with a color picker, or checked as an email |
@@ -43,6 +45,39 @@ def average(
 
 Between 1 and 20 values, each from 0 to 100: the outer `Min`/`Max` count the
 list, the inner ones check each item.
+
+## Tuples and immutable models
+
+A tuple is a list whose size can be part of the type. `tuple[T, ...]` takes
+`Min`/`Max` like a list, and a fixed tuple whose positions are all the same
+type is a list of exactly that size: with a default its rows are there and can
+be neither added nor removed, and without one the user adds them.
+
+`@immutable` declares a dataclass that validates itself and cannot change
+afterwards. It holds its collections in tuples, and as a parameter it is a
+nested form like any dataclass:
+
+```python
+from typing import Annotated
+
+from func_to_web import Max, Min, immutable
+
+Channel = Annotated[float, Min(0.0), Max(1.0)]
+
+
+@immutable
+class Layer:
+    name: Annotated[str, Min(1)]
+    color: tuple[Channel, Channel, Channel] = (0.0, 0.0, 1.0)
+    tags: tuple[str, ...] = ()
+
+
+def describe(layer: Layer) -> str:
+    return f"{layer.name}: {layer.color}"
+```
+
+`describe` receives a real `Layer`, already validated, whose `color` and `tags`
+are real tuples.
 
 ## Constraints and presentation
 
@@ -116,4 +151,6 @@ The complete catalog of types and atoms is in
 - A file field takes no text atoms (`Pattern`, `Placeholder`, `Rows`...).
 - An `int` beyond JavaScript's safe range (±2⁵³−1), a dataclass with no fields
   and a dataclass that contains itself are rejected when the application is
-  built.
+  built. So is a `float` default so small or so large that JavaScript writes it
+  with an exponent (`1e-7`, `1e21`), on a field without `Choices`.
+- A tuple whose positions differ, such as `tuple[int, str]`, has no form.

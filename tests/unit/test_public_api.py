@@ -61,6 +61,7 @@ PYTYPEHINT_NAMES = (
     "Rows",
     "Extra",
     "OptionalToggle",
+    "immutable",
     "SchemaTypeError",
     "SchemaValueError",
 )
