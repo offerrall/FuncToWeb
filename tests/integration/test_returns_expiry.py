@@ -9,8 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import func_to_web.web.returned_files as returns_module
-import func_to_web.web.upload as upload_module
+import func_to_web.web.storage as storage_module
 from func_to_web import Download, FileHint, app_of
 from func_to_web.web.pending import (
     PART_SUFFIX,
@@ -161,7 +160,7 @@ def test_a_return_exactly_at_the_ttl_has_expired(returned_file,
     expired = returned_file("r.bin", age=60)
     set_returns_ttl(60)
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert not expired.exists()
 
@@ -170,7 +169,7 @@ def test_a_return_just_under_the_ttl_stays(returned_file, set_returns_ttl):
     live = returned_file("r.bin", age=59)
     set_returns_ttl(60)
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert live.is_file()
 
@@ -194,7 +193,7 @@ def test_the_sweep_deletes_only_what_store_wrote(returns_dir, returned_file,
                  age=120),
     ]
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert not expired.exists()
     assert live.is_file()
@@ -211,7 +210,7 @@ def test_the_sweep_deletes_a_stale_partial_of_its_own(returns_dir,
     partial = returns_dir / f"{uuid4().hex}.{dated}.{uuid4().hex}{PART_SUFFIX}"
     partial.write_bytes(b"half")
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert not partial.exists()
 
@@ -222,7 +221,7 @@ def test_the_sweep_keeps_a_fresh_partial(returns_dir, set_returns_ttl):
     partial = returns_dir / f"{uuid4().hex}.{dated}.{uuid4().hex}{PART_SUFFIX}"
     partial.write_bytes(b"half")
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert partial.read_bytes() == b"half"
 
@@ -232,7 +231,7 @@ def test_the_sweep_keeps_a_partial_of_somebody_else(returns_dir,
     set_returns_ttl(60)
     theirs = stranger(returns_dir, f"backup.{'z' * 32}{PART_SUFFIX}", age=120)
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert theirs.read_bytes() == b"not ours"
 
@@ -245,7 +244,7 @@ def test_the_sweep_survives_an_entry_it_cannot_delete(returns_dir,
     (returns_dir / f"{uuid4().hex}.{dated}").mkdir()
     expired = returned_file("gone.bin", age=120)
 
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert not expired.exists()
     assert len(names_in(returns_dir)) == 1
@@ -292,7 +291,7 @@ def test_without_a_ttl_nothing_is_ever_swept(client_factory, returned_file,
     ancient = returned_file("old.bin", age=60 * 60 * 24 * 365)
 
     client_factory(naming("r.bin"), returns_ttl=None)
-    returns_module.sweep()
+    storage_module.RETURNS.sweep()
 
     assert names_in(returns_dir) == [ancient.name]
 
@@ -303,7 +302,7 @@ def test_the_sweeper_starts_for_the_returns_ttl_alone(client_factory,
 
     assert len(sweeper_threads) == 1
     assert sweeper_threads[0].daemon is True
-    assert sweeper_threads[0].target is upload_module._sweeping
+    assert sweeper_threads[0].target is storage_module._sweeping
 
 
 def test_the_sweeper_starts_for_the_uploads_ttl_alone(client_factory,
@@ -357,7 +356,7 @@ def test_two_routers_with_the_same_returns_ttl_settle_it_silently(
     # filterwarnings=error, so a warning here would fail the test.
     process(60, 60)
 
-    assert returns_module._ttl == 60
+    assert storage_module.RETURNS.ttl == 60
     assert len(sweeper_threads) == 1
 
 
@@ -365,7 +364,7 @@ def test_a_later_router_asking_for_another_returns_ttl_is_told_so(process):
     with pytest.warns(UserWarning, match=r"returns_ttl=7200 is ignored"):
         process(3600, 7200)
 
-    assert returns_module._ttl == 3600
+    assert storage_module.RETURNS.ttl == 3600
 
 
 def test_a_later_router_asking_for_no_returns_ttl_is_told_so(process):
@@ -373,7 +372,7 @@ def test_a_later_router_asking_for_no_returns_ttl_is_told_so(process):
                       match=r"returns_ttl=None is ignored.*returns_ttl=3600"):
         process(3600, None)
 
-    assert returns_module._ttl == 3600
+    assert storage_module.RETURNS.ttl == 3600
 
 
 def test_the_warning_names_the_router_that_asked(process):
@@ -415,7 +414,7 @@ def test_a_space_without_downloads_settles_nothing(client_factory, scalar,
     client_factory(scalar, returns_ttl=None)
     client_factory(naming("r.bin"), returns_ttl=60)
 
-    assert returns_module._ttl == 60
+    assert storage_module.RETURNS.ttl == 60
     assert len(sweeper_threads) == 1
 
 
@@ -436,7 +435,7 @@ def test_the_router_refuses_a_returns_ttl_of_another_type(scalar, value):
 def test_the_router_normalizes_a_returns_timedelta(client_factory):
     client_factory(naming("r.bin"), returns_ttl=timedelta(hours=2))
 
-    assert returns_module._ttl == 7200
+    assert storage_module.RETURNS.ttl == 7200
 
 
 def test_checked_ttl_names_the_parameter_it_was_asked_about():

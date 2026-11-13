@@ -28,13 +28,11 @@ from func_to_web.templates.theme import Theme, checked_theme
 from func_to_web.web.execution import execute
 from func_to_web.web.messages import without_storage_paths
 from func_to_web.web.returned_files import stored_return
+from func_to_web.web.storage import DEFAULT_TTL, RETURNS, UPLOADS
 from func_to_web.web.stream import stream
 from func_to_web.web.upload import (
-    DEFAULT_TTL,
     checked_limit,
     checked_ttl,
-    start_pending,
-    start_returns,
     stored_file,
     uploader,
 )
@@ -231,7 +229,7 @@ def app_of(
 
     if web_functions.uploads:
         routes.append(Route("/upload", uploader(limit), methods=["POST"]))
-        start_pending(uploads_root, ttl)
+        UPLOADS.adopt(uploads_root, ttl)
 
     if web_functions.returns:
         def returned(request: Request) -> FileResponse:
@@ -245,7 +243,7 @@ def app_of(
 
         routes.append(Route("/returns/{reference}", returned,
                             methods=["GET"]))
-        start_returns(returns_root, returns)
+        RETURNS.adopt(returns_root, returns)
 
     def documentation(request: Request) -> PlainTextResponse:
         return PlainTextResponse(web_functions.document)

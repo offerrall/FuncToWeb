@@ -582,8 +582,7 @@ def test_a_failed_build_leaves_no_files_and_no_global_state(
     uploads_dir,
     returns_dir,
 ):
-    import func_to_web.web.returned_files as returned_files
-    import func_to_web.web.upload as upload
+    from func_to_web.web.storage import RETURNS, UPLOADS
 
     def tree():
         return sorted(
@@ -615,5 +614,5 @@ def test_a_failed_build_leaves_no_files_and_no_global_state(
     assert list(returns_dir.iterdir()) == []
     assert RESERVED_SLUGS == before_reserved
     assert SLUG_PATTERN.pattern == before_pattern
-    assert upload.UPLOADS_DIR == uploads_dir
-    assert returned_files.RETURNS_DIR == returns_dir
+    assert UPLOADS.directory == uploads_dir
+    assert RETURNS.directory == returns_dir

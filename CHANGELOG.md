@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.9.0 - 2026-11-13
+
+### Changed
+
+- The form layer is `pytypehintweb == 1.3.0`, which brings `pytypehint` 1.3.0.
+  A parameter may be an `@immutable` model. A `float` default that JavaScript
+  writes in exponent notation (`1e-7`, `1e21`) and a dataclass that contains
+  itself are refused when the function is prepared, with the field's path,
+  instead of failing in the browser. A tuple parameter is still refused.
+- The page uses the stream client of `sdk.js` instead of a copy of its own, so
+  it loads `sdk.js` too. Its error cards carry that client's messages (`the
+  stream ended with no result event`, `the connection to ./invoke-stream
+  failed`, the server's `detail` for a refused request) where they used to say
+  `Invalid server response`; an output that cannot be drawn still says so.
+- `fileReference()` in `sdk.js` follows the rule of the file widget: the
+  extension is lowercased, and only 1 to 16 ASCII letters and digits after the
+  last dot count as one. `Report.CSV` ends in `.csv`, and anything else after
+  the dot is name text.
+- Uploads and returned files share one implementation of what they have in
+  common — the directory and TTL settled by the first router, the sweeper
+  thread and the partial file a write goes through — in `web/storage.py`. What
+  a name means and what a sweep may delete stay with each storage. The public
+  API, the names on disk and the warnings are unchanged. Publishing a returned
+  file retries its final rename like an upload does.
+
+### Fixed
+
+- A run whose connection dropped before its result left the page showing
+  "Running…" for good. It now ends in an error card, with what was printed
+  kept and Submit enabled again. A result that already arrived is drawn even if
+  the connection drops before the stream closes; `callStream()` returns at the
+  result event.
+- `call()`, `callStream()`, `events()`, `upload()` and `doc()` let a network
+  failure through as the browser's own `TypeError`. They throw `FuncToWebError`
+  with the original as `cause`, as the documentation said. An abort the caller
+  asked for still passes through as it is.
+- After an `OpenForm` moved the index to another function, the sidebar kept
+  the first one highlighted and clicking it did nothing. The sidebar and the
+  address now follow the page that is shown.
+
 ## 2.8.0 - 2026-10-31
 
 ### Added

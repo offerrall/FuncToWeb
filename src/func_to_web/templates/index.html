@@ -6,32 +6,15 @@
 <link rel="stylesheet" href="__PREFIX__/static/widgets.css">
 <style>
 
-    :root {
-        --ftw-color-scheme-light: light;
-        --ftw-color-scheme-dark: dark;
-    }
-
-    :root:not([data-pth-theme]) {
-        --ftw-color-scheme: var(--ftw-color-scheme-light);
-    }
+    html { color-scheme: light; }
 
     @media (prefers-color-scheme: dark) {
-        :root:not([data-pth-theme]) {
-            --ftw-color-scheme: var(--ftw-color-scheme-dark);
-        }
+        html:not([data-pth-theme]) { color-scheme: dark; }
     }
 
-    :root[data-pth-theme="light"] {
-        --ftw-color-scheme: var(--ftw-color-scheme-light);
-    }
-
-    :root[data-pth-theme="dark"] {
-        --ftw-color-scheme: var(--ftw-color-scheme-dark);
-    }
+    html[data-pth-theme="dark"] { color-scheme: dark; }
 
     * { box-sizing: border-box; }
-
-    html { color-scheme: var(--ftw-color-scheme); }
 
     body {
         margin: 0;
@@ -189,20 +172,41 @@ const links = [...document.querySelectorAll("a[data-slug]")];
 
 if (links.length === 1) document.querySelector("nav").remove();
 
-function show(slug) {
-    const link = links.find((l) => l.dataset.slug === slug) ?? links[0];
-
+function mark(link) {
     for (const other of links) other.classList.toggle("active", other === link);
 
     link.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function show(slug) {
+    const link = links.find((l) => l.dataset.slug === slug) ?? links[0];
+
+    mark(link);
 
     const src = `__PREFIX__/${link.dataset.slug}/`;
 
     const frame = view.contentWindow;
 
-    if (frame === null) view.src = src;
-    else if (!frame.location.href.endsWith(src)) frame.location.replace(src);
+    if (!frame.location.href.endsWith(src)) frame.location.replace(src);
 }
+
+// An OpenForm moves the iframe to another function without touching the hash.
+// Every page announces itself with `ready`, so the sidebar and the hash follow
+// it; replaceState fires no hashchange, which would reload the prefilled page.
+addEventListener("message", (event) => {
+    if (event.source !== view.contentWindow) return;
+
+    const message = event.data;
+
+    if (message?.v !== 1 || message.kind !== "ready") return;
+
+    const link = links.find((l) => l.dataset.slug === message.slug);
+
+    if (link === undefined || link.classList.contains("active")) return;
+
+    mark(link);
+    history.replaceState(null, "", `#${link.dataset.slug}`);
+});
 
 addEventListener("hashchange", () => show(location.hash.slice(1)));
 show(location.hash.slice(1));

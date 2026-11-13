@@ -1,6 +1,9 @@
 export class FuncToWebError extends Error {
-    constructor(message, { status = null, url = null, envelope = null } = {}) {
-        super(message);
+    constructor(
+        message,
+        { status = null, url = null, envelope = null, ...options } = {},
+    ) {
+        super(message, options);
 
         this.name = "FuncToWebError";
         this.status = status;
@@ -11,6 +14,8 @@ export class FuncToWebError extends Error {
 
 
 const FILE_SLUG_LIMIT = 15;
+
+const FREE_EXTENSION = /\.[a-z0-9]{1,16}$/;
 
 const MODAL_STYLE_ID = "functoweb-modal-style";
 
@@ -123,8 +128,7 @@ function uuid() {
 
 
 export function fileReference(filename) {
-    const dot = filename.lastIndexOf(".");
-    const extension = dot > 0 ? filename.slice(dot) : "";
+    const extension = FREE_EXTENSION.exec(filename.toLowerCase())?.[0] ?? "";
     const slug = asciiSlug(filename.slice(0, filename.length - extension.length));
 
     return slug === "" ? `${uuid()}${extension}` : `${slug}-${uuid()}${extension}`;
@@ -137,6 +141,18 @@ function trimmed(url) {
     }
 
     return url.replace(/\/+$/u, "");
+}
+
+
+async function reached(url, signal, pending) {
+    try {
+        return await pending;
+    } catch (cause) {
+        if (signal?.aborted) throw cause;
+
+        throw new FuncToWebError(`the connection to ${url} failed`,
+                                 { url, cause });
+    }
 }
 
 
@@ -159,14 +175,14 @@ function parseEvent(block) {
 }
 
 
-async function* sent(response) {
+async function* sent(response, url, signal) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
     let buffer = "";
 
     for (;;) {
-        const { done, value } = await reader.read();
+        const { done, value } = await reached(url, signal, reader.read());
 
         if (done) break;
 
@@ -224,10 +240,6 @@ async function envelopeOf(response, url) {
         return payload;
     }
 
-    if (response.ok && isRecord(payload)) {
-        return payload;
-    }
-
     throw new FuncToWebError(refusal(response, payload), {
         status: response.status,
         url,
@@ -276,7 +288,8 @@ function posted(url, args, signal) {
 
 export async function call(url, args = {}, { signal = null } = {}) {
     const target = `${trimmed(url)}/invoke`;
-    const response = await globalThis.fetch(target, posted(target, args, signal));
+    const response = await reached(
+        target, signal, globalThis.fetch(target, posted(target, args, signal)));
 
     return outputsOf(await envelopeOf(response, target),
                      { url: target, status: response.status });
@@ -289,22 +302,21 @@ export async function* events(url, args = {}, { signal = null } = {}) {
 
     options.headers.Accept = "text/event-stream";
 
-    const response = await globalThis.fetch(target, options);
+    const response = await reached(
+        target, signal, globalThis.fetch(target, options));
 
     if (!response.ok || response.body === null || response.body === undefined) {
         throw new FuncToWebError(refusal(response, await decoded(response)),
                                  { url: target, status: response.status });
     }
 
-    yield* sent(response);
+    yield* sent(response, target, signal);
 }
 
 
 export async function callStream(url, args = {}, options = {}) {
     const { onStart = null, onPrint = null, signal = null } = options;
     const target = `${trimmed(url)}/invoke-stream`;
-
-    let envelope = null;
 
     for await (const event of events(url, args, { signal })) {
         if (event.name === "start") {
@@ -313,17 +325,13 @@ export async function callStream(url, args = {}, options = {}) {
             if (onPrint !== null && typeof event.data?.text === "string") {
                 onPrint(event.data.text);
             }
-        } else if (event.name === "result") {
-            envelope = event.data;
+        } else if (event.name === "result" && event.data !== null) {
+            return outputsOf(event.data, { url: target, status: 200 });
         }
     }
 
-    if (envelope === null) {
-        throw new FuncToWebError("the stream ended with no result event",
-                                 { url: target });
-    }
-
-    return outputsOf(envelope, { url: target, status: 200 });
+    throw new FuncToWebError("the stream ended with no result event",
+                             { url: target });
 }
 
 
@@ -332,7 +340,7 @@ export async function upload(spaceUrl, file, options = {}) {
     const target = `${trimmed(spaceUrl)}/upload`;
     const chosen = reference ?? fileReference(file.name ?? "file");
 
-    const response = await globalThis.fetch(target, {
+    const response = await reached(target, signal, globalThis.fetch(target, {
         method: "POST",
         headers: {
             "Content-Type": "application/octet-stream",
@@ -340,7 +348,7 @@ export async function upload(spaceUrl, file, options = {}) {
         },
         body: file,
         signal,
-    });
+    }));
 
     const payload = await decoded(response);
 
@@ -356,10 +364,10 @@ export async function upload(spaceUrl, file, options = {}) {
 export async function doc(spaceUrl, { signal = null } = {}) {
     const target = `${trimmed(spaceUrl)}/doc`;
 
-    const response = await globalThis.fetch(target, {
+    const response = await reached(target, signal, globalThis.fetch(target, {
         headers: { Accept: "text/plain" },
         signal,
-    });
+    }));
 
     if (!response.ok) {
         throw new FuncToWebError(refusal(response, await decoded(response)),
@@ -605,12 +613,8 @@ export function openModal(url, options = {}) {
             if (onResult !== null) onResult(outputs);
             if (closeOnResult) close();
         },
-        onError(message) {
-            if (onError !== null) onError(message);
-        },
-        onBusy(busy) {
-            if (onBusy !== null) onBusy(busy);
-        },
+        onError,
+        onBusy,
     });
 
     function escaped(event) {

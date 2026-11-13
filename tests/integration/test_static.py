@@ -38,8 +38,6 @@ WIDGET_ASSETS = (
 
 ALL_ASSETS = OWN_ASSETS + WIDGET_ASSETS
 
-CRAWLED_ASSETS = tuple(name for name in ALL_ASSETS if name != "sdk.js")
-
 EXPECTED_TYPES = {
     ".js": "text/javascript",
     ".css": "text/css",
@@ -332,8 +330,8 @@ def test_crawl_of_the_real_graph_reaches_every_page_asset(client_factory,
         for url in visited
     }
 
-    assert reached == set(CRAWLED_ASSETS)
-    assert len(visited) == 22
+    assert reached == set(ALL_ASSETS)
+    assert len(visited) == 23
 
 
 def refusing_resolve(root):

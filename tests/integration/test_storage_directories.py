@@ -6,11 +6,11 @@ import pytest
 from shared import carries
 from func_to_web import app_of
 from func_to_web.config import RETURNS_VARIABLE, UPLOADS_VARIABLE
-from func_to_web.web import returned_files
 from func_to_web.web import upload as upload_module
 from func_to_web.web.messages import without_storage_paths
 from func_to_web.web.pending import now, pending_of, stamped_of
 from func_to_web.web.references import RETURNS_MARKER
+from func_to_web.web.storage import RETURNS, UPLOADS
 
 WRONG_TYPES = [3, 3.5, True, b"/srv/uploads", ["/srv/uploads"], object()]
 
@@ -54,7 +54,7 @@ def test_the_uploads_argument_beats_the_variable_and_the_default(
 
     uploading(uploads_dir=tmp_path / "argument")
 
-    assert upload_module.UPLOADS_DIR == tmp_path / "argument"
+    assert UPLOADS.directory == tmp_path / "argument"
 
 
 def test_the_uploads_variable_beats_the_default(uploading, tmp_path,
@@ -64,7 +64,7 @@ def test_the_uploads_variable_beats_the_default(uploading, tmp_path,
 
     uploading()
 
-    assert upload_module.UPLOADS_DIR == tmp_path / "variable"
+    assert UPLOADS.directory == tmp_path / "variable"
 
 
 def test_the_uploads_default_is_used_when_nothing_asks(uploading, tmp_path,
@@ -74,7 +74,7 @@ def test_the_uploads_default_is_used_when_nothing_asks(uploading, tmp_path,
 
     uploading()
 
-    assert upload_module.UPLOADS_DIR == tmp_path / "default"
+    assert UPLOADS.directory == tmp_path / "default"
 
 
 def test_the_returns_argument_beats_the_variable_and_the_default(
@@ -85,7 +85,7 @@ def test_the_returns_argument_beats_the_variable_and_the_default(
 
     returning(returns_dir=tmp_path / "argument")
 
-    assert returned_files.RETURNS_DIR == tmp_path / "argument"
+    assert RETURNS.directory == tmp_path / "argument"
 
 
 def test_the_returns_variable_beats_the_default(returning, tmp_path,
@@ -95,7 +95,7 @@ def test_the_returns_variable_beats_the_default(returning, tmp_path,
 
     returning()
 
-    assert returned_files.RETURNS_DIR == tmp_path / "variable"
+    assert RETURNS.directory == tmp_path / "variable"
 
 
 def test_the_returns_default_is_used_when_nothing_asks(returning, tmp_path,
@@ -105,7 +105,7 @@ def test_the_returns_default_is_used_when_nothing_asks(returning, tmp_path,
 
     returning()
 
-    assert returned_files.RETURNS_DIR == tmp_path / "default"
+    assert RETURNS.directory == tmp_path / "default"
 
 
 @pytest.mark.parametrize("value", WRONG_TYPES)
@@ -182,7 +182,7 @@ def test_a_directory_that_cannot_be_created_fails_the_build(file_function,
 def test_a_string_is_accepted(uploading, tmp_path):
     uploading(uploads_dir=str(tmp_path / "as-a-string"))
 
-    assert upload_module.UPLOADS_DIR == tmp_path / "as-a-string"
+    assert UPLOADS.directory == tmp_path / "as-a-string"
 
 
 def test_a_relative_directory_is_made_absolute(uploading, tmp_path,
@@ -191,8 +191,8 @@ def test_a_relative_directory_is_made_absolute(uploading, tmp_path,
 
     uploading(uploads_dir="relative-uploads")
 
-    assert upload_module.UPLOADS_DIR.is_absolute()
-    assert upload_module.UPLOADS_DIR == (Path.cwd() / "relative-uploads"
+    assert UPLOADS.directory.is_absolute()
+    assert UPLOADS.directory == (Path.cwd() / "relative-uploads"
                                          ).resolve()
 
 
@@ -231,7 +231,7 @@ def test_a_later_router_asking_for_another_uploads_dir_is_told_it_was_ignored(
     with pytest.warns(UserWarning, match=r"uploads_dir=.* is ignored"):
         client = uploading(uploads_dir=second)
 
-    assert upload_module.UPLOADS_DIR == first
+    assert UPLOADS.directory == first
     assert send(client, "a.txt", b"hello").status_code == 200
     assert names_in(second) == []
     assert len(names_in(first)) == 1
@@ -248,7 +248,7 @@ def test_a_later_router_asking_for_another_returns_dir_is_told_it_was_ignored(
     with pytest.warns(UserWarning, match=r"returns_dir=.* is ignored"):
         client = returning(returns_dir=second)
 
-    assert returned_files.RETURNS_DIR == first
+    assert RETURNS.directory == first
 
     result = client.post("/bundle/invoke", json={}).json()["result"]
 
@@ -264,7 +264,7 @@ def test_two_routers_with_the_same_directory_settle_it_silently(uploading,
     uploading(uploads_dir=same)
     uploading(uploads_dir=str(same))
 
-    assert upload_module.UPLOADS_DIR == same
+    assert UPLOADS.directory == same
 
 
 def test_one_piece_of_prose_covers_the_directory_and_the_ttl(uploading,
@@ -331,7 +331,7 @@ def test_a_custom_uploads_dir_serves_every_consumer(uploading, uploads_dir,
     expired = custom / pending_of("gone.txt", now() - 120)
     expired.write_bytes(b"old")
 
-    upload_module.sweep()
+    UPLOADS.sweep()
 
     assert not expired.exists()
     assert names_in(custom) == ["a.txt"]
@@ -372,7 +372,7 @@ def test_a_custom_returns_dir_serves_every_consumer(returning, returns_dir,
     expired = custom / f"{'0' * 32}.{dated}"
     expired.write_bytes(b"old")
 
-    returned_files.sweep()
+    RETURNS.sweep()
 
     assert not expired.exists()
     assert names_in(custom) == [result["value"]]

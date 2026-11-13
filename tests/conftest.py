@@ -46,8 +46,7 @@ class RecordedThread:
 
 @pytest.fixture(autouse=True)
 def isolated_storage(tmp_path, monkeypatch):
-    import func_to_web.web.returned_files as returned_files
-    import func_to_web.web.upload as upload
+    import func_to_web.web.storage as storage
 
     uploads = tmp_path / "uploads"
     returns = tmp_path / "returns"
@@ -60,14 +59,14 @@ def isolated_storage(tmp_path, monkeypatch):
     # the routers that do, which settle the directory for the process.
     monkeypatch.setenv("FUNCTOWEB_UPLOADS_DIR", str(uploads))
     monkeypatch.setenv("FUNCTOWEB_RETURNS_DIR", str(returns))
-    monkeypatch.setattr(upload, "UPLOADS_DIR", uploads)
-    monkeypatch.setattr(returned_files, "RETURNS_DIR", returns)
-    monkeypatch.setattr(upload, "_ttl", upload.DEFAULT_TTL)
-    monkeypatch.setattr(upload, "_adopted", False)
-    monkeypatch.setattr(upload, "_sweeper", None)
-    monkeypatch.setattr(upload, "Thread", partial(RecordedThread, started))
-    monkeypatch.setattr(returned_files, "_ttl", upload.DEFAULT_TTL)
-    monkeypatch.setattr(returned_files, "_adopted", False)
+    monkeypatch.setattr(storage.UPLOADS, "_policy",
+                        storage.Policy(uploads, storage.DEFAULT_TTL))
+    monkeypatch.setattr(storage.UPLOADS, "_adopted", False)
+    monkeypatch.setattr(storage.RETURNS, "_policy",
+                        storage.Policy(returns, storage.DEFAULT_TTL))
+    monkeypatch.setattr(storage.RETURNS, "_adopted", False)
+    monkeypatch.setattr(storage, "_sweeper", None)
+    monkeypatch.setattr(storage, "Thread", partial(RecordedThread, started))
 
     return {"uploads": uploads, "returns": returns, "threads": started}
 
@@ -80,11 +79,12 @@ def sweeper_threads(isolated_storage):
 @pytest.fixture
 def set_ttl(monkeypatch):
     """Set the TTL the resolver and the sweep use, as a router would."""
-    import func_to_web.web.upload as upload
+    from func_to_web.web.storage import UPLOADS, Policy
 
     def set(seconds):
-        monkeypatch.setattr(upload, "_ttl", seconds)
-        monkeypatch.setattr(upload, "_adopted", True)
+        monkeypatch.setattr(UPLOADS, "_policy",
+                            Policy(UPLOADS.directory, seconds))
+        monkeypatch.setattr(UPLOADS, "_adopted", True)
 
     return set
 
@@ -92,11 +92,12 @@ def set_ttl(monkeypatch):
 @pytest.fixture
 def set_returns_ttl(monkeypatch):
     """Set the TTL the returns sweep uses, as a router would."""
-    import func_to_web.web.returned_files as returned_files
+    from func_to_web.web.storage import RETURNS, Policy
 
     def set(seconds):
-        monkeypatch.setattr(returned_files, "_ttl", seconds)
-        monkeypatch.setattr(returned_files, "_adopted", True)
+        monkeypatch.setattr(RETURNS, "_policy",
+                            Policy(RETURNS.directory, seconds))
+        monkeypatch.setattr(RETURNS, "_adopted", True)
 
     return set
 

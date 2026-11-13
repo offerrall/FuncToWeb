@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-import func_to_web.web.upload as upload_module
+import func_to_web.web.storage as storage_module
 from func_to_web import app_of
 from func_to_web.web.pending import parsed, pending_of, stamps_of
 from func_to_web.web.references import (
@@ -16,7 +16,8 @@ from func_to_web.web.references import (
     REFERENCE_LIMIT,
     segment_of,
 )
-from func_to_web.web.upload import CONFLICT, PUBLISH_ATTEMPTS, checked_limit
+from func_to_web.web.storage import PUBLISH_ATTEMPTS
+from func_to_web.web.upload import CONFLICT, checked_limit
 
 PART_PATTERN = re.compile(r"^(?P<target>.+)\.[0-9a-f]{32}\.part$")
 
@@ -474,7 +475,7 @@ def test_storage_directory_is_created_when_missing(uploader_client,
 def test_body_is_written_to_a_partial_file(uploader_client, uploads_dir,
                                            monkeypatch):
     recorder = ReplaceRecorder()
-    monkeypatch.setattr(upload_module, "os", recorder)
+    monkeypatch.setattr(storage_module, "os", recorder)
 
     response = send(uploader_client, "a.txt", b"payload")
 
@@ -494,7 +495,7 @@ def test_publication_is_a_rename_onto_a_free_name(uploader_client, uploads_dir,
     send(uploader_client, "taken.txt", b"old")
 
     recorder = ReplaceRecorder()
-    monkeypatch.setattr(upload_module, "os", recorder)
+    monkeypatch.setattr(storage_module, "os", recorder)
 
     response = send(uploader_client, "free.txt", b"new")
 
@@ -694,7 +695,7 @@ def test_a_transient_publication_failure_is_retried(uploader_client,
                                                     uploads_dir, monkeypatch,
                                                     failures):
     flaky = FlakyReplace(failures)
-    monkeypatch.setattr(upload_module, "os", flaky)
+    monkeypatch.setattr(storage_module, "os", flaky)
 
     response = send(uploader_client, "a.txt", b"body")
 
@@ -709,7 +710,7 @@ def test_publication_retries_several_times_before_giving_up(uploader_client,
                                                             monkeypatch):
     flaky = FlakyReplace(3)
 
-    monkeypatch.setattr(upload_module, "os", flaky)
+    monkeypatch.setattr(storage_module, "os", flaky)
 
     response = send(uploader_client, "a.txt", b"body")
 
@@ -721,7 +722,7 @@ def test_publication_retries_several_times_before_giving_up(uploader_client,
 def test_publication_gives_up_after_the_last_attempt(tolerant_client,
                                                      uploads_dir, monkeypatch):
     flaky = FlakyReplace(PUBLISH_ATTEMPTS)
-    monkeypatch.setattr(upload_module, "os", flaky)
+    monkeypatch.setattr(storage_module, "os", flaky)
 
     response = send(tolerant_client(), "a.txt", b"body")
 
@@ -735,7 +736,7 @@ def test_a_server_side_publication_failure_is_a_500_not_a_400(
         def replace(self, source, destination):
             raise PermissionError(13, "Permission denied")
 
-    monkeypatch.setattr(upload_module, "os", Denied())
+    monkeypatch.setattr(storage_module, "os", Denied())
 
     response = send(tolerant_client(), "a.txt", b"body")
 
@@ -744,7 +745,7 @@ def test_a_server_side_publication_failure_is_a_500_not_a_400(
 
 def test_a_failed_publication_leaves_no_residue(tolerant_client, uploads_dir,
                                                 monkeypatch):
-    monkeypatch.setattr(upload_module, "os",
+    monkeypatch.setattr(storage_module, "os",
                         FlakyReplace(PUBLISH_ATTEMPTS))
 
     send(tolerant_client(), "a.txt", b"body")
@@ -759,7 +760,7 @@ def test_a_failed_publication_keeps_what_is_already_stored(tolerant_client,
 
     assert send(client, "a.txt", b"keep").status_code == 200
 
-    monkeypatch.setattr(upload_module, "os", FlakyReplace(PUBLISH_ATTEMPTS))
+    monkeypatch.setattr(storage_module, "os", FlakyReplace(PUBLISH_ATTEMPTS))
 
     assert send(client, "b.txt", b"new").status_code == 500
 
@@ -772,7 +773,7 @@ def test_a_failed_publication_keeps_what_is_already_stored(tolerant_client,
 def test_a_failing_cleanup_does_not_mask_the_original_failure(tolerant_client,
                                                               uploads_dir,
                                                               monkeypatch):
-    monkeypatch.setattr(upload_module, "os", FlakyReplace(PUBLISH_ATTEMPTS))
+    monkeypatch.setattr(storage_module, "os", FlakyReplace(PUBLISH_ATTEMPTS))
 
     def refuse(self, missing_ok=False):
         raise PermissionError(13, "Permission denied")

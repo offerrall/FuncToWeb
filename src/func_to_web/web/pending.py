@@ -28,8 +28,6 @@ from func_to_web.web.references import (
     TOKEN_DIGITS,
 )
 
-DEFAULT_TTL: int = 60 * 60
-
 PART_SUFFIX: str = ".part"
 
 HEX_DIGITS: frozenset[str] = frozenset("0123456789abcdef")

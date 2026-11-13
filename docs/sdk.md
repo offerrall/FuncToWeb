@@ -43,7 +43,9 @@ end).
 
 A failure throws `FuncToWebError`, with the server's message, its `status`, the
 `url` and the `envelope` it received. The SDK does not validate: the server
-does, and its `422` arrives as the error.
+does, and its `422` arrives as the error. A request that never reached the
+server, or a stream cut before its end, has no `status` and keeps the error of
+`fetch` as `cause`.
 
 ## Opening a function's page
 

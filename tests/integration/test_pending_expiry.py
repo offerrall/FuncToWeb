@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import func_to_web.web.storage as storage_module
 import func_to_web.web.upload as upload_module
 from func_to_web import FileHint, app_of
 from func_to_web.web.pending import PART_SUFFIX, now, parsed, pending_of
@@ -18,7 +19,8 @@ from func_to_web.web.references import (
     PENDING_PREFIX,
     REFERENCE_LIMIT,
 )
-from func_to_web.web.upload import CONFLICT, DEFAULT_TTL, checked_ttl
+from func_to_web.web.storage import DEFAULT_TTL
+from func_to_web.web.upload import CONFLICT, checked_ttl
 
 PENDING_PATTERN = re.compile(r"^~p(?P<stamp>\d{10})~(?P<reference>.+)$")
 
@@ -363,7 +365,7 @@ def test_the_sweep_deletes_what_is_expired_and_keeps_what_is_not(uploads_dir,
 
     os.utime(old_part, (stale, stale))
 
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert promoted.is_file()
     assert live.is_file()
@@ -382,7 +384,7 @@ def test_the_sweep_keeps_a_promoted_reference_that_ends_in_part(uploads_dir,
     stale = now() - 120
 
     os.utime(promoted, (stale, stale))
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert promoted.read_bytes() == b"kept"
 
@@ -395,7 +397,7 @@ def test_the_sweep_keeps_a_promoted_reference_with_a_short_token(uploads_dir,
     stale = now() - 120
 
     os.utime(promoted, (stale, stale))
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert promoted.read_bytes() == b"kept"
 
@@ -408,7 +410,7 @@ def test_the_sweep_keeps_a_promoted_reference_with_a_non_hex_token(uploads_dir,
     stale = now() - 120
 
     os.utime(promoted, (stale, stale))
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert promoted.read_bytes() == b"kept"
 
@@ -420,7 +422,7 @@ def test_the_sweep_still_deletes_a_real_stale_partial(uploads_dir, set_ttl):
     stale = now() - 120
 
     os.utime(partial, (stale, stale))
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert not partial.exists()
 
@@ -430,7 +432,7 @@ def test_the_sweep_keeps_a_fresh_partial(uploads_dir, set_ttl):
     partial = uploads_dir / f"notes.txt.{uuid4().hex}{PART_SUFFIX}"
     partial.write_bytes(b"half")
 
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert partial.read_bytes() == b"half"
 
@@ -453,7 +455,7 @@ def test_a_promoted_reference_ending_in_part_stays_immutable(client_factory,
 
     upload_module.stored_file(reference)
     os.utime(promoted, (stale, stale))
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     second = client.post("/upload", content=b"second",
                          headers={"X-File-Reference": reference})
@@ -468,7 +470,7 @@ def test_the_sweep_survives_a_directory_it_cannot_delete(uploads_dir,
     (uploads_dir / "folder").mkdir()
     expired = pending_file("gone.txt", age=120)
 
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert (uploads_dir / "folder").is_dir()
     assert not expired.exists()
@@ -491,7 +493,7 @@ def test_the_sweeper_is_one_daemon_thread_per_process(client_factory,
 
     assert len(sweeper_threads) == 1
     assert sweeper_threads[0].daemon is True
-    assert sweeper_threads[0].target is upload_module._sweeping
+    assert sweeper_threads[0].target is storage_module._sweeping
 
 
 def test_two_routers_with_the_same_ttl_settle_it_silently(process,
@@ -499,7 +501,7 @@ def test_two_routers_with_the_same_ttl_settle_it_silently(process,
     # filterwarnings=error, so a warning here would fail the test.
     process(60, 60)
 
-    assert upload_module._ttl == 60
+    assert storage_module.UPLOADS.ttl == 60
     assert len(sweeper_threads) == 1
 
 
@@ -507,7 +509,7 @@ def test_a_later_router_asking_for_another_ttl_is_told_it_was_ignored(process):
     with pytest.warns(UserWarning, match=r"pending_ttl=7200 is ignored"):
         process(3600, 7200)
 
-    assert upload_module._ttl == 3600
+    assert storage_module.UPLOADS.ttl == 3600
 
 
 def test_a_later_router_asking_for_no_ttl_is_told_it_was_ignored(process):
@@ -515,7 +517,7 @@ def test_a_later_router_asking_for_no_ttl_is_told_it_was_ignored(process):
                       match=r"pending_ttl=None is ignored.*pending_ttl=3600"):
         process(3600, None)
 
-    assert upload_module._ttl == 3600
+    assert storage_module.UPLOADS.ttl == 3600
 
 
 def test_the_warning_names_the_router_that_asked(process):
@@ -568,7 +570,7 @@ def test_a_router_without_file_fields_settles_nothing(client_factory, scalar,
     client_factory(scalar, pending_ttl=None)
     client_factory(file_function, pending_ttl=60)
 
-    assert upload_module._ttl == 60
+    assert storage_module.UPLOADS.ttl == 60
     assert len(sweeper_threads) == 1
 
 
@@ -588,14 +590,14 @@ def test_the_sweeper_sleeps_a_new_stretch_every_cycle(monkeypatch, uploads_dir,
         if len(slept) == 3:
             raise KeyboardInterrupt
 
-    monkeypatch.setattr(upload_module, "uniform", draw)
-    monkeypatch.setattr(upload_module, "sleep", stop)
+    monkeypatch.setattr(storage_module, "uniform", draw)
+    monkeypatch.setattr(storage_module, "sleep", stop)
 
     with pytest.raises(KeyboardInterrupt):
-        upload_module._sweeping()
+        storage_module._sweeping()
 
-    assert drawn == [(upload_module.SWEEP_MIN_SECONDS,
-                      upload_module.SWEEP_MAX_SECONDS)] * 3
+    assert drawn == [(storage_module.SWEEP_MIN_SECONDS,
+                      storage_module.SWEEP_MAX_SECONDS)] * 3
     assert slept == [1234.0] * 3
 
 
@@ -616,7 +618,7 @@ def test_without_a_ttl_nothing_is_ever_swept(client_factory, file_function,
     ancient = pending_file("old.txt", age=60 * 60 * 24 * 365)
 
     client_factory(file_function, pending_ttl=None)
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert ancient.is_file()
     assert names_in(uploads_dir) == [ancient.name]
@@ -743,7 +745,7 @@ def test_files_stored_before_this_version_survive_the_sweep(uploads_dir,
     for name in names:
         (uploads_dir / name).write_bytes(name.encode("utf-8"))
 
-    upload_module.sweep()
+    storage_module.UPLOADS.sweep()
 
     assert names_in(uploads_dir) == sorted(names)
 

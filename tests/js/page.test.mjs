@@ -7,12 +7,17 @@ import {
 } from "./dom.mjs";
 import {
     installClipboard, installObjectUrls, installTimers, installFetch, streamOf,
-    splitBytes, sse,
+    dyingStream, splitBytes, sse,
 } from "./browser.mjs";
 import { installXhr, upload } from "./xhr.mjs";
 import { form, reset } from "./form-stub.mjs";
 
 const INVALID = "Invalid server response";
+const NO_RESULT = "the stream ended with no result event";
+const NOT_AN_ENVELOPE =
+    "the answer carries neither result nor error, or carries both";
+const NOT_AN_OBJECT = "the answer is not a JSON object";
+const NO_CONNECTION = "the connection to ./invoke-stream failed";
 const PAGE = "../../src/func_to_web/static/page.js";
 
 const xhr = installXhr();
@@ -162,7 +167,7 @@ test("posts the form body to the streaming endpoint", async () => {
     await page.send([sse("result", { result: { type: "text", value: "x" } })]);
 
     assert.equal(page.calls.length, 1);
-    assert.equal(page.calls[0].url, "invoke-stream");
+    assert.equal(page.calls[0].url, "./invoke-stream");
     assert.equal(page.calls[0].options.method, "POST");
     assert.equal(page.calls[0].options.body, JSON.stringify({ a: 1 }));
     assert.equal(page.calls[0].options.headers.Accept, "text/event-stream");
@@ -251,7 +256,7 @@ test("treats invalid json in a data line as a missing payload", async () => {
     const cards = await page.send(["event: result\ndata: {not json}\n\n"]);
 
     assert.deepEqual(cards, ["ftw-output-error"]);
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_RESULT);
 });
 
 test("treats an event with no data lines as a missing payload", async () => {
@@ -259,7 +264,7 @@ test("treats an event with no data lines as a missing payload", async () => {
 
     await page.send(["event: result\n\n"]);
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_RESULT);
 });
 
 test("ignores a block that carries no event name", async () => {
@@ -321,7 +326,7 @@ test("reports an invalid response when the stream carries no result",
     const cards = await page.send([sse("start", {})]);
 
     assert.deepEqual(cards, ["ftw-output-error"]);
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_RESULT);
 });
 
 test("reports an invalid response when the stream is empty", async () => {
@@ -329,7 +334,7 @@ test("reports an invalid response when the stream is empty", async () => {
 
     await page.send([]);
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_RESULT);
 });
 
 test("accumulates printed chunks in a single growing stdout card", async () => {
@@ -380,7 +385,7 @@ test("ignores a print event whose text is not a string", async () => {
     assert.deepEqual(cards, ["ftw-output-text"]);
 });
 
-test("reports an invalid response when the request cannot be sent", async () => {
+test("reports a lost connection when the request cannot be sent", async () => {
     const page = await load();
 
     page.response = new Error("offline");
@@ -388,27 +393,91 @@ test("reports an invalid response when the request cannot be sent", async () => 
     await page.submit.click();
 
     assert.deepEqual(page.cards(), ["ftw-output-error"]);
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_CONNECTION);
 });
 
-test("reports an invalid response when the status is not ok", async () => {
-    const page = await load();
+test("reports a lost connection when the stream dies before its result",
+     async () => {
+    const page = await load({ embedded: true });
 
-    page.response = { ok: false, body: streamOf([]) };
+    page.response = {
+        ok: true,
+        status: 200,
+        body: dyingStream([sse("start", {})]),
+    };
 
     await page.submit.click();
 
-    assert.equal(page.message(), INVALID);
+    assert.deepEqual(page.cards(), ["ftw-output-error"]);
+    assert.equal(page.message(), NO_CONNECTION);
+    assert.equal(page.submit.disabled, false);
+    assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
+    assert.deepEqual(announced(page, "busy").map((data) => data.busy),
+                     [true, false]);
 });
 
-test("reports an invalid response when the body is missing", async () => {
+test("keeps what was printed when the stream dies before its result",
+     async () => {
     const page = await load();
 
-    page.response = { ok: true, body: null };
+    page.response = {
+        ok: true,
+        status: 200,
+        body: dyingStream([sse("start", {}), sse("print", { text: "half\n" })]),
+    };
 
     await page.submit.click();
 
-    assert.equal(page.message(), INVALID);
+    assert.deepEqual(page.cards(), ["ftw-output-stdout", "ftw-output-error"]);
+    assert.equal(page.message(), NO_CONNECTION);
+});
+
+test("a result that arrived is drawn even if the stream dies before it closes",
+     async () => {
+    const page = await load({ embedded: true });
+
+    page.response = {
+        ok: true,
+        status: 200,
+        body: dyingStream([
+            sse("start", {}),
+            sse("result", { result: { type: "text", value: "done" } }),
+        ]),
+    };
+
+    await page.submit.click();
+
+    assert.deepEqual(page.cards(), ["ftw-output-text"]);
+    assert.deepEqual(kinds(page), ["ready", "busy", "result", "busy"]);
+});
+
+test("reports the refusal of the server when the status is not ok", async () => {
+    const page = await load();
+
+    page.response = {
+        ok: false,
+        status: 404,
+        body: streamOf([]),
+        json: async () => ({ detail: "Not Found" }),
+    };
+
+    await page.submit.click();
+
+    assert.deepEqual(page.cards(), ["ftw-output-error"]);
+    assert.equal(page.message(), "Not Found");
+});
+
+test("reports an answer that is not an envelope when the body is missing",
+     async () => {
+    const page = await load();
+
+    page.response = { ok: true, status: 200, body: null };
+
+    await page.submit.click();
+
+    assert.deepEqual(page.cards(), ["ftw-output-error"]);
+    assert.equal(page.message(),
+                 "the answer of the server is not an envelope (HTTP 200)");
 });
 
 test("rejects an output whose type is unknown", async () => {
@@ -617,13 +686,13 @@ test("rejects an envelope carrying a result and an error at once", async () => {
         error: "boom",
     });
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NOT_AN_ENVELOPE);
 });
 
 test("rejects an envelope carrying neither a result nor an error", async () => {
     const { page } = await resultOf({ status: "ok" });
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NOT_AN_ENVELOPE);
 });
 
 test("rejects an envelope that is not an object", async () => {
@@ -631,7 +700,7 @@ test("rejects an envelope that is not an object", async () => {
 
     await page.send(["event: result\ndata: \"plain\"\n\n"]);
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NOT_AN_OBJECT);
 });
 
 test("passes visibility to the compiler and mounts its fields", async () => {
@@ -1006,7 +1075,7 @@ test("announces no result when the request itself fails", async () => {
 
     await page.submit.click();
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_CONNECTION);
     assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
 });
 
@@ -1016,7 +1085,7 @@ test("announces no result when the stream carries no answer", async () => {
 
     await page.send([sse("start", {})]);
 
-    assert.equal(page.message(), INVALID);
+    assert.equal(page.message(), NO_RESULT);
     assert.deepEqual(kinds(page), ["ready", "busy", "busy"]);
 });
 
@@ -1031,7 +1100,7 @@ test("autorun submits the form as soon as the page is ready", async () => {
     });
 
     assert.equal(page.calls.length, 1);
-    assert.equal(page.calls[0].url, "invoke-stream");
+    assert.equal(page.calls[0].url, "./invoke-stream");
     assert.deepEqual(page.cards(), ["ftw-output-text"]);
     assert.equal(page.message(), "done");
 });

@@ -5,9 +5,8 @@ from typing import Any
 from func_to_web.config import NAME, __version__
 from func_to_web.models.functions import FunctionInput, space_of
 from func_to_web.templates.theme import Theme
-from func_to_web.web import returned_files, upload
 from func_to_web.web.router import app_of
-from func_to_web.web.upload import DEFAULT_TTL
+from func_to_web.web.storage import DEFAULT_TTL, RETURNS, UPLOADS
 
 
 def run(
@@ -64,8 +63,8 @@ def run(
 
     print(
         f"{NAME} {__version__}\n"
-        f"UPLOADS DIR: {upload.UPLOADS_DIR}\n"
-        f"RETURNS DIR: {returned_files.RETURNS_DIR}",
+        f"UPLOADS DIR: {UPLOADS.directory}\n"
+        f"RETURNS DIR: {RETURNS.directory}",
         flush=True,
     )
 

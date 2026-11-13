@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-import func_to_web.web.upload as upload_module
+import func_to_web.web.storage as storage_module
 from func_to_web import FileHint
 
 pytestmark = [pytest.mark.browser, pytest.mark.slow]
@@ -246,7 +246,7 @@ def test_a_server_failure_is_retried_by_pressing_submit_again(open_page,
     chosen = local_file("retried.txt", b"retried content")
     switch = SwitchableReplace()
 
-    monkeypatch.setattr(upload_module, "os", switch)
+    monkeypatch.setattr(storage_module, "os", switch)
 
     file_input(page).set_input_files(chosen)
     page.click("#submit")

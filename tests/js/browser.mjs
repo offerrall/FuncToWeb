@@ -101,6 +101,25 @@ export function streamOf(chunks) {
 }
 
 
+export function dyingStream(chunks) {
+    const alive = streamOf(chunks).getReader();
+
+    return {
+        getReader() {
+            return {
+                async read() {
+                    const step = await alive.read();
+
+                    if (step.done) throw new TypeError("network error");
+
+                    return step;
+                },
+            };
+        },
+    };
+}
+
+
 export function bytesOf(text) {
     return new TextEncoder().encode(text);
 }

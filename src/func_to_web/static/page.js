@@ -4,6 +4,7 @@ import {
     renderDownload, renderError, renderForm, renderImage, renderRunning,
     renderStdout, renderTable, renderText,
 } from "./output.js";
+import { callStream } from "./sdk.js";
 import { runUploads } from "./upload.js";
 
 const plan = JSON.parse(
@@ -76,71 +77,19 @@ function listed(candidates) {
         .join(", ");
 }
 
-function parseEvent(block) {
-    const data = [];
-    let name = null;
-
-    for (const line of block.split("\n")) {
-        if (line.startsWith("event:")) name = line.slice(6).trim();
-        else if (line.startsWith("data:")) data.push(line.slice(5));
-    }
-
-    if (name === null) return null;
-
-    try {
-        return { name, data: JSON.parse(data.join("\n")) };
-    } catch {
-        return { name, data: null };
-    }
+function isRunError(envelope) {
+    return envelope !== null && typeof envelope === "object"
+        && Object.hasOwn(envelope, "error")
+        && !Object.hasOwn(envelope, "result");
 }
 
-async function* events(response) {
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+function showFailure(error, kept) {
+    show(...kept, renderError(error.message));
 
-    let buffer = "";
-
-    for (;;) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        buffer = (buffer + decoder.decode(value, { stream: true }))
-            .replace(/\r\n/g, "\n");
-
-        let end = buffer.indexOf("\n\n");
-
-        while (end !== -1) {
-            const event = parseEvent(buffer.slice(0, end));
-
-            buffer = buffer.slice(end + 2);
-
-            if (event !== null) yield event;
-
-            end = buffer.indexOf("\n\n");
-        }
-    }
+    if (isRunError(error.envelope)) emit("error", { message: error.message });
 }
 
-function showResult(data, kept) {
-    const hasResult = data !== null && typeof data === "object"
-        && Object.hasOwn(data, "result");
-    const hasError = data !== null && typeof data === "object"
-        && Object.hasOwn(data, "error");
-
-    if (hasResult === hasError) {
-        show(...kept, renderError("Invalid server response"));
-        return;
-    }
-
-    if (hasError) {
-        show(...kept, renderError(data.error));
-        emit("error", { message: data.error });
-        return;
-    }
-
-    const outputs = Array.isArray(data.result) ? data.result : [data.result];
-
+function showResult(outputs, kept) {
     if (outputs.length === 1 && isForm(outputs[0])) {
         show(...kept, renderForm(outputs[0]));
         emit("navigate", { href: outputs[0].href });
@@ -160,58 +109,37 @@ function showResult(data, kept) {
 }
 
 async function run(body) {
-    let response;
-
-    try {
-        response = await fetch("invoke-stream", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "text/event-stream",
-            },
-            body: JSON.stringify(body),
-        });
-    } catch {
-        fail("Invalid server response");
-        return;
-    }
-
-    if (!response.ok || response.body === null) {
-        fail("Invalid server response");
-        return;
-    }
-
     const running = renderRunning();
     const stdout = renderStdout();
 
     let printed = false;
-    let answered = false;
+    let outputs = null;
+    let failure = null;
 
-    for await (const event of events(response)) {
-        if (event.name === "start") {
-            show(running);
-            continue;
-        }
+    try {
+        outputs = await callStream(".", body, {
+            onStart() {
+                show(running);
+            },
+            onPrint(text) {
+                if (!printed) {
+                    printed = true;
+                    show(stdout.element, running);
+                }
 
-        if (event.name === "print" && typeof event.data?.text === "string") {
-            if (!printed) {
-                printed = true;
-                show(stdout.element, running);
-            }
-
-            stdout.append(event.data.text);
-            continue;
-        }
-
-        if (event.name === "result") {
-            answered = true;
-            showResult(event.data, printed ? [stdout.element] : []);
-
-            if (printed) stdout.follow();
-        }
+                stdout.append(text);
+            },
+        });
+    } catch (error) {
+        failure = error;
     }
 
-    if (!answered) fail("Invalid server response");
+    const kept = printed ? [stdout.element] : [];
+
+    if (failure === null) showResult(outputs, kept);
+    else showFailure(failure, kept);
+
+    if (printed) stdout.follow();
 }
 
 const submit = document.getElementById("submit");

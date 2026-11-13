@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { installDocument, makeElement, messaging, walk } from "./dom.mjs";
-import { installFetch } from "./browser.mjs";
+import { dyingStream, installFetch } from "./browser.mjs";
 import {
     FuncToWebError, call, callStream, doc, downloadUrl, embed, events,
     fileReference, formUrl, listen, openModal, outputsOf, pageUrl, upload,
@@ -219,6 +219,137 @@ test("an answer that is not json is refused", async () => {
 });
 
 
+test("an answer of the wrong shape is refused whatever its status", async () => {
+    recorded(() => answer(200, { status: "ok" }));
+
+    const error = await refused(() => call(FUNCTION, { a: 1 }));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.match(error.message, /is not an envelope \(HTTP 200\)/);
+    assert.equal(error.status, 200);
+    assert.deepEqual(error.envelope, { status: "ok" });
+});
+
+
+function offline() {
+    const cause = new TypeError("Failed to fetch");
+
+    recorded(() => {
+        throw cause;
+    });
+
+    return cause;
+}
+
+
+test("a call that never reaches the server is a FuncToWebError", async () => {
+    const cause = offline();
+
+    const error = await refused(() => call(FUNCTION, { a: 1 }));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.message, "the connection to /tools/add/invoke failed");
+    assert.equal(error.url, "/tools/add/invoke");
+    assert.equal(error.status, null);
+    assert.equal(error.cause, cause);
+});
+
+
+test("a stream that never reaches the server is a FuncToWebError", async () => {
+    const cause = offline();
+
+    const error = await refused(() => callStream(FUNCTION, { a: 1 }));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.message,
+                 "the connection to /tools/add/invoke-stream failed");
+    assert.equal(error.url, "/tools/add/invoke-stream");
+    assert.equal(error.cause, cause);
+});
+
+
+test("a stream that dies before its result is a FuncToWebError", async () => {
+    const printed = [];
+
+    recorded(() => answer(200, null, {
+        body: dyingStream([
+            'event: start\ndata: {}\n\n',
+            'event: print\ndata: {"text": "half"}\n\n',
+        ]),
+    }));
+
+    const error = await refused(() => callStream(FUNCTION, { a: 1 }, {
+        onPrint: (text) => printed.push(text),
+    }));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.message,
+                 "the connection to /tools/add/invoke-stream failed");
+    assert.equal(error.url, "/tools/add/invoke-stream");
+    assert.equal(error.cause instanceof TypeError, true);
+    assert.equal(error.cause.message, "network error");
+    assert.deepEqual(printed, ["half"]);
+});
+
+
+test("the raw events fail the same way when the stream dies", async () => {
+    recorded(() => answer(200, null, { body: dyingStream([]) }));
+
+    const error = await refused(async () => {
+        for await (const event of events(FUNCTION, { a: 1 })) void event;
+    });
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.cause.message, "network error");
+});
+
+
+test("an upload that never reaches the server is a FuncToWebError", async () => {
+    const cause = offline();
+
+    const error = await refused(() => upload(SPACE, { name: "a.csv" }));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.message, "the connection to /tools/upload failed");
+    assert.equal(error.url, "/tools/upload");
+    assert.equal(error.cause, cause);
+});
+
+
+test("a contract that never reaches the server is a FuncToWebError", async () => {
+    const cause = offline();
+
+    const error = await refused(() => doc(SPACE));
+
+    assert.equal(error instanceof FuncToWebError, true);
+    assert.equal(error.url, "/tools/doc");
+    assert.equal(error.cause, cause);
+});
+
+
+test("a request the caller cancelled keeps the abort of fetch", async () => {
+    const controller = new AbortController();
+
+    recorded(async (url, options) => {
+        controller.abort();
+
+        throw options.signal.reason;
+    });
+
+    const error = await refused(
+        () => call(FUNCTION, { a: 1 }, { signal: controller.signal }));
+
+    assert.equal(error instanceof FuncToWebError, false);
+    assert.equal(error.name, "AbortError");
+});
+
+
+test("an error that wraps nothing has no cause", () => {
+    assert.equal("cause" in new FuncToWebError("plain"), false);
+    assert.equal("cause" in new FuncToWebError("plain", { status: 500 }), false);
+});
+
+
 test("the arguments are not checked against a contract of our own", async () => {
     const calls = recorded(() => answer(422, {
         error: "SchemaTypeError: missing argument(s): a",
@@ -364,7 +495,7 @@ test("upload mints the reference from the name of the file", async () => {
 
     const reference = await upload(SPACE, { name: "Annual Report.CSV" });
 
-    assert.match(reference, /^annual-report-[0-9a-f-]{36}\.CSV$/);
+    assert.match(reference, /^annual-report-[0-9a-f-]{36}\.csv$/);
     assert.equal(calls[0].options.headers["X-File-Reference"], reference);
 });
 
@@ -412,6 +543,45 @@ test("a file whose name has no ascii left is only the uuid", () => {
 
 test("the extension of a file is the last one", () => {
     assert.match(fileReference("archive.tar.gz"), /^archive-tar-[0-9a-f-]{36}\.gz$/);
+});
+
+
+test("the extension of a reference is lowercased", () => {
+    assert.match(fileReference("Photo.JPG"), /^photo-[0-9a-f-]{36}\.jpg$/);
+});
+
+
+test("an ending that is not an extension is part of the name", () => {
+    assert.match(fileReference("report.final draft"),
+                 /^report-final-dr-[0-9a-f-]{36}$/);
+    assert.match(fileReference("price.50%"), /^price-50-[0-9a-f-]{36}$/);
+    assert.match(fileReference("data.cs_v"), /^data-cs-v-[0-9a-f-]{36}$/);
+    assert.match(fileReference("résumé.dócx"), /^resume-docx-[0-9a-f-]{36}$/);
+});
+
+
+test("an extension holds at most sixteen characters", () => {
+    assert.match(fileReference(`a.${"x".repeat(16)}`),
+                 /^a-[0-9a-f-]{36}\.x{16}$/);
+    assert.match(fileReference(`a.${"x".repeat(17)}`),
+                 /^a-xxxxxxxxxxxxx-[0-9a-f-]{36}$/);
+});
+
+
+test("a name that ends in a dot has no extension", () => {
+    assert.match(fileReference("notes."), /^notes-[0-9a-f-]{36}$/);
+});
+
+
+test("a name that is only an extension is only the uuid", () => {
+    assert.match(fileReference(".gitignore"), /^[0-9a-f-]{36}\.gitignore$/);
+});
+
+
+test("a reference never carries a character outside its alphabet", () => {
+    for (const name of ["a.b/c", "x.<svg>", "q.tar gz", "ñ.Ñ", "a.\u0000b"]) {
+        assert.match(fileReference(name), /^[a-z0-9-]+(\.[a-z0-9]{1,16})?$/);
+    }
 });
 
 

@@ -1,6 +1,6 @@
 import os
 
-from func_to_web.web import returned_files, upload
+from func_to_web.web.storage import RETURNS, UPLOADS
 
 
 def without_storage_paths(text: str) -> str:
@@ -16,7 +16,7 @@ def without_storage_paths(text: str) -> str:
     doubled; both renderings are cut, and the comparison folds case because
     Windows does.
     """
-    for root in (upload.UPLOADS_DIR, returned_files.RETURNS_DIR):
+    for root in (UPLOADS.directory, RETURNS.directory):
         for prefix in _prefixes(str(root)):
             text = _cut(text, prefix)
 

@@ -299,39 +299,36 @@ export function renderTable(output) {
     return element;
 }
 
-export function renderDownload(output) {
+function linkCard(variant, href, drawing, text) {
     const element = document.createElement("div");
-    element.className = "ftw-output ftw-output-download";
+    element.className = `ftw-output ftw-output-${variant}`;
 
     const link = document.createElement("a");
     link.className = "ftw-download";
-    link.href = `../returns/${encodeURIComponent(output.value)}`;
-    link.download = output.filename;
+    link.href = href;
 
     const name = document.createElement("span");
-    name.textContent = output.filename;
+    name.textContent = text;
 
-    link.append(downloadIcon(), name);
+    link.append(drawing, name);
     element.append(link);
+
+    return { element, link };
+}
+
+export function renderDownload(output) {
+    const { element, link } = linkCard(
+        "download", `../returns/${encodeURIComponent(output.value)}`,
+        downloadIcon(), output.filename);
+
+    link.download = output.filename;
 
     return element;
 }
 
 export function renderForm(output) {
-    const element = document.createElement("div");
-    element.className = "ftw-output ftw-output-form";
-
-    const link = document.createElement("a");
-    link.className = "ftw-download";
-    link.href = output.href;
-
-    const name = document.createElement("span");
-    name.textContent = "Opening the form…";
-
-    link.append(clockIcon(), name);
-    element.append(link);
-
-    return element;
+    return linkCard(
+        "form", output.href, clockIcon(), "Opening the form…").element;
 }
 
 export function renderImage(output) {
