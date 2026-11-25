@@ -304,7 +304,7 @@ def test_changing_another_parameter_never_uploads_the_file_again(open_page,
     outputs = []
 
     for times in ("1", "2", "3"):
-        field_input(page, "times").fill(times)
+        field_input(page, "Times").fill(times)
         page.click("#submit")
         page.wait_for_function(
             "() => !document.querySelector('#submit').disabled")

@@ -95,7 +95,7 @@ def test_a_second_run_replaces_every_output(open_page):
     page.click("#submit")
     page.wait_for_selector(TABLE)
 
-    page.locator(".pth-field:has(label:text-is('rows')) input").fill("4")
+    page.locator(".pth-field:has(label:text-is('Rows')) input").fill("4")
     page.click("#submit")
     page.wait_for_function(
         "() => document.querySelectorAll("

@@ -55,7 +55,7 @@ def test_the_target_page_arrives_prefilled(open_page):
     page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field:visible")
 
-    assert field_input(page, "name").input_value() == "chosen"
+    assert field_input(page, "Name").input_value() == "chosen"
 
 
 def test_the_hidden_field_is_not_shown_but_still_travels(open_page):
@@ -65,7 +65,7 @@ def test_the_hidden_field_is_not_shown_but_still_travels(open_page):
     page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field:visible")
 
-    assert page.locator(".pth-field:has(label:text-is('product_id'))").is_hidden()
+    assert page.locator(".pth-field:has(label:text-is('Product id'))").is_hidden()
 
     page.click("#submit")
 
@@ -105,7 +105,7 @@ def test_the_prefilled_page_can_be_run_and_changed(open_page):
     page.wait_for_url("**/edit_product/**")
     page.wait_for_selector("#fields .pth-field:visible")
 
-    field_input(page, "name").fill("edited")
+    field_input(page, "Name").fill("edited")
     page.click("#submit")
 
     assert page.text_content(TEXT) == "7:edited:"
@@ -137,7 +137,7 @@ def test_the_download_link_survives_a_second_run(open_page):
     page = open_page(SPACE, "pack")
 
     for expected in (b"zzz", b"zzzzz"):
-        field_input(page, "seed").fill(str(len(expected)))
+        field_input(page, "Seed").fill(str(len(expected)))
         page.click("#submit")
         page.wait_for_selector("#result .ftw-output-download a")
 

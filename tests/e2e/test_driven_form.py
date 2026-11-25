@@ -32,8 +32,8 @@ def field_input(page, label):
 def test_typing_and_clicking_submit_runs_the_function(open_page):
     page = open_page(add, "add")
 
-    field_input(page, "a").fill("5")
-    field_input(page, "b").fill("7")
+    field_input(page, "A").fill("5")
+    field_input(page, "B").fill("7")
     page.click("#submit")
 
     assert page.text_content(TEXT) == "12"
@@ -51,42 +51,42 @@ def test_a_missing_required_field_never_reaches_the_server(open_page, console):
 
     page.click("#submit")
 
-    assert "Complete: a" in page.text_content(ERROR)
+    assert "Complete: A" in page.text_content(ERROR)
     assert page.locator(TEXT).count() == 0
 
 
 def test_a_value_out_of_bounds_is_refused_by_the_browser(open_page):
     page = open_page(add, "add")
 
-    field_input(page, "a").fill("1")
-    field_input(page, "b").fill("99")
+    field_input(page, "A").fill("1")
+    field_input(page, "B").fill("99")
     page.click("#submit")
 
-    assert "Fix: b" in page.text_content(ERROR)
+    assert "Fix: B" in page.text_content(ERROR)
 
 
 def test_the_number_buttons_change_the_value(open_page):
     page = open_page(add, "add")
 
-    field_input(page, "a").fill("1")
-    page.click(".pth-field:has(label:text-is('a')) "
+    field_input(page, "A").fill("1")
+    page.click(".pth-field:has(label:text-is('A')) "
                "button[aria-label='Increase']")
-    page.click(".pth-field:has(label:text-is('a')) "
+    page.click(".pth-field:has(label:text-is('A')) "
                "button[aria-label='Increase']")
 
-    assert field_input(page, "a").input_value() == "3"
+    assert field_input(page, "A").input_value() == "3"
 
-    page.click(".pth-field:has(label:text-is('a')) "
+    page.click(".pth-field:has(label:text-is('A')) "
                "button[aria-label='Decrease']")
 
-    assert field_input(page, "a").input_value() == "2"
+    assert field_input(page, "A").input_value() == "2"
 
 
 def test_enter_in_a_text_field_does_not_submit_the_form(open_page):
     page = open_page(add, "add")
 
-    field_input(page, "a").fill("1")
-    field_input(page, "note").press("Enter")
+    field_input(page, "A").fill("1")
+    field_input(page, "Note").press("Enter")
 
     assert page.locator(RESULT).count() == 0
 
@@ -95,7 +95,7 @@ def test_several_runs_replace_the_previous_result(open_page):
     page = open_page(add, "add")
 
     for value, expected in (("1", "3"), ("10", "12"), ("100", "102")):
-        field_input(page, "a").fill(value)
+        field_input(page, "A").fill(value)
         page.click("#submit")
         page.wait_for_function(
             "expected => document.querySelector("
@@ -129,7 +129,7 @@ def test_a_failing_function_shows_the_error_envelope(open_page, failing):
 def test_the_page_runs_without_console_errors(open_page, console):
     page = open_page(add, "add")
 
-    field_input(page, "a").fill("1")
+    field_input(page, "A").fill("1")
     page.click("#submit")
     page.wait_for_selector(TEXT)
 

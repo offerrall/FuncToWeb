@@ -100,7 +100,7 @@ def test_a_result_reaches_the_host_and_travels_in_closed(host):
 
     open_modal(page, "add")
 
-    field(page, "a").fill("5")
+    field(page, "A").fill("5")
     submit(page)
 
     page.wait_for_function("window.probe.results.length === 1")
@@ -123,7 +123,7 @@ def test_close_on_result_closes_the_modal_and_completes(host):
 
     open_modal(page, "add", closeOnResult=True)
 
-    field(page, "a").fill("1")
+    field(page, "A").fill("1")
     submit(page)
 
     assert outcome(page) == {
