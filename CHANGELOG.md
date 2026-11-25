@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.11.0 - 2026-11-25
+
+### Changed
+
+- The form layer is `pytypehintweb == 1.5.0`. A field or parameter with no
+  `Label` shows its name as words, by the rule the page title already follows:
+  `contact_person` reads "Contact person" and `shop` reads "Shop". A `Label` is
+  shown letter for letter, and values still travel by the parameter's name.
+
 ## 2.10.0 - 2026-11-13
 
 ### Added

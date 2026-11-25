@@ -36,11 +36,11 @@ def test_nested_visibility_keeps_prefill_and_new_items_in_submission(
     page.wait_for_selector("#fields .pth-field")
     tokens = page.locator(".pth-str input").filter(visible=False)
     assert tokens.count() == 3
-    assert page.get_by_label("name", exact=True).nth(0).input_value() == "Demo"
-    page.get_by_label("name", exact=True).nth(0).fill("Changed")
+    assert page.get_by_label("Name", exact=True).nth(0).input_value() == "Demo"
+    page.get_by_label("Name", exact=True).nth(0).fill("Changed")
     page.locator(".pth-list-add").click()
     assert tokens.count() == 4
-    assert page.get_by_label("name", exact=True).nth(2).is_visible()
+    assert page.get_by_label("Name", exact=True).nth(2).is_visible()
     page.click("#submit")
     result = page.locator("#result .ftw-output-text .ftw-output-value")
     result.wait_for()
